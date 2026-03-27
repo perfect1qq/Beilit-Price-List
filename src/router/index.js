@@ -1,7 +1,9 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import QuotationList from '../views/QuotationList.vue'
 import BeamQuotationList from '../views/BeamQuotationList.vue'
 import QuotationStatistics from '../views/QuotationStatistics.vue'
+
+
 const routes = [
   {
     path: '/',
@@ -28,7 +30,9 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+// 2. 使用 Hash 模式
+  // import.meta.env.BASE_URL 会自动获取你在 vite.config.js 中配置的 base ('/vue-project/')
+  history: createWebHashHistory(import.meta.env.BASE_URL),
   routes
 })
 
