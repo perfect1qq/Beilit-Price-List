@@ -31,25 +31,25 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
   const token = localStorage.getItem('token')
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   if (to.meta.public) {
     if (token && (to.path === '/login' || to.path === '/register')) {
-      return next('/')
+      return '/'
     }
-    return next()
+    return true
   }
 
-  if (!token) return next('/login')
+  if (!token) return '/login'
 
   // 管理员权限检查
   if (to.meta.adminOnly && user.role !== 'admin') {
-    return next('/')
+    return '/'
   }
 
-  next()
+  return true
 })
 
 export default router

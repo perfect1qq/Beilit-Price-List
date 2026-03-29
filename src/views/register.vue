@@ -46,7 +46,7 @@
           
           <div class="footer-links">
             <span>已有账号？</span>
-            <el-link type="primary" :underline="false" @click="goToLogin">去登录</el-link>
+            <el-link type="primary" underline="never" @click="goToLogin">去登录</el-link>
           </div>
         </el-form>
       </el-card>

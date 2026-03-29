@@ -2,40 +2,106 @@
   <el-card shadow="never" class="card">
     <div class="head">
       <div>
-        <h2>{{ form.companyName || form.name || '审批详情' }}</h2>
-        <div class="sub">编号：{{ form.quotationNo || '-' }} ｜ 提交人：{{ form.ownerName || '-' }}</div>
+        <h2>{{ companyName || meta.name || '审批详情' }}</h2>
+        <div class="sub">编号：{{ meta.quotationNo || '-' }} ｜ 提交人：{{ meta.ownerName || '-' }}</div>
       </div>
       <div class="actions">
-        <el-tag :type="tagType(form.status)">{{ statusLabel(form.status) }}</el-tag>
+        <el-tag :type="tagType(meta.status)">{{ statusLabel(meta.status) }}</el-tag>
         <el-button @click="router.back()">返回</el-button>
-        <el-button v-if="form.status === 'pending'" type="success" @click="approve">通过</el-button>
-        <el-button v-if="form.status === 'pending'" type="danger" @click="reject">驳回</el-button>
-        <el-button v-if="form.status !== 'approved'" type="warning" :disabled="!editMode" @click="save">保存</el-button>
+        <el-button v-if="meta.status === 'pending'" type="success" @click="approve">通过</el-button>
+        <el-button v-if="meta.status === 'pending'" type="danger" @click="reject">驳回</el-button>
+        <el-button v-if="meta.status !== 'approved'" type="warning" :disabled="!editMode" @click="save">保存修改</el-button>
       </div>
     </div>
 
-    <el-form class="form" label-width="90px" :model="form">
+    <el-form class="form" label-width="90px">
       <el-row :gutter="16">
-        <el-col :span="12"><el-form-item label="公司名称"><el-input v-model="form.companyName" :disabled="!editMode" /></el-form-item></el-col>
-        <el-col :span="12"><el-form-item label="状态"><el-input :model-value="statusLabel(form.status)" disabled /></el-form-item></el-col>
-        <el-col :span="12"><el-form-item label="折扣"><el-input-number v-model="form.discount" :disabled="!editMode" :min="0" :max="100" controls-position="right" /></el-form-item></el-col>
-        <el-col :span="12"><el-form-item label="成交价"><el-input-number v-model="form.finalPrice" :disabled="!editMode" :min="0" :precision="2" controls-position="right" /></el-form-item></el-col>
+        <el-col :span="8">
+          <el-form-item label="公司名称">
+            <el-input v-model="companyName" :disabled="!editMode" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="折扣 (%)">
+            <el-input-number 
+              v-model="discount" 
+              :disabled="!editMode" 
+              :min="0" :max="100" 
+              controls-position="right" 
+              style="width: 100%"
+              @change="handleDiscountChange"
+            />
+          </el-form-item>
+        </el-col>
+        <el-col :span="8">
+          <el-form-item label="成交价">
+            <el-input-number 
+              v-model="finalPrice" 
+              :disabled="!editMode" 
+              :min="0" :precision="2" 
+              controls-position="right" 
+              style="width: 100%"
+              @input="handleManualFinalPriceChange"
+            />
+          </el-form-item>
+        </el-col>
       </el-row>
-      <el-form-item label="备注"><el-input v-model="form.remark" type="textarea" :rows="3" :disabled="!editMode" /></el-form-item>
+      <el-form-item label="备注">
+        <el-input v-model="remark" type="textarea" :rows="2" :disabled="!editMode" />
+      </el-form-item>
     </el-form>
 
-    <el-table :data="form.items" border stripe style="width:100%; margin-top: 12px" :header-cell-style="headerStyle">
-      <el-table-column label="名称" min-width="150"><template #default="{ row }"><el-input v-model="row.name" :disabled="!editMode" /></template></el-table-column>
-      <el-table-column label="规格" min-width="120"><template #default="{ row }"><el-input v-model="row.spec" :disabled="!editMode" /></template></el-table-column>
-      <el-table-column label="数量" min-width="110"><template #default="{ row }"><el-input v-model="row.quantity" :disabled="!editMode" /></template></el-table-column>
-      <el-table-column label="单价" min-width="120"><template #default="{ row }"><el-input-number v-model="row.unitPrice" :disabled="!editMode" :min="0" :precision="2" style="width:100%" /></template></el-table-column>
-      <el-table-column label="总价" min-width="120" align="center"><template #default="{ row }">¥ {{ Number(row.totalPrice || 0).toFixed(2) }}</template></el-table-column>
-    </el-table>
+    <div class="table-container">
+      <el-table :data="items" border stripe style="width:100%" :header-cell-style="headerStyle">
+        <el-table-column label="项目名称" min-width="150">
+          <template #default="{ row }">
+            <el-input v-model="row.name" :disabled="!editMode" />
+          </template>
+        </el-table-column>
+        <el-table-column label="规格型号" min-width="150">
+          <template #default="{ row }">
+            <el-input v-model="row.spec" :disabled="!editMode" />
+          </template>
+        </el-table-column>
+        <el-table-column label="数量" width="120">
+          <template #default="{ row }">
+            <el-input v-model="row.quantity" :disabled="!editMode" @change="updateRowTotal(row)" />
+          </template>
+        </el-table-column>
+        <el-table-column label="单价" width="150">
+          <template #default="{ row }">
+            <el-input-number v-model="row.unitPrice" :disabled="!editMode" :min="0" :precision="2" controls-position="right" style="width:100%" @change="updateRowTotal(row)" />
+          </template>
+        </el-table-column>
+        <el-table-column label="总价" width="150" align="right">
+          <template #default="{ row }">
+            <span class="row-total">¥ {{ Number(row.totalPrice || 0).toFixed(2) }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+
+    <!-- 汇总区域 (保持与主模块一致) -->
+    <div class="summary-bar">
+      <div class="summary-item">合计小计：<span>¥ {{ Number(subtotal || 0).toFixed(2) }}</span></div>
+      <div class="summary-item">优惠金额：<span>¥ {{ Number(discountAmount || 0).toFixed(2) }}</span></div>
+      <div class="summary-item main">最终成交价：<strong>¥ {{ Number(finalPrice || 0).toFixed(2) }}</strong></div>
+      <el-button v-if="editMode && isManualFinalPrice" type="primary" link @click="restoreAutoFinalPrice">恢复自动计算</el-button>
+    </div>
 
     <el-divider />
-    <h3>审批记录</h3>
-    <el-timeline>
-      <el-timeline-item v-for="log in logs" :key="log.id" :timestamp="log.createdAt">{{ log.action }} - {{ log.comment }}</el-timeline-item>
+    <h3 class="section-title">审批流水 & 日志</h3>
+    <el-timeline class="logs">
+      <el-timeline-item 
+        v-for="log in logs" 
+        :key="log.id" 
+        :timestamp="new Date(log.createdAt).toLocaleString()"
+        :type="log.action === 'approve' ? 'success' : (log.action === 'reject' ? 'danger' : 'info')"
+      >
+        <span class="log-op">{{ log.operatorName }}</span> 
+        <el-tag size="small" :type="tagType(log.action)" class="log-tag">{{ log.action }}</el-tag>
+        <span class="log-comment">{{ log.comment }}</span>
+      </el-timeline-item>
     </el-timeline>
   </el-card>
 </template>
@@ -45,54 +111,116 @@ import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { quotationApi } from '@/api/quotation'
+import { useQuotationDraft } from '@/composables/useQuotationDraft'
 
 const route = useRoute()
 const router = useRouter()
 const editMode = ref(route.query.mode === 'edit')
 const logs = ref([])
 const headerStyle = { background: '#f5f7fa', fontWeight: 'bold', textAlign: 'center' }
-const form = reactive({ id: null, quotationNo: '', name: '', companyName: '', ownerName: '', status: 'pending', items: [], remark: '', discount: 0, finalPrice: 0, isManual: false })
 
-const tagType = (status) => ({ draft: 'info', pending: 'warning', approved: 'success', rejected: 'danger', deleted: 'info' }[status] || 'info')
-const statusLabel = (status) => ({ draft: '草稿', pending: '待审批', approved: '已通过', rejected: '已驳回', deleted: '已删除' }[status] || status)
+// 基础元数据
+const meta = reactive({
+  id: null,
+  quotationNo: '',
+  name: '',
+  ownerName: '',
+  status: 'pending'
+})
+
+// 核心状态集成
+const {
+  companyName,
+  remark,
+  discount,
+  finalPrice,
+  items,
+  subtotal,
+  discountAmount,
+  isManualFinalPrice,
+  updateRowTotal,
+  setFinalPriceManual,
+  restoreAutoFinalPrice,
+  loadRecord,
+  getPayload
+} = useQuotationDraft()
+
+const tagType = (status) => ({ 
+  draft: 'info', pending: 'warning', approved: 'success', rejected: 'danger', deleted: 'info',
+  submit: 'primary', approve: 'success', reject: 'danger', recall: 'warning'
+ }[status] || 'info')
+
+const statusLabel = (status) => ({ 
+  draft: '草稿', pending: '待审批', approved: '已通过', rejected: '已驳回', deleted: '已删除',
+  submit: '提交审批', approve: '审批通过', reject: '审批驳回'
+ }[status] || status)
+
+// 成交价手动修改
+const handleManualFinalPriceChange = (val) => {
+  if (!editMode.value) return
+  setFinalPriceManual(val)
+}
+
+// 折扣修改
+const handleDiscountChange = () => {
+  if (!editMode.value) return
+  if (isManualFinalPrice.value) {
+    restoreAutoFinalPrice()
+  }
+}
 
 async function loadDetail() {
-  const res = await quotationApi.get(route.params.id)
-  const q = res.quotation || {}
-  Object.assign(form, q)
-  logs.value = res.logs || []
+  try {
+    const res = await quotationApi.get(route.params.id)
+    const q = res.quotation || {}
+    meta.id = q.id
+    meta.quotationNo = q.quotationNo
+    meta.name = q.name
+    meta.ownerName = q.ownerName
+    meta.status = q.status
+    logs.value = res.logs || []
+    
+    loadRecord(q, editMode.value ? 'edit' : 'view')
+  } catch (err) {
+    ElMessage.error('加载详情失败')
+  }
 }
 
 async function save() {
-  const payload = {
-    companyName: form.companyName || form.name,
-    name: form.companyName || form.name,
-    items: form.items,
-    remark: form.remark,
-    discount: form.discount,
-    finalPrice: form.finalPrice,
-    isManual: true
+  if (!companyName.value.trim()) return ElMessage.warning('公司名称不能为空')
+  const payload = getPayload()
+  try {
+    await quotationApi.update(meta.id, payload)
+    ElMessage.success('报价单修改成功')
+    editMode.value = false
+    await loadDetail()
+  } catch (err) {
+    ElMessage.error(err.message || '保存失败')
   }
-  await quotationApi.update(form.id, payload)
-  ElMessage.success('修改成功')
-  editMode.value = false
-  await loadDetail()
 }
 
 async function approve() {
-  await quotationApi.approve(form.id, '同意')
-  ElMessage.success('已通过')
-  await loadDetail()
+  try {
+    await quotationApi.approve(meta.id, '审批通过 (由管理员直接修改并同意)')
+    ElMessage.success('审批已通过')
+    router.back()
+  } catch (err) {
+    ElMessage.error('操作失败')
+  }
 }
 
 async function reject() {
-  const { value } = await ElMessageBox.prompt('请输入驳回原因', '驳回报价单', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消'
-  })
-  await quotationApi.reject(form.id, value || '拒绝')
-  ElMessage.success('已驳回')
-  await loadDetail()
+  try {
+    const { value } = await ElMessageBox.prompt('请输入驳回原因', '审批驳回', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消'
+    })
+    await quotationApi.reject(meta.id, value || '拒绝')
+    ElMessage.success('已驳回')
+    router.back()
+  } catch (err) {
+    // 处理取消
+  }
 }
 
 onMounted(loadDetail)
@@ -100,8 +228,20 @@ onMounted(loadDetail)
 
 <style scoped>
 .card { border-radius: 18px; }
-.head { display:flex; justify-content:space-between; align-items:flex-end; gap: 16px; }
+.head { display:flex; justify-content:space-between; align-items:flex-end; gap: 16px; margin-bottom: 20px; }
 .sub { color: #6b7280; font-size: 13px; margin-top: 6px; }
 .actions { display:flex; gap: 10px; flex-wrap: wrap; }
-.form { margin-top: 16px; }
+.form { margin-top: 10px; padding: 16px; background: #f8fafc; border-radius: 12px; margin-bottom: 16px; }
+.table-container { margin-bottom: 16px; }
+.row-total { font-weight: 600; color: #374151; }
+.summary-bar { 
+  display: flex; align-items: center; justify-content: flex-end; gap: 24px;
+  padding: 16px; background: #f1f5f9; border-radius: 12px; font-size: 14px;
+}
+.summary-item span { color: #475569; font-weight: 600; margin-left: 4px; }
+.summary-item.main strong { color: #ef4444; font-size: 18px; margin-left: 6px; }
+.section-title { font-size: 16px; font-weight: 700; color: #1f2937; margin-top: 24px; margin-bottom: 16px; }
+.log-op { font-weight: 600; color: #1f2d3d; }
+.log-tag { margin: 0 8px; }
+.log-comment { color: #64748b; font-size: 13px; }
 </style>

@@ -208,6 +208,30 @@ const formatMoney = (val) => {
   return num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+// 报价单状态对应的标签样式
+const statusTag = (status) => {
+  const tags = {
+    draft: 'info',
+    pending: 'warning',
+    approved: 'success',
+    rejected: 'danger',
+    deleted: 'info'
+  }
+  return tags[status] || 'info'
+}
+
+// 报价单状态对应的中文文案
+const statusLabel = (status) => {
+  const labels = {
+    draft: '草稿',
+    pending: '待审批',
+    approved: '已通过',
+    rejected: '已驳回',
+    deleted: '已删除'
+  }
+  return labels[status] || status
+}
+
 // --- [状态管理] 报价单草稿逻辑 ---
 // 核心逻辑高度封装在 useQuotationDraft 中，包括：
 // 1. 自动计算总价、小计、折扣

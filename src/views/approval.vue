@@ -23,7 +23,7 @@
       </el-table-column>
       <el-table-column label="操作" width="220" align="center" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="viewDetail(row.id)">查看</el-button>
+          <el-button link type="primary" size="small" @click="editDetail(row.id)">修改</el-button>
           <el-button link type="success" size="small" @click="approveRow(row)">通过</el-button>
           <el-button link type="danger" size="small" @click="rejectRow(row)">驳回</el-button>
         </template>
@@ -58,6 +58,8 @@ const loadList = async () => {
     loading.value = true
     const res = await quotationApi.list({ status: 'pending', keyword: searchKeyword.value })
     list.value = res.quotations || []
+    // [新] 进入页面且加载成功后，清空通知角标
+    quotationApi.markAllNotificationsAsRead()
   } catch (error) {
     ElMessage.error(error?.response?.data?.message || '获取审批列表失败')
   } finally {
@@ -65,8 +67,8 @@ const loadList = async () => {
   }
 }
 
-const viewDetail = (id) => {
-  router.push(`/approval/${id}`)
+const editDetail = (id) => {
+  router.push({ path: `/approval/${id}`, query: { mode: 'edit' } })
 }
 
 const approveRow = async (row) => {

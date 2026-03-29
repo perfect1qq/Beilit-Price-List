@@ -46,7 +46,7 @@
           <el-button class="login-btn" type="primary" size="large" :loading="loading" @click="handleLogin">登录系统</el-button>
           <div class="footer-links">
             <span>没有账号？</span>
-            <el-link type="primary" :underline="false" @click="goToRegister">立即注册</el-link>
+            <el-link type="primary" underline="never" @click="goToRegister">立即注册</el-link>
           </div>
           <div class="tips">默认演示：admin / 123456，user / 123456</div>
         </el-form>

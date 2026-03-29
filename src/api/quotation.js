@@ -39,6 +39,22 @@ export const quotationApi = {
 
   parseText(text) {
     return request.post('/api/quotation-parse', { text }).then(res => res.data)
+  },
+
+  getUnreadNotificationsCount() {
+    return request.get('/api/notifications/unread-count').then(res => res.data)
+  },
+
+  getNotifications() {
+    return request.get('/api/notifications').then(res => res.data)
+  },
+
+  markNotificationAsRead(id) {
+    return request.put(`/api/notifications/${id}/read`).then(res => res.data)
+  },
+
+  markAllNotificationsAsRead() {
+    return request.post('/api/notifications/read-all').then(res => res.data)
   }
 }
 
