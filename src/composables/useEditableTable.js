@@ -4,7 +4,7 @@ import { deepClone } from '../utils/helpers'
 
 /**
  * 通用的可编辑表格逻辑 Hook
- * 处理表格行的：增、删、清空、批量删除、数据快照、变动检测等。
+ * 处理表格行的：增、删、清空、批量删除、数据快照、变动检测等。   
  */
 export function useEditableTable({ createEmptyItem, validateItem, enableDelete = true }) {
   const items = ref([createEmptyItem()]) // 表格行数据
