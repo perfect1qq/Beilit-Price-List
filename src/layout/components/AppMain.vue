@@ -15,23 +15,21 @@
 
 <style scoped>
 .app-main {
-  /* 60 = navbar */
   min-height: calc(100vh - 60px);
   width: 100%;
+  min-width: 0;
   position: relative;
-  overflow: hidden;
-  padding: 24px;
-  box-sizing: border-box; /* 确保padding包含在width内 */
-}
-
-.main-transition-wrapper {
-  width: 100%;
+  overflow-x: hidden;
+  overflow-y: visible;
+  padding: 80px 20px 20px;
   box-sizing: border-box;
 }
 
-.fixed-header + .app-main {
-  padding-top: 84px; /* 60 + 24 */
+.main-transition-wrapper {
+  min-width: 0;
+  width: 100%;
 }
+
 
 /* 若依标准 fade-transform 动画 */
 .fade-transform-leave-active,

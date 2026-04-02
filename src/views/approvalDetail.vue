@@ -232,7 +232,7 @@ onMounted(loadDetail)
 </script>
 
 <style scoped>
-.card { border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: none; }
+.card {   border-radius: 12px;box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05); border: none; }
 .head { display:flex; justify-content:space-between; align-items:flex-end; gap: 16px; margin-bottom: 24px; border-bottom: 1px solid #f1f5f9; padding-bottom: 16px; }
 .head h2 { font-size: 20px; font-weight: 800; color: #1e293b; margin: 0; line-height: 1; border-left: 4px solid #6366f1; padding-left: 10px; }
 .sub { color: #64748b; font-size: 13px; margin-top: 10px; padding-left: 14px; }

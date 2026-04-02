@@ -398,7 +398,7 @@ const loadData = async () => {
   try {
     const res = await mediumShelfWeightApi.getConfig()
     applyConfig(res?.config)
-    ElMessage.success('配置数据同步加载成功')
+    // ElMessage.success('配置数据同步加载成功')
   } catch (error) {
     errorMsg.value = error?.response?.data?.message ?? '由于网络或服务端异常，加载中型货架重量表失败'
     ElMessage.error(errorMsg.value)
@@ -568,10 +568,8 @@ onMounted(() => {
 }
 
 .page-card {
- 
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-  overflow: hidden;
 }
 
 .toolbar {
@@ -603,8 +601,7 @@ onMounted(() => {
 
 .section-card {
   margin-top: 16px;
-  border-radius: 8px;
-  overflow: hidden;
+  border-radius: 4px;
 }
 
 .section-title {
@@ -623,17 +620,6 @@ onMounted(() => {
 
 .table {
   width: 100%;
-}
-
-/* 表格圆角样式 */
-:deep(.el-table) {
-  border-radius: 8px !important;
-  overflow: hidden;
-}
-
-:deep(.el-table--border) {
-  border-radius: 8px !important;
-  overflow: hidden;
 }
 
 .mb-16 {

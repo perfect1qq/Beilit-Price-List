@@ -21,7 +21,6 @@ import Sidebar from './components/Sidebar.vue'
 import Navbar from './components/Navbar.vue'
 import AppMain from './components/AppMain.vue'
 
-// 简单的侧边栏收缩状态 mock
 const sidebar = computed(() => ({
   opened: true,
   withoutAnimation: false
@@ -31,10 +30,10 @@ const sidebar = computed(() => ({
 <style scoped>
 .app-wrapper {
   position: relative;
-  height: 100vh;
+  min-height: 100vh;
   width: 100%;
   overflow-x: hidden;
-  box-sizing: border-box;
+  overflow-y: visible;
 }
 
 .sidebar-container {
@@ -54,12 +53,13 @@ const sidebar = computed(() => ({
 
 .main-container {
   min-height: 100%;
+  min-width: 0;
   transition: margin-left .28s;
   margin-left: 240px;
   position: relative;
   background-color: #f1f5f9;
   overflow-x: hidden;
-  box-sizing: border-box;
+  overflow-y: visible;
 }
 
 .fixed-header {
@@ -69,8 +69,6 @@ const sidebar = computed(() => ({
   z-index: 9;
   width: calc(100% - 240px);
   transition: width 0.28s;
-  overflow: hidden;
-  box-sizing: border-box;
 }
 
 .hideSidebar .sidebar-container {
