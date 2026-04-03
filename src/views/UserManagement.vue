@@ -48,7 +48,7 @@
               <!-- 业务规则：禁止管理员在这里自杀式修改自己的角色，防止整个系统失去 Admin 节点 -->
               <el-option label="管理员" value="admin" />
               <el-option label="业务员" value="user" />
-            </el-select>
+            </el-select> 
           </template>
         </el-table-column>
         
