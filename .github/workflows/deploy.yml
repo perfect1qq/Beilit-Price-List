@@ -1,9 +1,9 @@
-name: Deploy Stable
+name: Deploy to GitHub Pages
 
 on:
   push:
     branches:
-      - main
+      - main   # 你现在用的分支
 
 jobs:
   build-and-deploy:
@@ -13,34 +13,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Use Node
+      - name: Install Node
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Install deps
+      - name: Install dependencies
         run: npm install
-
-      # 🔍 打印变量（方便排查）
-      - name: Debug ENV
-        run: |
-          echo "VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}"
-
-      # ❗ 如果变量不存在就直接失败
-      - name: Check ENV
-        run: |
-          if [ -z "${{ vars.VITE_API_BASE_URL }}" ]; then
-            echo "❌ VITE_API_BASE_URL is NOT set!"
-            exit 1
-          else
-            echo "✅ ENV OK"
-          fi
-
-      # ✅ 写入 env 文件
-      - name: Create .env.production
-        run: |
-          echo "VITE_API_BASE_URL=${{ vars.VITE_API_BASE_URL }}" > .env.production
-          cat .env.production
 
       - name: Build
         run: npm run build
