@@ -1,8 +1,8 @@
 import axios from 'axios'
-// import http from '../api/http'
+import http from '../api/http'
 const service = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-  timeout: 10000
+  baseURL: http.defaults.baseURL,
+  timeout: 5000
 })
 
 service.interceptors.request.use(config => {
