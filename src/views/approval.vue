@@ -7,14 +7,14 @@
         <p class="sub">这里展示报价单提交后的待审记录，仅管理员或相关审核人员可处理。</p>
       </div>
       <div class="actions">
-        <el-input v-model="searchKeyword" placeholder="按名称或编号搜索" clearable style="width: 260px" @input="loadList" />
+        <el-input v-model="searchKeyword" placeholder="按公司名称或名称搜索" clearable style="width: 260px" @input="loadList" />
         <el-button type="primary" :loading="loading" @click="loadList">刷新列表</el-button>
       </div>
     </div>
 
     <!-- 审批台账数据表 -->
     <el-table :data="filteredList" border stripe style="width: 100%; margin-top: 16px" :header-cell-style="headerStyle" class="smart-table">
-      <el-table-column prop="quotationNo" label="编号" width="180" />
+      <el-table-column prop="quotationNo" label="名称" width="180" />
       <el-table-column prop="companyName" label="公司名称" min-width="180" />
       <el-table-column prop="ownerName" label="提交人" width="120" />
       <el-table-column prop="createDate" label="创建时间" width="120" />

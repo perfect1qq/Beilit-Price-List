@@ -62,6 +62,7 @@ const iconMap = {
   '/user-management': User,
   '/usd-conversion': Money,
   '/message': ChatLineSquare,
+  '/memo-management': ChatLineSquare,
   '/home': House,
   default: IconMenu
 }

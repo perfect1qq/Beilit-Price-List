@@ -11,6 +11,7 @@ import ApprovalLayout from '../views/ApprovalLayout.vue'
 import Approval from '../views/approval.vue'
 import ApprovalDetail from '../views/approvalDetail.vue'
 import MediumShelfWeightTable from '../views/MediumShelfWeightTable.vue'
+import MemoManagement from '../views/MemoManagement.vue'
 
 const routes = [
   { path: '/login', component: Login, meta: { public: true } },
@@ -87,6 +88,12 @@ const routes = [
         name: 'MediumShelfWeight',
         component: MediumShelfWeightTable,
         meta: { title: '中型货架重量表' }
+      },
+      {
+        path: 'memo-management',
+        name: 'MemoManagement',
+        component: MemoManagement,
+        meta: { title: '备忘录' }
       },
       {
         path: 'usd-conversion',

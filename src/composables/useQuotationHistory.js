@@ -20,6 +20,20 @@ const normalizeRecord = (record) => ({
   updateTime: record.updateTime || record.updatedAt || ''
 })
 
+const groupByCompany = (list) => {
+  const map = new Map()
+  list.forEach((record) => {
+    const key = String(record.companyName || record.name || '未命名报价单').trim() || '未命名报价单'
+    if (!map.has(key)) map.set(key, [])
+    map.get(key).push(record)
+  })
+  return Array.from(map.entries()).map(([companyName, records]) => ({
+    companyName,
+    count: records.length,
+    records: records.sort((a, b) => new Date(b.createdAt || b.createTime || 0) - new Date(a.createdAt || a.createTime || 0))
+  }))
+}
+
 export function useQuotationHistory({ api, loadToEditor }) {
   const historyList = ref([])
   const historyDialogVisible = ref(false)
@@ -42,10 +56,12 @@ export function useQuotationHistory({ api, loadToEditor }) {
     const kw = searchKeyword.value.trim().toLowerCase()
     if (!kw) return historyList.value
     return historyList.value.filter(record => {
-      const target = `${record.companyName || ''} ${record.name || ''} ${record.quotationNo || ''}`.toLowerCase()
+      const target = `${record.companyName || ''} ${record.name || ''} ${record.quotationNo || ''} ${record.ownerName || ''}`.toLowerCase()
       return target.includes(kw)
     })
   })
+
+  const groupedHistoryList = computed(() => groupByCompany(filteredHistoryList.value))
 
   const openHistoryDialog = async () => {
     await loadHistoryList()
@@ -105,6 +121,7 @@ export function useQuotationHistory({ api, loadToEditor }) {
     searchKeyword,
     loading,
     filteredHistoryList,
+    groupedHistoryList,
     loadHistoryList,
     openHistoryDialog,
     saveQuotation,

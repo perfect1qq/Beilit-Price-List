@@ -25,6 +25,9 @@
               <div class="section-title">基础信息</div>
             </template>
             <el-form label-width="92px">
+              <el-form-item label="名称" required>
+                <el-input v-model="quotationNo" placeholder="请输入名称" :disabled="isViewMode" />
+              </el-form-item>
               <el-form-item label="公司名称" required>
                 <el-input v-model="companyName" placeholder="请输入公司名称" :disabled="isViewMode" />
               </el-form-item>
@@ -152,37 +155,46 @@
       </el-card>
     </el-card>
 
-    <el-dialog v-model="historyDialogVisible" title="历史报价单" width="980px">
+    <el-dialog v-model="historyDialogVisible" title="历史报价单" width="1100px">
       <div class="history-toolbar">
-        <el-input v-model="searchKeyword" placeholder="按公司名称搜索" clearable style="max-width: 340px" />
+        <el-input v-model="searchKeyword" placeholder="按公司名称 / 名称搜索" clearable style="max-width: 340px" />
         <el-tag type="info">{{ role === 'admin' ? '管理员可查看所有人的报价单' : '仅显示自己的历史记录' }}</el-tag>
       </div>
 
-      <el-table :data="filteredHistoryList" stripe border max-height="460" :header-cell-style="headerStyle" class="smart-table">
-        <!-- <el-table-column prop="quotationNo" label="编号" width="120">
-          <template #default="{ row }">
-            {{ (row.quotationNo || '').length > 10 ? (row.quotationNo || '').slice(-10) : row.quotationNo }}
-          </template>
-        </el-table-column> -->
-        <el-table-column prop="companyName" label="公司名称" min-width="220" />
-        <el-table-column prop="ownerName" label="提交人" width="120" v-if="role === 'admin'" />
-        <el-table-column prop="finalPrice" label="成交价" width="120" align="right">
-          <template #default="{ row }">¥ {{ formatMoney(row.finalPrice) }}</template>
-        </el-table-column>
-        <el-table-column prop="createDate" label="创建时间" width="120" />
-        <el-table-column label="状态" width="110" align="center">
-          <template #default="{ row }">
-            <el-tag :type="statusTag(row.status)">{{ statusLabel(row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="260" fixed="right" align="center">
-          <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="viewHistory(row)">查看</el-button>
-            <el-button link type="warning" size="small" @click="editHistory(row)" :disabled="row.status === 'approved' && role !== 'admin'">修改</el-button>
-            <el-button link type="danger" size="small" @click="deleteHistory(row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <el-scrollbar max-height="520px">
+        <el-collapse v-if="groupedHistoryList.length" class="company-collapse">
+          <el-collapse-item v-for="group in groupedHistoryList" :key="group.companyName" :name="group.companyName">
+            <template #title>
+              <div class="collapse-title">
+                <span class="collapse-company">{{ group.companyName }}</span>
+                <el-tag size="small" type="info" effect="plain">{{ group.count }} 份</el-tag>
+              </div>
+            </template>
+
+            <el-table :data="group.records" stripe border max-height="420" :header-cell-style="headerStyle" class="smart-table">
+              <el-table-column prop="quotationNo" label="名称" min-width="150" />
+              <el-table-column prop="ownerName" label="提交人" width="120" v-if="role === 'admin'" />
+              <el-table-column prop="finalPrice" label="成交价" width="120" align="right">
+                <template #default="{ row }">¥ {{ formatMoney(row.finalPrice) }}</template>
+              </el-table-column>
+              <el-table-column prop="createDate" label="创建时间" width="120" />
+              <el-table-column label="状态" width="110" align="center">
+                <template #default="{ row }">
+                  <el-tag :type="statusTag(row.status)">{{ statusLabel(row.status) }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="260" fixed="right" align="center">
+                <template #default="{ row }">
+                  <el-button link type="primary" size="small" @click="viewHistory(row)">查看</el-button>
+                  <el-button link type="warning" size="small" @click="editHistory(row)" :disabled="row.status === 'approved' && role !== 'admin'">修改</el-button>
+                  <el-button link type="danger" size="small" @click="deleteHistory(row)">删除</el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </el-collapse-item>
+        </el-collapse>
+        <el-empty v-else description="暂无历史报价单" />
+      </el-scrollbar>
 
       <template #footer>
         <el-button @click="historyDialogVisible = false">关闭</el-button>
@@ -243,6 +255,7 @@ const statusLabel = (status) => {
 // 2. 区分“自动成交价”与“手动覆盖成交价”
 // 3. 动态显隐表格列 (根据解析出的内容)
 const {
+  quotationNo,
   companyName,
   remark,
   discount,
@@ -275,7 +288,7 @@ const {
 const {
   historyDialogVisible,
   searchKeyword,
-  filteredHistoryList,
+  groupedHistoryList,
   saveQuotation,
   deleteHistory,
   openHistoryDialog,
@@ -343,6 +356,7 @@ const validateRows = () => {
   })
 
   // 三元或简化式校验逻辑
+  if (!quotationNo.value.trim()) return ElMessage.warning('请先填写名称'), false
   if (!companyName.value.trim()) return ElMessage.warning('请先填写公司名称归属'), false
   if (!validRows.length) return ElMessage.warning('请先录入或使用 AI 智能粘贴获取报价明细'), false
   if (validRows.length !== items.value.length) return ElMessage.warning('表格存在残缺不完整的数据行，请修正后继续'), false
@@ -403,6 +417,9 @@ onMounted(() => {
 .price-actions { margin-top: 14px; }
 .hint-row { margin-top: 10px; color: #64748b; font-size: 13px; line-height: 1.6; }
 .history-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.company-collapse { border-top: 1px solid #e2e8f0; }
+.collapse-title { display: flex; align-items: center; gap: 10px; }
+.collapse-company { font-weight: 700; color: #1e293b; }
 
 @media (max-width: 960px) {
   .price-summary { grid-template-columns: 1fr; }

@@ -5,7 +5,7 @@
     <div class="head">
       <div>
         <h2>{{ companyName || meta.name || '审批详情' }}</h2>
-        <div class="sub">单据编号：{{ meta.quotationNo || '-' }} ｜ 发起人：{{ meta.ownerName || '-' }}</div>
+        <div class="sub">单据名称：{{ meta.quotationNo || '-' }} ｜ 发起人：{{ meta.ownerName || '-' }}</div>
       </div>
       <div class="actions">
         <!-- 业务流转状态标记 -->

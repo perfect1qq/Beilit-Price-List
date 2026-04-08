@@ -47,6 +47,7 @@ const normalizeRow = (row = {}) => {
  *    - 手动模式：用户直接输入成交价，反向计算折扣。
  */
 export function useQuotationDraft() {
+  const quotationNo = ref('')
   const companyName = ref('')
   const remark = ref('')
   const discount = ref(0) // 折扣百分比 (0-100)
@@ -75,6 +76,7 @@ export function useQuotationDraft() {
   watch([subtotal, discount], syncAutoPrice, { immediate: true })
 
   const resetDraft = () => {
+    quotationNo.value = ''
     companyName.value = ''
     remark.value = ''
     discount.value = 0
@@ -144,6 +146,7 @@ export function useQuotationDraft() {
   const originalPayloadStr = ref('')
 
   const loadRecord = (record, newMode = 'edit') => {
+    quotationNo.value = record.quotationNo || ''
     companyName.value = record.companyName || record.name || ''
     remark.value = record.remark || ''
     discount.value = Number(record.discount || 0)
@@ -174,6 +177,7 @@ export function useQuotationDraft() {
   }
 
   const getPayload = () => ({
+    quotationNo: quotationNo.value,
     companyName: companyName.value,
     name: companyName.value,
     remark: remark.value,
@@ -185,6 +189,7 @@ export function useQuotationDraft() {
 
   return {
     FIELD_ORDER,
+    quotationNo,
     companyName,
     remark,
     discount,
