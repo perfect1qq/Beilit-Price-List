@@ -38,11 +38,16 @@
 
         <el-table-column prop="contactInfo" label="联系方式" width="220" />
         <el-table-column prop="content" label="留言内容" min-width="260" show-overflow-tooltip />
-        <el-table-column label="状态" width="100" align="center">
+        <el-table-column label="状态" width="130" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'assigned' ? 'success' : 'warning'" size="small">
-              {{ row.status === 'assigned' ? '已指派' : '待处理' }}
-            </el-tag>
+            <div class="status-cell">
+              <el-tag :type="row.status === 'assigned' ? 'success' : 'warning'" size="small">
+                {{ row.status === 'assigned' ? '已指派' : '待处理' }}
+              </el-tag>
+              <el-tag v-if="isAdmin && row.hiddenByAssignee" type="info" size="small" class="status-extra">
+                业务员已隐藏
+              </el-tag>
+            </div>
           </template>
         </el-table-column>
 
@@ -52,10 +57,23 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="240" fixed="right" align="center">
+        <el-table-column label="操作" :width="isAdmin ? 260 : 200" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button v-if="isAdmin" link type="primary" size="small" :loading="isActionLoading(row.id)" @click="openAssign(row)">指派</el-button>
-            <el-button v-if="isAdmin" link type="danger" size="small" :loading="isActionLoading(row.id)" @click="doDelete(row)">删除</el-button>
+            <el-button link type="primary" size="small" @click="openView(row)">查看</el-button>
+            <template v-if="isAdmin">
+              <el-button link type="primary" size="small" :loading="isActionLoading(row.id)" @click="openAssign(row)">指派</el-button>
+              <el-button link type="danger" size="small" :loading="isActionLoading(row.id)" @click="doDelete(row)">删除</el-button>
+            </template>
+            <el-button
+              v-else
+              link
+              type="danger"
+              size="small"
+              :loading="isActionLoading(row.id)"
+              @click="doHideFromList(row)"
+            >
+              删除
+            </el-button>
           </template>
         </el-table-column>
 
@@ -98,6 +116,30 @@
         />
       </div>
     </el-card>
+
+    <el-dialog v-model="viewVisible" :title="viewTitle" width="560px" destroy-on-close class="message-view-dialog">
+      <div v-if="viewRow" class="message-view-body">
+        <div class="view-field">
+          <span class="view-label">提交时间</span>
+          <span class="view-value">{{ formatTime(viewRow.createdAt) }}</span>
+        </div>
+        <div class="view-field">
+          <span class="view-label">联系方式</span>
+          <div class="view-value view-text-block">{{ viewRow.contactInfo || '—' }}</div>
+        </div>
+        <div class="view-field">
+          <span class="view-label">留言内容</span>
+          <div class="view-value view-text-block view-content">{{ viewRow.content || '—' }}</div>
+        </div>
+        <div v-if="viewRow.remark" class="view-field">
+          <span class="view-label">跟进备注</span>
+          <div class="view-value view-text-block">{{ viewRow.remark }}</div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="viewVisible = false">关闭</el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog v-model="assignVisible" title="指派客户" width="420px" destroy-on-close>
       <el-form :model="assignForm" label-width="90px">
@@ -164,6 +206,10 @@ const total = ref(0)
 const VIRTUAL_TABLE_THRESHOLD = 80
 const useVirtualTable = computed(() => messages.value.length >= VIRTUAL_TABLE_THRESHOLD)
 
+const viewVisible = ref(false)
+const viewRow = ref(null)
+const viewTitle = computed(() => (viewRow.value ? `留言详情 #${viewRow.value.id}` : '留言详情'))
+
 const staffList = ref([])
 const assignVisible = ref(false)
 const assignLoading = ref(false)
@@ -225,6 +271,15 @@ const handleSizeChange = (val) => {
 }
 
 /**
+ * 查看完整留言（表格列宽有限时便于阅读全文）。
+ * @param {object} row
+ */
+const openView = (row) => {
+  viewRow.value = row
+  viewVisible.value = true
+}
+
+/**
  * 打开指派弹窗。
  * @param {object} row - 当前留言
  */
@@ -266,6 +321,32 @@ const confirmAssign = async () => {
     ElMessage.error(error?.message || error?.response?.data?.message || '指派失败')
   } finally {
     assignLoading.value = false
+  }
+}
+
+/**
+ * 业务员从「我的指派」删除：软隐藏，本人不再看到，管理员仍可见。
+ * @param {object} row
+ */
+const doHideFromList = async (row) => {
+  try {
+    await ElMessageBox.confirm(
+      '确定从「我的指派」中删除这条留言吗？删除后您将不再看到它，超级管理员仍可在后台查看完整数据。',
+      '提示',
+      { type: 'warning' }
+    )
+    removeById(row.id)
+    total.value = Math.max(0, Number(total.value || 0) - 1)
+    await withActionLock(row.id, async () => {
+      await messageApi.hideFromAssignee(row.id)
+    })
+    ElMessage.success('已从我的列表移除')
+    await loadMessages(page.value)
+  } catch (error) {
+    if (error !== 'cancel') {
+      await loadMessages(page.value)
+      ElMessage.error(error?.message || error?.response?.data?.message || '操作失败')
+    }
   }
 }
 
@@ -318,13 +399,21 @@ const virtualColumns = computed(() => {
       key: 'status',
       dataKey: 'status',
       title: '状态',
-      width: 120,
+      width: 150,
       align: 'center',
-      cellRenderer: ({ rowData }) => h(
-        ElTag,
-        { size: 'small', type: statusType(rowData) },
-        () => statusText(rowData)
-      )
+      cellRenderer: ({ rowData }) => {
+        const tags = [
+          h(
+            ElTag,
+            { size: 'small', type: statusType(rowData) },
+            () => statusText(rowData)
+          )
+        ]
+        if (isAdmin.value && rowData?.hiddenByAssignee) {
+          tags.push(h(ElTag, { size: 'small', type: 'info', class: 'status-extra' }, () => '已隐藏'))
+        }
+        return h('div', { class: 'status-cell' }, tags)
+      }
     },
     {
       key: 'assignee',
@@ -339,35 +428,59 @@ const virtualColumns = computed(() => {
   baseColumns.push({
     key: 'actions',
     title: '操作',
-    width: 220,
+    width: isAdmin.value ? 260 : 200,
     align: 'center',
-    cellRenderer: ({ rowData }) => {
-      if (!isAdmin.value) return '—'
-      return h('div', { class: 'virtual-actions' }, [
+    cellRenderer: ({ rowData }) =>
+      h('div', { class: 'virtual-actions' }, [
         h(
           ElButton,
           {
             type: 'primary',
             link: true,
             size: 'small',
-            loading: isActionLoading(rowData?.id),
-            onClick: () => openAssign(rowData)
+            onClick: () => openView(rowData)
           },
-          () => '指派'
+          () => '查看'
         ),
-        h(
-          ElButton,
-          {
-            type: 'danger',
-            link: true,
-            size: 'small',
-            loading: isActionLoading(rowData?.id),
-            onClick: () => doDelete(rowData)
-          },
-          () => '删除'
-        )
+        ...(isAdmin.value
+          ? [
+              h(
+                ElButton,
+                {
+                  type: 'primary',
+                  link: true,
+                  size: 'small',
+                  loading: isActionLoading(rowData?.id),
+                  onClick: () => openAssign(rowData)
+                },
+                () => '指派'
+              ),
+              h(
+                ElButton,
+                {
+                  type: 'danger',
+                  link: true,
+                  size: 'small',
+                  loading: isActionLoading(rowData?.id),
+                  onClick: () => doDelete(rowData)
+                },
+                () => '删除'
+              )
+            ]
+          : [
+              h(
+                ElButton,
+                {
+                  type: 'danger',
+                  link: true,
+                  size: 'small',
+                  loading: isActionLoading(rowData?.id),
+                  onClick: () => doHideFromList(rowData)
+                },
+                () => '删除'
+              )
+            ])
       ])
-    }
   })
 
   return baseColumns
@@ -451,6 +564,58 @@ onUnmounted(() => {
 
 .load-error {
   margin-top: 12px;
+}
+
+.status-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-extra {
+  margin: 0;
+}
+
+.message-view-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.view-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.view-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.view-value {
+  font-size: 14px;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+.view-text-block {
+  white-space: pre-wrap;
+  line-height: 1.65;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.view-content {
+  max-height: 320px;
+  overflow-y: auto;
 }
 
 @media (max-width: 768px) {

@@ -45,5 +45,14 @@ export const messageApi = {
   async remove(id) {
     const res = await request.delete(`/api/messages/${id}`)
     return res.data
+  },
+
+  /**
+   * 业务员从「我的指派」移除（软隐藏，管理员仍可见）。
+   * @param {number} id - 留言 ID
+   */
+  async hideFromAssignee(id) {
+    const res = await request.put(`/api/messages/${id}/hide-from-assignee`)
+    return res.data
   }
 }

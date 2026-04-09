@@ -4,30 +4,30 @@
     <el-row :gutter="16" class="memo-stats">
       <el-col :xs="24" :sm="12" :lg="6">
         <el-card shadow="never" class="stat-card">
-          <div class="stat-label">总任务</div>
+          <div class="stat-label">{{ scopeStatCopy.totalLabel }}</div>
           <div class="stat-value">{{ stats.total }}</div>
-          <div class="stat-tip">当前账号可见的全部任务</div>
+          <div class="stat-tip">{{ scopeStatCopy.totalTip }}</div>
         </el-card>
       </el-col>
       <el-col :xs="24" :sm="12" :lg="6">
         <el-card shadow="never" class="stat-card">
           <div class="stat-label">未完成</div>
           <div class="stat-value">{{ stats.todoTotal }}</div>
-          <div class="stat-tip">今天还没有标记已做的任务</div>
+          <div class="stat-tip">{{ scopeStatCopy.todoTip }}</div>
         </el-card>
       </el-col>
       <el-col :xs="24" :sm="12" :lg="6">
         <el-card shadow="never" class="stat-card">
           <div class="stat-label">已完成</div>
           <div class="stat-value">{{ stats.doneTotal }}</div>
-          <div class="stat-tip">已经打勾的任务</div>
+          <div class="stat-tip">{{ scopeStatCopy.doneTip }}</div>
         </el-card>
       </el-col>
       <el-col :xs="24" :sm="12" :lg="6">
         <el-card shadow="never" class="stat-card">
           <div class="stat-label">置顶</div>
           <div class="stat-value">{{ stats.pinnedTotal }}</div>
-          <div class="stat-tip">需要优先处理的事项</div>
+          <div class="stat-tip">{{ scopeStatCopy.pinnedTip }}</div>
         </el-card>
       </el-col>
     </el-row>
@@ -37,10 +37,15 @@
         <div class="page-header">
           <div>
             <div class="page-title">{{ pageTitle }}</div>
-            <div class="page-subtitle">{{ pageSubtitle }}</div>
           </div>
 
           <div class="header-tools">
+            <el-segmented
+              v-model="activeListScope"
+              :options="listScopeOptions"
+              size="small"
+              @change="handleListScopeChange"
+            />
             <el-input
               v-model="keyword"
               clearable
@@ -49,13 +54,30 @@
               :prefix-icon="Search"
               @input="onKeywordInput"
             />
+            <el-date-picker
+              v-if="activeListScope === 'history'"
+              v-model="historyCreatedOn"
+              type="date"
+              value-format="YYYY-MM-DD"
+              placeholder="创建日期"
+              clearable
+              class="history-date-picker"
+              @change="onHistoryDateChange"
+            />
             <el-segmented
               v-model="activeFilter"
               :options="filterOptions"
               size="small"
               @change="handleFilterChange"
             />
-            <el-button type="primary" :icon="Plus" @click="openCreate">新增任务</el-button>
+            <el-button
+              v-if="activeListScope === 'today'"
+              type="primary"
+              :icon="Plus"
+              @click="openCreate"
+            >
+              新增任务
+            </el-button>
           </div>
         </div>
       </template>
@@ -100,6 +122,7 @@
 
                       <div class="task-meta">
                         <span>创建人：{{ item.ownerName }}</span>
+                        <span v-if="activeListScope === 'history'">创建于：{{ formatTime(item.createdAt) }}</span>
                         <span>更新于：{{ formatTime(item.updatedAt) }}</span>
                         <span v-if="item.label">标签：{{ item.label }}</span>
                       </div>
@@ -158,6 +181,7 @@
 
                       <div class="task-meta">
                         <span>创建人：{{ item.ownerName }}</span>
+                        <span v-if="activeListScope === 'history'">创建于：{{ formatTime(item.createdAt) }}</span>
                         <span>完成于：{{ formatTime(item.completedAt || item.updatedAt) }}</span>
                         <span v-if="item.label">标签：{{ item.label }}</span>
                       </div>
@@ -210,6 +234,7 @@
 
                   <div class="task-meta">
                     <span>创建人：{{ item.ownerName }}</span>
+                    <span v-if="activeListScope === 'history'">创建于：{{ formatTime(item.createdAt) }}</span>
                     <span>更新于：{{ formatTime(item.updatedAt) }}</span>
                     <span v-if="item.completedAt">完成于：{{ formatTime(item.completedAt) }}</span>
                     <span v-if="item.label">标签：{{ item.label }}</span>
@@ -233,7 +258,7 @@
             </article>
           </div>
 
-          <el-empty v-else description="暂无任务" />
+          <el-empty v-else :description="emptyDescription" />
         </template>
       </el-skeleton>
       <el-alert
@@ -348,6 +373,12 @@ const list = ref([])
 const { loading, loadError, run: runListLoad, isLatest } = useCancelableLoader()
 const saving = ref(false)
 const { keyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
+/** 列表范围：今日仅展示当日创建的备忘；历史为之前日期创建的备忘（与后端 scope 一致）。 */
+const activeListScope = ref('today')
+/** 与浏览器本地时区一致，传给后端计算「当日」与按日筛选。 */
+const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
+/** 历史列表：按创建日期（YYYY-MM-DD）筛选，空表示不限制日期。 */
+const historyCreatedOn = ref(null)
 const activeFilter = ref('all')
 const stats = reactive({
   total: 0,
@@ -373,6 +404,11 @@ const historyTitle = ref('任务历史')
 const historyList = ref([])
 const { isActionLoading, withActionLock } = useInstantListActions(list)
 
+const listScopeOptions = [
+  { label: '今日', value: 'today' },
+  { label: '历史', value: 'history' }
+]
+
 const filterOptions = [
   { label: '全部', value: 'all' },
   { label: '未完成', value: 'todo' },
@@ -389,8 +425,34 @@ const colorOptions = [
   { label: '灰色', value: 'slate' }
 ]
 
-const pageTitle = computed(() => '每日任务备忘录')
-const pageSubtitle = computed(() => '把要做的事情放进同一块任务板里，完成后直接勾选，未勾选的就是未做。')
+const pageTitle = computed(() =>
+  activeListScope.value === 'history' ? '历史备忘录' : '每日任务备忘录'
+)
+
+const emptyDescription = computed(() =>
+  activeListScope.value === 'history' ? '暂无历史备忘' : '今日暂无任务，点击右上角新增'
+)
+
+const scopeStatCopy = computed(() => {
+  if (activeListScope.value === 'history') {
+    return {
+      totalLabel: '历史条目',
+      totalTip: historyCreatedOn.value
+        ? `创建于 ${historyCreatedOn.value}（本地时区）`
+        : '本地「今日」之前创建的全部备忘',
+      todoTip: '当前列表中尚未标记已做的备忘',
+      doneTip: '当前列表中已勾选的备忘',
+      pinnedTip: '当前列表中置顶的备忘'
+    }
+  }
+  return {
+    totalLabel: '今日任务',
+    totalTip: '按您浏览器时区划分的「今日」内创建的备忘',
+    todoTip: '今日创建、尚未标记已做的任务',
+    doneTip: '今日创建、已打勾的任务',
+    pinnedTip: '今日创建且置顶的事项'
+  }
+})
 
 const isBoardMode = computed(() => activeFilter.value === 'all')
 const todoList = computed(() => list.value.filter(item => !item.completed))
@@ -405,12 +467,20 @@ const colorTagType = (color) => ({ blue: 'primary', green: 'success', amber: 'wa
  */
 const loadList = async (targetPage = page.value) => {
   const runResult = await runListLoad(async ({ signal, seq }) => {
-    const res = await memoApi.list({
+    const params = {
       page: targetPage,
       pageSize: pageSize.value,
       keyword: keyword.value.trim(),
-      filter: activeFilter.value
-    }, { signal })
+      filter: activeFilter.value,
+      tz: browserTimeZone
+    }
+    if (activeListScope.value === 'history' && historyCreatedOn.value) {
+      params.createdOn = historyCreatedOn.value
+    }
+    const res =
+      activeListScope.value === 'history'
+        ? await memoApi.listHistory(params, { signal })
+        : await memoApi.list(params, { signal })
     if (!isLatest(seq)) return
     list.value = res.list || []
     stats.total = Number(res.total || 0)
@@ -488,6 +558,7 @@ const recalcStatsByList = () => {
 
 const appendCreatedMemoToList = (memo) => {
   if (!memo || !memo.id) return
+  if (activeListScope.value !== 'today') return
   const exists = list.value.some(item => item.id === memo.id)
   if (exists) return
 
@@ -673,6 +744,25 @@ const handleFilterChange = () => {
 }
 
 /**
+ * 今日 / 历史切换。
+ */
+const handleListScopeChange = () => {
+  if (activeListScope.value === 'today') {
+    historyCreatedOn.value = null
+  }
+  resetToFirstPage()
+  loadList(1)
+}
+
+/**
+ * 历史按创建日期筛选。
+ */
+const onHistoryDateChange = () => {
+  resetToFirstPage()
+  loadList(1)
+}
+
+/**
  * 搜索输入防抖，避免每次键入都发请求。
  */
 const triggerSearch = createDebounce(() => {
@@ -751,10 +841,8 @@ onUnmounted(() => {
   color: #0f172a;
 }
 
-.page-subtitle {
-  margin-top: 4px;
-  color: #64748b;
-  font-size: 13px;
+.history-date-picker {
+  width: 150px;
 }
 
 .header-tools {
@@ -955,6 +1043,10 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .search-input {
+    width: 100%;
+  }
+
+  .history-date-picker {
     width: 100%;
   }
 
