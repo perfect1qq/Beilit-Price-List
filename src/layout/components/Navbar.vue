@@ -247,6 +247,7 @@ onUnmounted(() => {
 
 .navbar-tags {
   background: #fff;
+  overflow: hidden;
 }
 
 .right-menu {

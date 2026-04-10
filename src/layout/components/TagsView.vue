@@ -79,6 +79,7 @@ const handleCommand = async (command) => {
   gap: 10px;
   padding: 0 12px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .tags-left-tools {
@@ -112,6 +113,15 @@ const handleCommand = async (command) => {
   height: 100%;
   flex: 1 1 auto;
   min-width: 0;
+}
+
+.tags-view-scrollbar :deep(.el-scrollbar__wrap) {
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+}
+
+.tags-view-scrollbar :deep(.el-scrollbar__bar.is-vertical) {
+  display: none !important;
 }
 
 .tags-view-list {

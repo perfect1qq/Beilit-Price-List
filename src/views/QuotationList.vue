@@ -161,13 +161,13 @@
       </el-card>
     </el-card>
 
-    <el-dialog v-model="historyDialogVisible" title="历史报价单" width="1100px">
+    <el-dialog v-model="historyDialogVisible" title="历史报价单" width="1100px" :lock-scroll="true" append-to-body class="history-dialog">
       <div class="history-toolbar">
         <el-input v-model="searchKeyword" placeholder="按公司名称 / 名称搜索" clearable style="max-width: 340px" @input="onHistoryKeywordInput" />
         <el-tag type="info">{{ role === 'admin' ? '管理员可查看所有人的报价单' : '仅显示自己的历史记录' }}</el-tag>
       </div>
 
-      <el-scrollbar max-height="520px">
+      <div class="history-content-wrap">
         <el-collapse v-if="groupedHistoryList.length" class="company-collapse">
           <el-collapse-item v-for="group in groupedHistoryList" :key="group.companyName" :name="group.companyName">
             <template #title>
@@ -177,7 +177,7 @@
               </div>
             </template>
 
-            <el-table :data="group.records" stripe border max-height="420" :header-cell-style="headerStyle" class="smart-table">
+            <el-table :data="group.records" stripe border :header-cell-style="headerStyle" class="smart-table">
               <el-table-column prop="quotationNo" label="名称" min-width="150" />
               <el-table-column prop="ownerName" label="提交人" width="120" v-if="role === 'admin'" />
               <el-table-column prop="finalPrice" label="成交价" width="120" align="right">
@@ -200,7 +200,7 @@
           </el-collapse-item>
         </el-collapse>
         <el-empty v-else description="暂无历史报价单" />
-      </el-scrollbar>
+      </div>
       <div class="history-pager">
         <el-pagination
           v-model:current-page="historyPage"
@@ -221,7 +221,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Delete, DocumentAdd, List, Plus, Refresh } from '@element-plus/icons-vue'
 import { quotationApi } from '@/api/quotation'
@@ -444,9 +444,44 @@ const backToCreate = () => {
   resetDraft()
 }
 
+const DIALOG_SCROLL_ROOT_LOCK = 'dialog-scroll-root-lock'
+let prevBodyPaddingRight = ''
+
+const setDialogRootLock = (locked) => {
+  const html = document.documentElement
+  const body = document.body
+  const app = document.getElementById('app')
+  if (!html || !body) return
+
+  if (locked) {
+    const scrollbarWidth = Math.max(0, window.innerWidth - html.clientWidth)
+    prevBodyPaddingRight = body.style.paddingRight || ''
+    html.classList.add(DIALOG_SCROLL_ROOT_LOCK)
+    body.classList.add(DIALOG_SCROLL_ROOT_LOCK)
+    app?.classList.add(DIALOG_SCROLL_ROOT_LOCK)
+    if (scrollbarWidth > 0) {
+      body.style.paddingRight = `${scrollbarWidth}px`
+    }
+    return
+  }
+
+  html.classList.remove(DIALOG_SCROLL_ROOT_LOCK)
+  body.classList.remove(DIALOG_SCROLL_ROOT_LOCK)
+  app?.classList.remove(DIALOG_SCROLL_ROOT_LOCK)
+  body.style.paddingRight = prevBodyPaddingRight
+}
+
+watch(historyDialogVisible, (visible) => {
+  setDialogRootLock(Boolean(visible))
+})
+
 onMounted(() => {
   enteredFromHistory.value = false
   resetDraft()
+})
+
+onBeforeUnmount(() => {
+  setDialogRootLock(false)
 })
 </script>
 
@@ -462,10 +497,12 @@ onMounted(() => {
 .price-actions { margin-top: 14px; }
 .hint-row { margin-top: 10px; color: #64748b; font-size: 13px; line-height: 1.6; }
 .history-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.history-content-wrap { overflow: visible; }
 .company-collapse { border-top: 1px solid #e2e8f0; }
 .collapse-title { display: flex; align-items: center; gap: 10px; }
 .collapse-company { font-weight: 700; color: #1e293b; }
 .history-pager { margin-top: 14px; display: flex; justify-content: flex-end; }
+.history-dialog :deep(.el-dialog__body) { max-height: none; overflow: visible; }
 
 @media (max-width: 960px) {
   .price-summary { grid-template-columns: 1fr; }

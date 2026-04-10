@@ -24,6 +24,11 @@ body,
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  overflow-y: visible;
+}
+
+html,
+body {
   overflow-y: auto;
 }
 
@@ -50,7 +55,28 @@ body {
 
 .el-main {
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: visible;
+}
+
+/* 弹窗打开时强制根节点禁滚，避免出现第二根纵向滚动条。 */
+html.dialog-scroll-root-lock,
+html.dialog-scroll-root-lock body,
+html.dialog-scroll-root-lock body #app,
+html.dialog-scroll-root-lock body .el-main {
+  overflow: hidden !important;
+}
+
+/* 当任意 Element Plus 弹窗打开时，禁止应用容器滚动，
+   仅保留遮罩层/弹窗一根纵向滚动条。 */
+body.el-popup-parent--hidden,
+body.el-popup-parent--hidden #app,
+body.el-popup-parent--hidden .el-main {
+  overflow: hidden !important;
+}
+
+.el-overlay-dialog {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
 }
 
 .el-card,
