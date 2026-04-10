@@ -203,4 +203,29 @@ onMounted(fetchList)
 .detail-toolbar { justify-content: flex-start; }
 .name-display { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .label { font-weight: bold; color: #475569; }
+
+@media (max-width: 768px) {
+  .search-toolbar,
+  .detail-toolbar {
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+
+  .search-toolbar :deep(.el-input),
+  .search-toolbar :deep(.el-input__wrapper) {
+    width: 100% !important;
+  }
+
+  .name-display {
+    margin-left: 0;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .name-display :deep(.el-input),
+  .name-display :deep(.el-input__wrapper) {
+    width: 100% !important;
+  }
+}
 </style>

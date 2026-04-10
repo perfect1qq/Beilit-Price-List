@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { toNum, ceil, fixed2 } from '@/utils/number'
+import { toNum, ceil, fixed2, normalizeRate, rmbToUsdCeil } from '@/utils/number'
 
 export function useUsdCalculator() {
 
@@ -23,25 +23,25 @@ export function useUsdCalculator() {
 
   // ===== 运费 =====
   const handleDomesticRmbChange = () => {
-    const rate = toNum(globalExchangeRate.value) || 1
+    const rate = normalizeRate(globalExchangeRate.value)
     const rmb = toNum(globalDomesticRmb.value)
-    globalDomesticUsd.value = rmb ? ceil(rmb / rate).toString() : ''
+    globalDomesticUsd.value = rmb ? rmbToUsdCeil(rmb, rate).toString() : ''
   }
 
   const handleDomesticUsdChange = () => {
-    const rate = toNum(globalExchangeRate.value) || 1
+    const rate = normalizeRate(globalExchangeRate.value)
     const usd = toNum(globalDomesticUsd.value)
     globalDomesticRmb.value = usd ? ceil(usd * rate).toString() : ''
   }
 
   const handleIntlRmbChange = () => {
-    const rate = toNum(globalExchangeRate.value) || 1
+    const rate = normalizeRate(globalExchangeRate.value)
     const rmb = toNum(globalIntlRmb.value)
-    globalIntlUsd.value = rmb ? ceil(rmb / rate).toString() : ''
+    globalIntlUsd.value = rmb ? rmbToUsdCeil(rmb, rate).toString() : ''
   }
 
   const handleIntlUsdChange = () => {
-    const rate = toNum(globalExchangeRate.value) || 1
+    const rate = normalizeRate(globalExchangeRate.value)
     const usd = toNum(globalIntlUsd.value)
     globalIntlRmb.value = usd ? ceil(usd * rate).toString() : ''
   }
@@ -52,10 +52,10 @@ export function useUsdCalculator() {
   }
 
   const calculateRow = (row) => {
-    const rate = toNum(globalExchangeRate.value) || 1
+    const rate = normalizeRate(globalExchangeRate.value)
     const rmb = toNum(row.unitPriceRmb)
 
-    row.unitPriceUsd = rmb ? ceil(rmb / rate).toString() : ''
+    row.unitPriceUsd = rmb ? rmbToUsdCeil(rmb, rate).toString() : ''
     calculateTotals(row)
   }
 
@@ -79,7 +79,7 @@ export function useUsdCalculator() {
   )
 
   const grandTotalRmb = computed(() => {
-    const rate = toNum(globalExchangeRate.value) || 1
+    const rate = normalizeRate(globalExchangeRate.value)
     return (grandTotalUsd.value * rate).toFixed(2)
   })
 

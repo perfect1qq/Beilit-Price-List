@@ -625,4 +625,32 @@ onMounted(() => {
 .mb-16 {
   margin-bottom: 16px;
 }
+
+@media (max-width: 768px) {
+  .toolbar {
+    margin-bottom: 12px;
+    gap: 10px;
+  }
+
+  .page-title {
+    font-size: 16px;
+  }
+
+  .page-subtitle {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .toolbar-actions {
+    width: 100%;
+  }
+
+  .toolbar-actions :deep(.el-button) {
+    margin-left: 0;
+  }
+
+  .section-card {
+    margin-top: 12px;
+  }
+}
 </style>

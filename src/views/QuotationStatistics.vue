@@ -179,5 +179,35 @@ th { background: #f8fafc; font-weight: bold; color: #475569; }
   .page {
     padding: 12px;
   }
+
+  .panel {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: 17px;
+  }
+
+  h2 {
+    font-size: 14px;
+  }
+
+  textarea {
+    min-height: 180px;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  table {
+    min-width: 540px;
+  }
+
+  th, td {
+    padding: 10px;
+    font-size: 13px;
+  }
 }
 </style>

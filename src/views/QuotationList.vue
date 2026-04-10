@@ -5,7 +5,7 @@
       <!-- 顶部操作按钮工具栏 -->
       <div class="toolbar">
         <!-- 解析粘贴自 Word 或 Excel 的非结构化文本 -->
-        <el-button type="primary" :icon="DocumentAdd" @click="handleParseText" :loading="parsing">智能解析粘贴内容</el-button>
+        <el-button v-if="!isViewMode" type="primary" :icon="DocumentAdd" @click="handleParseText" :loading="parsing">智能解析粘贴内容</el-button>
         <el-button type="primary" plain :icon="Plus" @click="addRow" :disabled="isViewMode">手动添加一行</el-button>
         <el-button :icon="Refresh" @click="clearRows" :disabled="isViewMode">清空当前表格</el-button>
         
@@ -14,8 +14,14 @@
         <el-button :icon="List" @click="openHistoryDialog">查看历史记录</el-button>
         
         <!-- 模式切换按钮 -->
-        <el-button v-if="isEditing && !isViewMode" type="warning" @click="resetDraft">新建空白单</el-button>
-        <el-button v-if="isViewMode" type="info" :icon="Edit" @click="switchToEdit">编辑当前记录</el-button>
+        <QuotationModeActions
+          :is-editing="isEditing"
+          :is-view-mode="isViewMode"
+          :entered-from-history="enteredFromHistory"
+          @reset="resetDraft"
+          @back="backToCreate"
+          @switch-edit="switchToEdit"
+        />
       </div>
 
       <el-row :gutter="16" class="meta-area">
@@ -87,22 +93,7 @@
         </el-col>
       </el-row>
 
-      <el-card shadow="never" class="inner-card">
-        <template #header>
-          <div class="section-title">粘贴 Word 内容</div>
-        </template>
-        <el-input
-          v-model="rawText"
-          type="textarea"
-          :rows="8"
-          resize="vertical"
-          placeholder="把 Word 里复制出来的表格直接粘贴到这里，再点击“解析粘贴内容”"
-          :disabled="isViewMode"
-        />
-        <div class="hint-row">
-          支持名称/规格/数量/单价/总价的任意组合，缺少的列会自动隐藏；总价缺失时会用 数量 × 单价 自动计算。
-        </div>
-      </el-card>
+      <QuotationParsePanel :is-view-mode="isViewMode" :raw-text="rawText" @update:raw-text="rawText = $event" />
 
       <el-card shadow="never" class="inner-card">
         <template #header>
@@ -217,11 +208,13 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Delete, DocumentAdd, Edit, List, Plus, Refresh } from '@element-plus/icons-vue'
+import { Delete, DocumentAdd, List, Plus, Refresh } from '@element-plus/icons-vue'
 import { quotationApi } from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
 import { useQuotationHistory } from '@/composables/useQuotationHistory'
 import { readCurrentUser } from '@/utils/navigation'
+import QuotationModeActions from '@/components/quotation/QuotationModeActions.vue'
+import QuotationParsePanel from '@/components/quotation/QuotationParsePanel.vue'
 
 // 当前用户角色判断，处理只读/读写权限
 // 当前账号角色会影响报价单的查看和编辑权限。
@@ -231,6 +224,7 @@ const headerStyle = { background: '#f8fafc', color: '#475569', fontWeight: 'bold
 // 控制全页面并发状态的 Loading
 const parsing = ref(false)
 const isSubmitting = ref(false)
+const enteredFromHistory = ref(false)
 
 // 格式化金额：保留两位小数并添加千分位
 const formatMoney = (val) => {
@@ -312,12 +306,22 @@ const {
   saveQuotation,
   deleteHistory,
   openHistoryDialog,
-  viewHistory,
-  editHistory
+  viewHistory: rawViewHistory,
+  editHistory: rawEditHistory
 } = useQuotationHistory({ 
   api: quotationApi, 
   loadToEditor: (record, mode) => loadRecord(record, mode) 
 })
+
+const viewHistory = (record) => {
+  enteredFromHistory.value = true
+  rawViewHistory(record)
+}
+
+const editHistory = (record) => {
+  enteredFromHistory.value = false
+  rawEditHistory(record)
+}
 
 const handleManualFinalPriceChange = (value) => {
   if (isViewMode.value) return
@@ -417,10 +421,17 @@ const handleSubmit = async () => {
 
 const switchToEdit = () => {
   if (!isViewMode.value) return
+  enteredFromHistory.value = false
   setMode('edit')
 }
 
+const backToCreate = () => {
+  enteredFromHistory.value = false
+  resetDraft()
+}
+
 onMounted(() => {
+  enteredFromHistory.value = false
   resetDraft()
 })
 </script>
@@ -444,5 +455,33 @@ onMounted(() => {
 
 @media (max-width: 960px) {
   .price-summary { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+  .toolbar {
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+
+  .history-toolbar {
+    margin-bottom: 10px;
+    align-items: flex-start;
+  }
+
+  .history-toolbar :deep(.el-input),
+  .history-toolbar :deep(.el-input__wrapper) {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .history-pager {
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+
+  .collapse-title {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
 }
 </style>

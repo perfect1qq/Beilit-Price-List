@@ -61,4 +61,10 @@
   opacity: 0;
   transform: translateX(30px);
 }
+
+@media (max-width: 768px) {
+  .app-main {
+    padding: calc(var(--layout-header-height) + 10px) 10px 12px;
+  }
+}
 </style>

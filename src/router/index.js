@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import { readCurrentUser } from '@/utils/navigation'
+import { applyAuthGuard } from '@/router/guards/authGuard'
 
 /**
  * 路由表统一采用按需加载，降低首屏包体积。
@@ -132,24 +132,6 @@ const router = createRouter({
   }
 })
 
-router.beforeEach((to) => {
-  const token = localStorage.getItem('token')
-  const user = readCurrentUser()
-
-  if (to.meta.public) {
-    if (token && (to.path === '/login' || to.path === '/register')) {
-      return '/'
-    }
-    return true
-  }
-
-  if (!token) return '/login'
-
-  if (to.meta.adminOnly && user.role !== 'admin') {
-    return '/'
-  }
-
-  return true
-})
+router.beforeEach(applyAuthGuard)
 
 export default router

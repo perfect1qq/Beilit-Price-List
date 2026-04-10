@@ -100,7 +100,7 @@ const goToRegister = () => router.push('/register')
 
 <style scoped>
 /* 替换原蓝绿基调为深邃高级的靛蓝暗调背景 */
-.login-page { min-height: 100vh; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 24px; background: radial-gradient(circle at top left, rgba(99,102,241,.24), transparent 40%), radial-gradient(circle at bottom right, rgba(165,180,252,.18), transparent 30%), linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #020617 100%); }
+.login-page { min-height: 100vh; min-height: 100dvh; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 24px; background: radial-gradient(circle at top left, rgba(99,102,241,.24), transparent 40%), radial-gradient(circle at bottom right, rgba(165,180,252,.18), transparent 30%), linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #020617 100%); }
 .login-decor { position: absolute; border-radius: 50%; filter: blur(80px); opacity: .5; }
 .decor-1 { width: 300px; height: 300px; top: -100px; left: -100px; background: #6366f1; }
 .decor-2 { width: 280px; height: 280px; bottom: -80px; right: -80px; background: #818cf8; }
@@ -126,6 +126,30 @@ const goToRegister = () => router.push('/register')
 .login-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 20px rgba(99,102,241,.35); }
 .footer-links { margin-top: 18px; display: flex; align-items: center; justify-content: center; gap: 4px; color: #64748b; font-size: 14px; line-height: 1; }
 .footer-links :deep(.el-link) { font-weight: 600; color: #6366f1; display: inline-flex; align-items: center; }
-@media (max-width: 960px) { .login-wrap { grid-template-columns: 1fr; } .hero-panel h1 { font-size: 34px; } .login-card { padding: 28px 24px; } }
-@media (max-width: 640px) { .login-page { padding: 16px; } .hero-panel { padding: 10px 2px 0; } .brand-title { font-size: 18px; } .hero-panel h1 { font-size: 28px; } .hero-panel p { font-size: 14px; line-height: 1.7; } .login-card { padding: 22px 18px; border-radius: 16px; } }
+@media (max-width: 960px) {
+  .login-wrap { grid-template-columns: 1fr; gap: 18px; max-width: 560px; }
+  .hero-panel { padding: 6px 0; }
+  .hero-panel h1 { font-size: 34px; }
+  .login-card { padding: 28px 24px; }
+}
+@media (max-width: 768px) {
+  .login-page { padding: 14px; align-items: stretch; }
+  .login-wrap { width: 100%; max-width: 420px; margin: auto; gap: 12px; }
+  .hero-panel { display: none; }
+  .login-card { border-radius: 16px; padding: 20px 16px; box-shadow: 0 14px 28px rgba(0,0,0,.2); }
+  .card-head { margin-bottom: 16px; }
+  .card-title { font-size: 22px; }
+  .card-sub { margin-top: 4px; font-size: 13px; }
+  .form :deep(.el-form-item) { margin-bottom: 16px; }
+  .form :deep(.el-input__wrapper) { height: 44px; }
+  .login-btn { height: 44px; margin-top: 6px; font-size: 15px; }
+}
+@media (max-width: 420px) {
+  .login-page { padding: 10px; }
+  .decor-1 { width: 220px; height: 220px; top: -90px; left: -120px; }
+  .decor-2 { width: 220px; height: 220px; bottom: -100px; right: -120px; }
+  .login-card { padding: 18px 14px; }
+  .card-title { font-size: 20px; }
+  .footer-links { font-size: 13px; }
+}
 </style>

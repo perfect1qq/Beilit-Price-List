@@ -139,4 +139,27 @@ onMounted(() => {
     align-items: flex-start;
   }
 }
+
+@media (max-width: 768px) {
+  .home-page {
+    gap: 12px;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .desc {
+    font-size: 13px;
+  }
+
+  .hero-badge {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .quick-card {
+    min-height: 120px;
+  }
+}
 </style>

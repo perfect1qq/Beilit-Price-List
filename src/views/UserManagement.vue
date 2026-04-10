@@ -215,4 +215,31 @@ onMounted(() => {
 .dialog-content { padding: 10px 0; }
 .dialog-tip { margin-bottom: 20px; color: #475569; line-height: 1.5; font-size: 14px;}
 .dialog-tip strong { color: #6366f1; }
+
+@media (max-width: 768px) {
+  .header-box {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .title {
+    font-size: 16px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    padding-left: 0;
+  }
+
+  .actions {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .actions :deep(.el-input),
+  .actions :deep(.el-input__wrapper) {
+    width: 100% !important;
+  }
+}
 </style>

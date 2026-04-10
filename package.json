@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "format": "prettier --write --experimental-cli src/",
-    "regression:instant-update": "node scripts/regression-instant-update.js"
+    "regression:instant-update": "node scripts/regression-instant-update.js",
+    "regression:ui": "node scripts/regression-quotation-auth-ui.js"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",

@@ -1,36 +1,6 @@
 <template>
   <div class="memo-page">
-    <!-- 顶部数据概览：帮助用户快速看到待办、已完成和置顶数量。 -->
-    <el-row :gutter="16" class="memo-stats">
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="never" class="stat-card">
-          <div class="stat-label">{{ scopeStatCopy.totalLabel }}</div>
-          <div class="stat-value">{{ stats.total }}</div>
-          <div class="stat-tip">{{ scopeStatCopy.totalTip }}</div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="never" class="stat-card">
-          <div class="stat-label">未完成</div>
-          <div class="stat-value">{{ stats.todoTotal }}</div>
-          <div class="stat-tip">{{ scopeStatCopy.todoTip }}</div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="never" class="stat-card">
-          <div class="stat-label">已完成</div>
-          <div class="stat-value">{{ stats.doneTotal }}</div>
-          <div class="stat-tip">{{ scopeStatCopy.doneTip }}</div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :sm="12" :lg="6">
-        <el-card shadow="never" class="stat-card">
-          <div class="stat-label">置顶</div>
-          <div class="stat-value">{{ stats.pinnedTotal }}</div>
-          <div class="stat-tip">{{ scopeStatCopy.pinnedTip }}</div>
-        </el-card>
-      </el-col>
-    </el-row>
+    <MemoStatsRow :stats="stats" :scope-stat-copy="scopeStatCopy" />
 
     <el-card shadow="never" class="memo-card">
       <template #header>
@@ -361,6 +331,7 @@ import { formatDateTime } from '@/utils/navigation'
 import { useCancelableLoader } from '@/composables/useCancelableLoader'
 import { useListQueryState } from '@/composables/useListQueryState'
 import { useInstantListActions } from '@/composables/useInstantListActions'
+import MemoStatsRow from '@/components/memo/MemoStatsRow.vue'
 
 /**
  * 任务备忘录页面。
@@ -1042,6 +1013,19 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
+  .page-title {
+    font-size: 16px;
+  }
+
+  .header-tools {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .header-tools :deep(.el-segmented) {
+    width: 100%;
+  }
+
   .search-input {
     width: 100%;
   }
@@ -1056,6 +1040,11 @@ onUnmounted(() => {
 
   .task-actions {
     justify-content: flex-start;
+  }
+
+  .pager-wrap {
+    justify-content: flex-start;
+    overflow-x: auto;
   }
 }
 </style>

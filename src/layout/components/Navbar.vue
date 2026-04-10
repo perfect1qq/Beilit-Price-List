@@ -1,6 +1,9 @@
 <template>
   <div class="navbar-shell">
     <div class="navbar-top">
+      <button class="mobile-nav-trigger" type="button" @click="emit('toggle-mobile-sidebar')">
+        <el-icon><Menu /></el-icon>
+      </button>
       <div class="brand-area">
         <div class="brand-mark">BT</div>
         <div class="brand-copy">
@@ -115,121 +118,39 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, reactive, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElNotification } from 'element-plus'
 import request from '@/utils/request'
 import TagsView from './TagsView.vue'
-import { resetBreadcrumbTabs } from '@/composables/useBreadcrumbTabs'
-import { Bell, InfoFilled, CircleCheckFilled, CaretBottom, ArrowRight } from '@element-plus/icons-vue'
+import { logoutByUser } from '@/utils/authSession'
+import { Bell, InfoFilled, CircleCheckFilled, CaretBottom, ArrowRight, Menu } from '@element-plus/icons-vue'
+import { useNavbarPasswordDialog } from '@/composables/useNavbarPasswordDialog'
+import { useNavbarNotifications } from '@/composables/useNavbarNotifications'
 
 const router = useRouter()
+const emit = defineEmits(['toggle-mobile-sidebar'])
 const userName = ref('管理员')
 const userRole = ref('user')
-const unreadApprovalCount = ref(0)
-const noticeList = ref([])
-const isBellRinging = ref(false)
 const device = ref('desktop')
 const homeRoute = '/home'
+const {
+  unreadApprovalCount,
+  noticeList,
+  isBellRinging,
+  fetchUnreadCount,
+  handleNoticeClick,
+  markAllAsRead,
+  goNoticePage
+} = useNavbarNotifications({ request, router, userRole })
 
-const triggerBellRing = () => {
-  if (isBellRinging.value) return
-  isBellRinging.value = true
-  setTimeout(() => { isBellRinging.value = false }, 1000)
-}
-
-const isInitialLoad = ref(true)
-
-const fetchUnreadCount = async () => {
-  try {
-    const resCount = await request.get('/api/notifications/unread-count')
-    const newCount = resCount.data?.count ?? 0
-    const oldCount = unreadApprovalCount.value
-
-    if (newCount > oldCount) {
-      triggerBellRing()
-      const resList = await request.get('/api/notifications')
-      const latest = resList.data?.list?.[0]
-      if (latest && !isInitialLoad.value) {
-        ElNotification({
-          title: '系统消息待处理',
-          message: latest.content,
-          type: 'warning',
-          position: 'top-right',
-          duration: 4500,
-          offset: 60,
-          onClick: () => handleNoticeClick(latest)
-        })
-      }
-      noticeList.value = (resList.data.list || []).slice(0, 10)
-    } else {
-      const resList = await request.get('/api/notifications')
-      noticeList.value = (resList.data.list || []).slice(0, 10)
-    }
-    unreadApprovalCount.value = newCount
-    isInitialLoad.value = false
-  } catch {
-    // ignore
-  }
-}
-
-const handleNoticeClick = async (notice) => {
-  if (!notice?.id) return
-  try {
-    await request.put(`/api/notifications/${notice.id}/read`)
-    await fetchUnreadCount()
-
-    const targetPath = notice.type === 'quotation_submitted'
-      ? `/approval/${notice.relatedId}?mode=edit`
-      : '/quotation'
-    router.push(targetPath)
-  } catch (err) {
-    console.error('处理通知失败', err)
-  }
-}
-
-const markAllAsRead = async (e) => {
-  if (e) e.stopPropagation()
-  try {
-    await request.post('/api/notifications/read-all')
-    await fetchUnreadCount()
-    ElMessage.success('已全部标记为已读')
-  } catch {
-    ElMessage.error('操作失败')
-  }
-}
-
-const goNoticePage = () => {
-  if (userRole.value === 'admin') router.push('/approval')
-  else router.push('/quotation')
-}
-
-const changePassDialog = reactive({ visible: false, loading: false, form: { oldPassword: '', newPassword: '', confirmPassword: '' } })
-const confirmChangePass = async () => {
-  const { oldPassword, newPassword, confirmPassword } = changePassDialog.form
-  if (!oldPassword || !newPassword) return ElMessage.warning('请填写必填项')
-  if (newPassword !== confirmPassword) return ElMessage.warning('两次输入的新密码不一致')
-  if (newPassword.length < 6) return ElMessage.warning('密码长度至少为 6 位')
-
-  try {
-    changePassDialog.loading = true
-    await request.post('/api/user/change-password', { oldPassword, newPassword })
-    ElMessage.success('密码修改成功，请重新登录')
-    changePassDialog.visible = false
-    logout()
-  } catch (error) {
-    ElMessage.error(error?.response?.data?.message || '修改失败')
-  } finally {
-    changePassDialog.loading = false
-  }
-}
+const { changePassDialog, confirmChangePass } = useNavbarPasswordDialog({
+  request,
+  onSuccess: () => logout()
+})
 
 const goHome = () => router.push(homeRoute)
 const logout = () => {
-  // 退出前清空当前账号标签页缓存，避免下一次登录继承上一个账号的页面。
-  resetBreadcrumbTabs()
-  localStorage.clear()
-  router.replace('/login')
+  logoutByUser()
 }
 
 let notificationTimer = null
@@ -270,6 +191,17 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 0 18px 0 20px;
+}
+.mobile-nav-trigger {
+  display: none;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #dbe3ef;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  align-items: center;
+  justify-content: center;
 }
 
 .brand-area {
@@ -511,5 +443,40 @@ onUnmounted(() => {
 }
 .notice-footer span:hover {
   text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .navbar-top {
+    padding: 0 10px;
+    gap: 10px;
+  }
+
+  .mobile-nav-trigger {
+    display: inline-flex;
+    flex: 0 0 auto;
+  }
+
+  .brand-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+
+  .brand-title {
+    font-size: 13px;
+  }
+
+  .right-menu {
+    gap: 8px;
+  }
+
+  .user-name {
+    display: none;
+  }
+
+  .notice-dropdown {
+    width: min(92vw, 360px);
+  }
 }
 </style>

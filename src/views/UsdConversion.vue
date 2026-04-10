@@ -373,4 +373,66 @@ onMounted(() => {
 :deep(.el-table th.el-table__cell) {
   text-align: center;
 }
+
+@media (max-width: 768px) {
+  .card-header {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .title {
+    font-size: 16px;
+  }
+
+  .global-setting-group {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .setting-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .label-title {
+    width: 100%;
+    text-align: left;
+    margin-right: 0;
+  }
+
+  .w-120,
+  .w-150 {
+    width: 100%;
+  }
+
+  .arrow {
+    display: none;
+  }
+
+  .footer-summary {
+    padding: 12px;
+  }
+
+  .summary-item {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    font-size: 14px;
+  }
+
+  .summary-item .label {
+    width: auto;
+    text-align: left;
+    margin-right: 0;
+  }
+
+  .summary-item .val {
+    font-size: 17px;
+  }
+
+  .summary-item .desc {
+    width: 100%;
+    margin-left: 0;
+    font-size: 12px;
+  }
+}
 </style>

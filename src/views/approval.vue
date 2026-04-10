@@ -129,4 +129,27 @@ onMounted(loadList)
 .head h2 { font-size: 16px; font-weight: bold; color: #1e293b; border-left: 4px solid #6366f1; padding-left: 10px; margin: 0; line-height: 1; }
 .sub { color: #64748b; font-size: 13px; margin-top: 8px; }
 .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+@media (max-width: 768px) {
+  .head {
+    margin-bottom: 12px;
+  }
+
+  .head h2 {
+    font-size: 15px;
+  }
+
+  .sub {
+    font-size: 12px;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .actions :deep(.el-input),
+  .actions :deep(.el-input__wrapper) {
+    width: 100% !important;
+  }
+}
 </style>

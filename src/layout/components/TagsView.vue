@@ -175,4 +175,32 @@ const handleCommand = async (command) => {
   color: #dc2626;
   background: rgba(220, 38, 38, 0.08);
 }
+
+@media (max-width: 768px) {
+  .tags-view-wrapper {
+    padding: 0 8px;
+    gap: 6px;
+  }
+
+  .tags-left-tools {
+    display: none;
+  }
+
+  .tags-view-list {
+    gap: 6px;
+    padding-right: 4px;
+  }
+
+  .tags-view-item {
+    padding: 0 10px;
+    font-size: 12px;
+    max-width: 160px;
+  }
+
+  .tag-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
 </style>

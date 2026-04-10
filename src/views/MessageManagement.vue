@@ -44,9 +44,7 @@
               <el-tag :type="row.status === 'assigned' ? 'success' : 'warning'" size="small">
                 {{ row.status === 'assigned' ? '已指派' : '待处理' }}
               </el-tag>
-              <el-tag v-if="isAdmin && row.hiddenByAssignee" type="info" size="small" class="status-extra">
-                业务员已隐藏
-              </el-tag>
+        
             </div>
           </template>
         </el-table-column>
@@ -117,48 +115,17 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="viewVisible" :title="viewTitle" width="560px" destroy-on-close class="message-view-dialog">
-      <div v-if="viewRow" class="message-view-body">
-        <div class="view-field">
-          <span class="view-label">提交时间</span>
-          <span class="view-value">{{ formatTime(viewRow.createdAt) }}</span>
-        </div>
-        <div class="view-field">
-          <span class="view-label">联系方式</span>
-          <div class="view-value view-text-block">{{ viewRow.contactInfo || '—' }}</div>
-        </div>
-        <div class="view-field">
-          <span class="view-label">留言内容</span>
-          <div class="view-value view-text-block view-content">{{ viewRow.content || '—' }}</div>
-        </div>
-        <div v-if="viewRow.remark" class="view-field">
-          <span class="view-label">跟进备注</span>
-          <div class="view-value view-text-block">{{ viewRow.remark }}</div>
-        </div>
-      </div>
-      <template #footer>
-        <el-button type="primary" @click="viewVisible = false">关闭</el-button>
-      </template>
-    </el-dialog>
-
-    <el-dialog v-model="assignVisible" title="指派客户" width="420px" destroy-on-close>
-      <el-form :model="assignForm" label-width="90px">
-        <el-form-item label="指派对象" required>
-          <el-select v-model="assignForm.userId" placeholder="请选择业务员" filterable style="width: 100%">
-            <el-option
-              v-for="u in staffList"
-              :key="u.id"
-              :label="u.username"
-              :value="u.id"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="assignVisible = false">取消</el-button>
-        <el-button type="primary" :loading="assignLoading" @click="confirmAssign">确认指派</el-button>
-      </template>
-    </el-dialog>
+    <MessageDialogs
+      v-model:view-visible="viewVisible"
+      v-model:assign-visible="assignVisible"
+      :view-title="viewTitle"
+      :view-row="viewRow"
+      :assign-form="assignForm"
+      :staff-list="staffList"
+      :assign-loading="assignLoading"
+      :format-time="formatTime"
+      @confirm-assign="confirmAssign"
+    />
 
   </div>
 </template>
@@ -174,6 +141,7 @@ import { getMessagePageTitle, readCurrentUser, formatDateTime } from '@/utils/na
 import { useCancelableLoader } from '@/composables/useCancelableLoader'
 import { useListQueryState } from '@/composables/useListQueryState'
 import { useInstantListActions } from '@/composables/useInstantListActions'
+import MessageDialogs from '@/components/message/MessageDialogs.vue'
 
 /**
  * 留言管理页面：
@@ -619,8 +587,30 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
+  .page-title {
+    font-size: 16px;
+  }
+
+  .page-subtitle {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .header-tools {
+    width: 100%;
+  }
+
   .search-input {
     width: 100%;
+  }
+
+  .pager-wrap {
+    justify-content: flex-start;
+    overflow-x: auto;
+  }
+
+  .virtual-table-wrap {
+    height: 380px;
   }
 }
 </style>

@@ -37,6 +37,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import request from '@/utils/request'
 import { readCurrentUser } from '@/utils/navigation'
+import { handleAuthExpired } from '@/utils/authSession'
 import {
   House, Money, Monitor, Document, List, Histogram, DataAnalysis, User, Menu as IconMenu, ChatLineSquare
 } from '@element-plus/icons-vue'
@@ -89,8 +90,7 @@ const fetchMenu = async () => {
     menuList.value = list
   } catch (error) {
     if (error?.response?.status === 401) {
-      localStorage.clear()
-      router.replace('/login')
+      handleAuthExpired(error?.response?.data?.code)
     }
   }
 }

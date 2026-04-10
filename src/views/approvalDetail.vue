@@ -269,4 +269,40 @@ onMounted(loadDetail)
 .log-op { font-weight: 700; color: #1e293b; }
 .log-tag { margin: 0 10px; }
 .log-comment { color: #64748b; font-size: 14px; }
+
+@media (max-width: 768px) {
+  .head {
+    align-items: flex-start;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+  }
+
+  .head h2 {
+    font-size: 16px;
+  }
+
+  .sub {
+    padding-left: 0;
+    line-height: 1.6;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .form {
+    padding: 12px;
+  }
+
+  .summary-bar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .summary-item.main strong {
+    font-size: 17px;
+  }
+}
 </style>

@@ -1,5 +1,6 @@
 import axios from 'axios'
 import http from '../api/http'
+import { handleAuthExpired } from '@/utils/authSession'
 const service = axios.create({
   baseURL: http.defaults.baseURL,
   timeout: 15000
@@ -50,6 +51,13 @@ service.interceptors.response.use(
   async (error) => {
     const config = error?.config || {}
     config.__retryCount = Number(config.__retryCount || 0)
+    const status = Number(error?.response?.status || 0)
+    const reasonCode = error?.response?.data?.code
+
+    if (status === 401) {
+      handleAuthExpired(reasonCode)
+      return Promise.reject(error)
+    }
 
     if (shouldRetry(error) && config.__retryCount < 1) {
       config.__retryCount += 1

@@ -113,4 +113,23 @@ const goToHistory = () => router.push('/beam-quotation/history')
 .toolbar { margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
 .name-group { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .label { font-weight: bold; color: #475569; }
+
+@media (max-width: 768px) {
+  .toolbar {
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+
+  .name-group {
+    margin-left: 0;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .name-group :deep(.el-input),
+  .name-group :deep(.el-input__wrapper) {
+    width: 100% !important;
+  }
+}
 </style>
