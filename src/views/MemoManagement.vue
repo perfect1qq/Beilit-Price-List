@@ -37,7 +37,7 @@
               class="custom-search"
               @input="onKeywordInput"
             />
-            
+
             <div class="date-picker-box" :class="{ 'is-expanded': activeListScope === 'history' }">
               <el-date-picker
                 v-model="historyCreatedOn"
@@ -80,10 +80,11 @@
                   <span class="col-name">待处理</span>
                   <span class="col-num">{{ todoList.length }}</span>
                 </div>
+
                 <div class="task-list">
-                  <div 
-                    v-for="item in todoList" 
-                    :key="item.id" 
+                  <div
+                    v-for="item in todoList"
+                    :key="item.id"
                     v-memo="[item.updatedAt, item.pinned, item.color]"
                     :class="['card', item.color, { 'is-pinned': item.pinned }]"
                   >
@@ -91,26 +92,36 @@
                       <div class="card-side">
                         <el-checkbox :model-value="item.completed" @change="() => toggleCompleted(item)" />
                       </div>
+
                       <div class="card-main" @click="openEdit(item)">
                         <div class="card-header">
                           <span class="card-title">{{ item.title }}</span>
-                          <el-tag v-if="item.pinned" size="small" type="danger" effect="dark" round>置顶</el-tag>
+                          <el-tag v-if="item.pinned" size="small" type="danger" effect="dark" round>
+                            置顶
+                          </el-tag>
                         </div>
+
                         <p class="card-body">{{ item.content }}</p>
+
                         <div class="card-meta">
                           <span class="tag">{{ item.label || '默认' }}</span>
                           <span class="date">{{ formatTime(item.updatedAt) }}</span>
                         </div>
                       </div>
+
                       <div class="card-actions">
                         <el-dropdown trigger="click">
                           <el-button link :icon="MoreFilled"></el-button>
                           <template #dropdown>
                             <el-dropdown-menu>
                               <el-dropdown-item @click="openEdit(item)">编辑详情</el-dropdown-item>
-                              <el-dropdown-item @click="togglePinned(item)">{{ item.pinned ? '取消置顶' : '置顶任务' }}</el-dropdown-item>
+                              <el-dropdown-item @click="togglePinned(item)">
+                                {{ item.pinned ? '取消置顶' : '置顶任务' }}
+                              </el-dropdown-item>
                               <el-dropdown-item @click="openHistory(item)">查看日志</el-dropdown-item>
-                              <el-dropdown-item divided style="color: #f56c6c" @click="removeMemo(item)">彻底删除</el-dropdown-item>
+                              <el-dropdown-item divided style="color: #f56c6c" @click="removeMemo(item)">
+                                彻底删除
+                              </el-dropdown-item>
                             </el-dropdown-menu>
                           </template>
                         </el-dropdown>
@@ -118,6 +129,7 @@
                     </div>
                   </div>
                 </div>
+
                 <el-empty v-if="!todoList.length" description="今日无事" :image-size="80" />
               </section>
 
@@ -127,10 +139,11 @@
                   <span class="col-name">已圆满</span>
                   <span class="col-num">{{ doneList.length }}</span>
                 </div>
+
                 <div class="task-list">
-                  <div 
-                    v-for="item in doneList" 
-                    :key="item.id" 
+                  <div
+                    v-for="item in doneList"
+                    :key="item.id"
                     v-memo="[item.updatedAt, item.completed]"
                     class="card is-completed"
                   >
@@ -138,69 +151,80 @@
                       <div class="card-side">
                         <el-checkbox :model-value="item.completed" @change="() => toggleCompleted(item)" />
                       </div>
+
                       <div class="card-main">
                         <span class="card-title">{{ item.title }}</span>
                         <div class="card-meta">
                           <span class="date">完成于 {{ formatTime(item.completedAt || item.updatedAt) }}</span>
                         </div>
                       </div>
+
                       <el-button link type="danger" :icon="Delete" @click="removeMemo(item)"></el-button>
                     </div>
                   </div>
                 </div>
+
                 <el-empty v-if="!doneList.length" description="继续加油" :image-size="80" />
               </section>
             </div>
 
             <div v-show="!isBoardMode" class="list-view">
               <div v-if="list.length" class="task-list single-stack">
-                <div 
-                  v-for="item in list" 
-                  :key="item.id" 
+                <div
+                  v-for="item in list"
+                  :key="item.id"
                   v-memo="[item.updatedAt, item.completed, item.pinned]"
                   :class="['card', item.color, { 'is-pinned': item.pinned, 'is-completed': item.completed }]"
                 >
-                   <div class="card-inner">
-                      <el-checkbox :model-value="item.completed" @change="() => toggleCompleted(item)" />
-                      <div class="card-main" @click="openEdit(item)">
-                        <div class="card-header">
-                          <span class="card-title">{{ item.title }}</span>
-                          <el-tag v-if="item.completed" size="small" type="success">DONE</el-tag>
-                        </div>
-                        <p class="card-body">{{ item.content }}</p>
+                  <div class="card-inner">
+                    <el-checkbox :model-value="item.completed" @change="() => toggleCompleted(item)" />
+                    <div class="card-main" @click="openEdit(item)">
+                      <div class="card-header">
+                        <span class="card-title">{{ item.title }}</span>
+                        <el-tag v-if="item.completed" size="small" type="success">DONE</el-tag>
                       </div>
-                      <div class="card-actions">
-                        <el-button link @click="openEdit(item)">编辑</el-button>
-                        <el-button link type="danger" @click="removeMemo(item)">删除</el-button>
-                      </div>
-                   </div>
+                      <p class="card-body">{{ item.content }}</p>
+                    </div>
+                    <div class="card-actions">
+                      <el-button link @click="openEdit(item)">编辑</el-button>
+                      <el-button link type="danger" @click="removeMemo(item)">删除</el-button>
+                    </div>
+                  </div>
                 </div>
               </div>
+
               <el-empty v-else :description="emptyDescription" />
             </div>
 
-            <div v-if="list.length > 0" class="load-more-container">
-              <el-button 
-                :loading="loading" 
-                plain 
-                round 
-                class="load-more-btn"
-                @click="loadNextPage"
-              >
-                向下加载更多任务
-              </el-button>
+            <div class="load-more-container">
+              <div v-if="loading" class="no-more-text">
+                <span>加载中...</span>
+              </div>
+
+              <div v-else-if="!hasMore && list.length > 0" class="no-more-text">
+                <span class="line"></span>
+                <span>已经没有更多任务了</span>
+                <span class="line"></span>
+              </div>
             </div>
 
+            <div ref="loadMoreTriggerRef" class="load-more-sentinel" aria-hidden="true"></div>
           </template>
         </el-skeleton>
       </div>
     </div>
 
-    <el-drawer v-model="editorVisible" :title="editorMode === 'create' ? '✨ 开启新任务' : '📝 更新任务细节'" size="540px" class="custom-drawer">
+    <el-drawer
+      v-model="editorVisible"
+      :title="editorMode === 'create' ? '✨ 开启新任务' : '📝 更新任务细节'"
+      size="540px"
+      class="custom-drawer"
+    >
       <el-form :model="form" label-position="top">
         <el-form-item label="任务名称">
           <el-input v-model="form.title" placeholder="输入核心目标" maxlength="40" show-word-limit />
         </el-form-item>
+
         <div class="form-row">
           <el-form-item label="分类" style="flex: 1">
             <el-input v-model="form.label" placeholder="如：工作" />
@@ -211,6 +235,7 @@
             </el-select>
           </el-form-item>
         </div>
+
         <div class="form-row toggle-row">
           <el-form-item label="置顶显示">
             <el-switch v-model="form.pinned" />
@@ -219,10 +244,12 @@
             <el-switch v-model="form.completed" />
           </el-form-item>
         </div>
+
         <el-form-item label="详细说明">
           <el-input v-model="form.content" type="textarea" :rows="10" placeholder="记录具体步骤或想法..." />
         </el-form-item>
       </el-form>
+
       <template #footer>
         <div class="drawer-btns">
           <el-button @click="editorVisible = false">舍弃修改</el-button>
@@ -232,8 +259,13 @@
     </el-drawer>
 
     <el-drawer v-model="historyVisible" :title="historyTitle" size="420px">
-       <el-timeline v-if="historyList.length" class="custom-timeline">
-        <el-timeline-item v-for="h in historyList" :key="h.id" :timestamp="formatTime(h.createdAt)" :type="h.action === 'complete' ? 'success' : 'primary'">
+      <el-timeline v-if="historyList.length" class="custom-timeline">
+        <el-timeline-item
+          v-for="h in historyList"
+          :key="h.id"
+          :timestamp="formatTime(h.createdAt)"
+          :type="h.action === 'complete' ? 'success' : 'primary'"
+        >
           <div class="log-box">
             <p class="log-user"><strong>{{ h.operatorName }}</strong> {{ actionLabel(h.action) }}</p>
             <div class="log-content">{{ h.content }}</div>
@@ -246,7 +278,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, shallowRef } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, shallowRef } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, MoreFilled, Delete } from '@element-plus/icons-vue'
 import { memoApi } from '@/api/memo'
@@ -256,7 +288,7 @@ import { useCancelableLoader } from '@/composables/useCancelableLoader'
 import { useListQueryState } from '@/composables/useListQueryState'
 
 // 1. 响应式状态：使用 shallowRef 优化大型列表性能
-const list = shallowRef([]) 
+const list = shallowRef([])
 const hasMore = ref(false)
 const { loading, run: runListLoad, isLatest } = useCancelableLoader()
 const saving = ref(false)
@@ -275,6 +307,10 @@ const historyVisible = ref(false)
 const historyTitle = ref('日志')
 const historyList = shallowRef([])
 
+// 抖音式底部哨兵
+const loadMoreTriggerRef = ref(null)
+let observer = null
+
 // 3. 静态配置
 const statConfig = [
   { label: '全部任务', key: 'total', class: '' },
@@ -287,12 +323,14 @@ const listScopeOptions = [
   { label: '今日任务', value: 'today' },
   { label: '往期回顾', value: 'history' }
 ]
+
 const filterOptions = [
   { label: '全部', value: 'all' },
   { label: '待办', value: 'todo' },
   { label: '完成', value: 'done' },
   { label: '置顶', value: 'pinned' }
 ]
+
 const colorOptions = [
   { label: '经典蓝', value: 'blue' },
   { label: '薄荷绿', value: 'green' },
@@ -305,8 +343,10 @@ const colorOptions = [
 const isBoardMode = computed(() => activeFilter.value === 'all')
 const todoList = computed(() => list.value.filter(i => !i.completed))
 const doneList = computed(() => list.value.filter(i => i.completed))
-const pageTitle = computed(() => activeListScope.value === 'today' ? '今日任务' : '往期任务')
-const emptyDescription = computed(() => activeListScope.value === 'history' ? '这一天没有任何记录' : '今日还没有任务，给自己定个目标吧')
+const pageTitle = computed(() => (activeListScope.value === 'today' ? '今日任务' : '往期任务'))
+const emptyDescription = computed(() =>
+  activeListScope.value === 'history' ? '这一天没有任何记录' : '今日还没有任务，给自己定个目标吧'
+)
 
 // 5. 方法函数
 const loadList = async (targetPage = page.value, append = false) => {
@@ -318,17 +358,22 @@ const loadList = async (targetPage = page.value, append = false) => {
       filter: activeFilter.value,
       tz: Intl.DateTimeFormat().resolvedOptions().timeZone
     }
+
     if (activeListScope.value === 'history' && historyCreatedOn.value) {
       params.createdOn = historyCreatedOn.value
     }
-    
-    const res = activeListScope.value === 'history' ? await memoApi.listHistory(params, { signal }) : await memoApi.list(params, { signal })
-    
+
+    const res =
+      activeListScope.value === 'history'
+        ? await memoApi.listHistory(params, { signal })
+        : await memoApi.list(params, { signal })
+
     if (!isLatest(seq)) return
-    
-    list.value = append ? [...list.value, ...(res.list || [])] : (res.list || [])
-    hasMore.value = list.value.length < res.total
-    
+
+    const rows = res.list || []
+    list.value = append ? [...list.value, ...rows] : rows
+    hasMore.value = list.value.length < (res.total || 0)
+
     Object.assign(stats, {
       total: res.total || 0,
       todoTotal: res.todoTotal || 0,
@@ -338,18 +383,38 @@ const loadList = async (targetPage = page.value, append = false) => {
   })
 }
 
-// 核心修改：加载下一页并给予提示
+// 抖音式：滚动到接近底部自动加载
 const loadNextPage = async () => {
-  if (!hasMore.value) {
-    ElMessage.info({ message: '此时刻系统暂无更多可加载的数据', duration: 2000 })
-    return
-  }
-  page.value++
+  if (!hasMore.value || loading.value) return
+
+  page.value += 1
   await loadList(page.value, true)
-  
-  if (!hasMore.value) {
-    ElMessage.info({ message: '已经到底啦，没有更多任务了', duration: 2000 })
+}
+
+const initInfiniteObserver = () => {
+  if (observer) {
+    observer.disconnect()
+    observer = null
   }
+
+  const target = loadMoreTriggerRef.value
+  if (!target) return
+
+  observer = new IntersectionObserver(
+    entries => {
+      const [entry] = entries
+      if (entry?.isIntersecting) {
+        loadNextPage()
+      }
+    },
+    {
+      root: null,
+      rootMargin: '0px 0px 240px 0px',
+      threshold: 0.1
+    }
+  )
+
+  observer.observe(target)
 }
 
 const openCreate = () => {
@@ -358,7 +423,7 @@ const openCreate = () => {
   editorVisible.value = true
 }
 
-const openEdit = (item) => {
+const openEdit = item => {
   editorMode.value = 'edit'
   editingId.value = item.id
   Object.assign(form, { ...item })
@@ -373,50 +438,97 @@ const saveMemo = async () => {
     else await memoApi.update(editingId.value, form)
     ElMessage.success('已同步至云端')
     editorVisible.value = false
-    loadList(1)
+    page.value = 1
+    await loadList(1)
   } finally {
     saving.value = false
   }
 }
 
-const toggleCompleted = async (item) => {
+const toggleCompleted = async item => {
   try {
     await memoApi.update(item.id, { ...item, completed: !item.completed })
-    loadList(1)
-  } catch (e) { ElMessage.error('网络繁忙，请重试') }
+    page.value = 1
+    await loadList(1)
+  } catch (e) {
+    ElMessage.error('网络繁忙，请重试')
+  }
 }
 
-const togglePinned = async (item) => {
+const togglePinned = async item => {
   try {
     await memoApi.update(item.id, { ...item, pinned: !item.pinned })
-    loadList(1)
-  } catch (e) { ElMessage.error('操作失败') }
+    page.value = 1
+    await loadList(1)
+  } catch (e) {
+    ElMessage.error('操作失败')
+  }
 }
 
-const removeMemo = async (item) => {
+const removeMemo = async item => {
   try {
     await ElMessageBox.confirm('任务一旦删除将无法找回，确认继续吗？', '删除确认')
     await memoApi.remove(item.id)
-    loadList(1)
+    page.value = 1
+    await loadList(1)
   } catch {}
 }
 
-const openHistory = async (item) => {
+const openHistory = async item => {
   historyTitle.value = `${item.title} 的修订轨迹`
   historyVisible.value = true
   const res = await memoApi.history(item.id)
   historyList.value = res.histories || []
 }
 
-const triggerSearch = createDebounce(() => { resetToFirstPage(); loadList(1); }, 300)
-const onKeywordInput = () => triggerSearch()
-const handleFilterChange = () => { resetToFirstPage(); loadList(1); }
-const handleListScopeChange = () => { historyCreatedOn.value = null; resetToFirstPage(); loadList(1); }
-const onHistoryDateChange = () => { resetToFirstPage(); loadList(1); }
-const formatTime = (v) => formatDateTime(v)
-const actionLabel = (a) => ({ create: '创建了任务', update: '更新了内容', complete: '完成了任务', reopen: '重新开启了任务' }[a] || a)
+const triggerSearch = createDebounce(() => {
+  resetToFirstPage()
+  page.value = 1
+  loadList(1)
+}, 300)
 
-onMounted(() => loadList(1))
+const onKeywordInput = () => triggerSearch()
+
+const handleFilterChange = () => {
+  resetToFirstPage()
+  page.value = 1
+  loadList(1)
+}
+
+const handleListScopeChange = () => {
+  historyCreatedOn.value = null
+  resetToFirstPage()
+  page.value = 1
+  loadList(1)
+}
+
+const onHistoryDateChange = () => {
+  resetToFirstPage()
+  page.value = 1
+  loadList(1)
+}
+
+const formatTime = v => formatDateTime(v)
+
+const actionLabel = a =>
+  ({
+    create: '创建了任务',
+    update: '更新了内容',
+    complete: '完成了任务',
+    reopen: '重新开启了任务'
+  }[a] || a)
+
+onMounted(async () => {
+  await loadList(1)
+  initInfiniteObserver()
+})
+
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect()
+    observer = null
+  }
+})
 </script>
 
 <style scoped>
@@ -439,20 +551,35 @@ onMounted(() => loadList(1))
   background: #ffffff;
   padding: 24px;
   border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.03);
   border: 1px solid #f1f5f9;
 }
-.stat-label { font-size: 14px; color: #64748b; display: block; margin-bottom: 8px; font-weight: 500; }
-.stat-count { font-size: 32px; font-weight: 800; }
-.stat-count.todo { color: #f59e0b; }
-.stat-count.done { color: #10b981; }
-.stat-count.pinned { color: #ef4444; }
+.stat-label {
+  font-size: 14px;
+  color: #64748b;
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+.stat-count {
+  font-size: 32px;
+  font-weight: 800;
+}
+.stat-count.todo {
+  color: #f59e0b;
+}
+.stat-count.done {
+  color: #10b981;
+}
+.stat-count.pinned {
+  color: #ef4444;
+}
 
 /* 核心布局卡片 */
 .memo-wrapper {
   background: #ffffff;
   border-radius: 20px;
-  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
   border: 1px solid #f1f5f9;
   min-height: 600px;
 }
@@ -467,12 +594,37 @@ onMounted(() => loadList(1))
   flex-wrap: wrap;
   gap: 24px;
 }
-.header-left { display: flex; align-items: center; gap: 12px; }
-.memo-title { font-size: 24px; font-weight: 850; letter-spacing: -0.5px; margin: 0; }
-.memo-badge { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #475569; }
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.memo-title {
+  font-size: 24px;
+  font-weight: 850;
+  letter-spacing: -0.5px;
+  margin: 0;
+}
+.memo-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+}
 
-.header-right { display: flex; align-items: center; gap: 16px; }
-.vertical-spacer { width: 1px; height: 32px; background: #e2e8f0; margin: 0 4px; }
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.vertical-spacer {
+  width: 1px;
+  height: 32px;
+  background: #e2e8f0;
+  margin: 0 4px;
+}
 
 /* 搜索与日期容器 */
 .search-container {
@@ -482,7 +634,9 @@ onMounted(() => loadList(1))
   flex: 1;
   min-width: 450px;
 }
-.custom-search { width: 240px; }
+.custom-search {
+  width: 240px;
+}
 .custom-search :deep(.el-input__wrapper) {
   background-color: #f8fafc;
   box-shadow: none !important;
@@ -516,17 +670,55 @@ onMounted(() => loadList(1))
 }
 
 /* 看板视图布局 */
-.memo-content { padding: 28px; }
-.board-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
-.column { background: #f8fafc; border-radius: 16px; padding: 20px; border: 1px solid #f1f5f9; }
-.column-head { display: flex; align-items: center; margin-bottom: 20px; font-weight: 700; }
-.col-indicator { width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; }
-.col-indicator.todo { background: #f59e0b; box-shadow: 0 0 10px rgba(245,158,11,0.3); }
-.col-indicator.done { background: #10b981; box-shadow: 0 0 10px rgba(16,185,129,0.3); }
-.col-num { margin-left: auto; color: #94a3b8; font-size: 12px; background: #fff; padding: 2px 10px; border-radius: 20px; }
+.memo-content {
+  padding: 28px;
+}
+.board-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+.column {
+  background: #f8fafc;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid #f1f5f9;
+}
+.column-head {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+.col-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+.col-indicator.todo {
+  background: #f59e0b;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+.col-indicator.done {
+  background: #10b981;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}
+.col-num {
+  margin-left: auto;
+  color: #94a3b8;
+  font-size: 12px;
+  background: #fff;
+  padding: 2px 10px;
+  border-radius: 20px;
+}
 
 /* 任务卡片样式 */
-.task-list { display: flex; flex-direction: column; gap: 14px; }
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 .card {
   background: #ffffff;
   border-radius: 14px;
@@ -535,41 +727,100 @@ onMounted(() => loadList(1))
   position: relative;
   cursor: default;
 }
-.card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px -8px rgba(0,0,0,0.08); border-color: #cbd5e1; }
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
+}
 
 .card::after {
   content: '';
   position: absolute;
-  left: 0; top: 15%; bottom: 15%;
-  width: 4px; border-radius: 0 4px 4px 0;
+  left: 0;
+  top: 15%;
+  bottom: 15%;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
 }
-.card.blue::after { background: #3b82f6; }
-.card.green::after { background: #10b981; }
-.card.amber::after { background: #f59e0b; }
-.card.rose::after { background: #f43f5e; }
-.card.purple::after { background: #a855f7; }
+.card.blue::after {
+  background: #3b82f6;
+}
+.card.green::after {
+  background: #10b981;
+}
+.card.amber::after {
+  background: #f59e0b;
+}
+.card.rose::after {
+  background: #f43f5e;
+}
+.card.purple::after {
+  background: #a855f7;
+}
 
-.card.is-completed { opacity: 0.6; }
-.card.is-completed .card-title { text-decoration: line-through; color: #94a3b8; }
+.card.is-completed {
+  opacity: 0.6;
+}
+.card.is-completed .card-title {
+  text-decoration: line-through;
+  color: #94a3b8;
+}
 
-.card-inner { padding: 18px; display: flex; gap: 16px; align-items: flex-start; }
-.card-main { flex: 1; cursor: pointer; }
-.card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-.card-title { font-size: 15px; font-weight: 700; color: #0f172a; line-height: 1.4; }
-.card-body { font-size: 13px; color: #475569; margin: 0 0 12px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.card-meta { display: flex; justify-content: space-between; align-items: center; }
-.tag { font-size: 11px; background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
-.date { font-size: 11px; color: #cbd5e1; }
+.card-inner {
+  padding: 18px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.card-main {
+  flex: 1;
+  cursor: pointer;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.4;
+}
+.card-body {
+  font-size: 13px;
+  color: #475569;
+  margin: 0 0 12px;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.tag {
+  font-size: 11px;
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+.date {
+  font-size: 11px;
+  color: #cbd5e1;
+}
 
-/* 核心增加：加载更多与底部提示的样式 */
+/* 加载更多与底部提示 */
 .load-more-container {
   margin-top: 32px;
   text-align: center;
   padding-bottom: 16px;
-}
-.load-more-btn {
-  padding: 10px 32px;
-  font-weight: 600;
 }
 .no-more-text {
   display: flex;
@@ -585,26 +836,66 @@ onMounted(() => loadList(1))
   height: 1px;
   background-color: #e2e8f0;
 }
+.load-more-sentinel {
+  width: 100%;
+  height: 1px;
+}
 
 /* 表单与抽屉样式 */
-.form-row { display: flex; gap: 20px; }
-.toggle-row { background: #f8fafc; padding: 16px; border-radius: 12px; margin-bottom: 20px; }
-.drawer-btns { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+.form-row {
+  display: flex;
+  gap: 20px;
+}
+.toggle-row {
+  background: #f8fafc;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+.drawer-btns {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
+}
 
-.log-box { background: #f1f5f9; padding: 12px; border-radius: 10px; }
-.log-user { font-size: 13px; margin: 0 0 4px; }
-.log-content { font-size: 12px; color: #64748b; }
+.log-box {
+  background: #f1f5f9;
+  padding: 12px;
+  border-radius: 10px;
+}
+.log-user {
+  font-size: 13px;
+  margin: 0 0 4px;
+}
+.log-content {
+  font-size: 12px;
+  color: #64748b;
+}
 
 /* 响应式适配 */
 @media (max-width: 1280px) {
-  .search-container { min-width: 350px; }
-  .custom-search { width: 180px; }
+  .search-container {
+    min-width: 350px;
+  }
+  .custom-search {
+    width: 180px;
+  }
 }
 
 @media (max-width: 1024px) {
-  .stats-overview { grid-template-columns: 1fr 1fr; }
-  .board-grid { grid-template-columns: 1fr; }
-  .header-right { width: 100%; justify-content: flex-start; }
-  .search-container { width: 100%; min-width: auto; }
+  .stats-overview {
+    grid-template-columns: 1fr 1fr;
+  }
+  .board-grid {
+    grid-template-columns: 1fr;
+  }
+  .header-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .search-container {
+    width: 100%;
+    min-width: auto;
+  }
 }
 </style>

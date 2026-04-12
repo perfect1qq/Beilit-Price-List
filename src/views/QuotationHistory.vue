@@ -319,7 +319,9 @@ const totalRecords = computed(() => groupedHistoryList.value.reduce((sum, group)
 watch(
   pagedHistoryGroups,
   (groups) => {
-    activePanels.value = groups.length ? [groups[0].companyName] : []
+    // 这个会自动展开折叠的
+    // activePanels.value = groups.length ? [groups[0].companyName] : [] 
+    activePanels.value = [] // 切换页码时默认全部折叠，避免性能问题和视觉干扰
   },
   { immediate: true }
 )

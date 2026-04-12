@@ -61,7 +61,7 @@ const routes = [
             path: 'history',
             name: 'QuotationHistory',
             component: QuotationHistory,
-            meta: { title: '历史记录' }
+            meta: { title: '报价单历史' }
           }
         ]
       },
@@ -79,7 +79,7 @@ const routes = [
             path: 'history',
             name: 'BeamQuotationHistory',
             component: BeamQuotationHistory,
-            meta: { title: '历史记录' }
+            meta: { title: '横梁载重单历史' }
           }
         ]
       },
@@ -106,7 +106,7 @@ const routes = [
             path: 'history',
             name: 'ApprovalHistory',
             component: ApprovalHistory,
-            meta: { title: '历史记录', adminOnly: true }
+            meta: { title: '审批历史', adminOnly: true }
           },
           {
             path: 'history/:id',
