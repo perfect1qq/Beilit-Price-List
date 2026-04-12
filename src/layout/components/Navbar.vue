@@ -29,7 +29,7 @@
                     <span class="title">系统消息</span>
                     <span class="subtitle">最近 10 条通知</span>
                   </div>
-                  <el-button v-if="noticeList.length" link type="primary" size="small" @click="markAllAsRead">全部忽略</el-button>
+                  <el-button v-if="noticeList.length" link type="primary" size="small" @click="markAllAsRead">全部已读</el-button>
                 </div>
                 <el-scrollbar max-height="320px">
                   <div v-if="!noticeList.length" class="notice-empty">

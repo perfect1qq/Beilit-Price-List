@@ -40,6 +40,8 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background-color: #f5f7fb;
   color: #334155;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
 }
 
 .el-container,

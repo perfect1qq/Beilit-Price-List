@@ -11,14 +11,17 @@ import { applyAuthGuard } from '@/router/guards/authGuard'
 const Login = () => import('../views/login.vue')
 const MainLayout = () => import('../layout/index.vue')
 const HomeView = () => import('../views/HomeView.vue')
+const QuotationLayout = () => import('../views/QuotationLayout.vue')
 const QuotationList = () => import('../views/QuotationList.vue')
 const BeamQuotationLayout = () => import('../views/BeamQuotationLayout.vue')
 const BeamQuotationList = () => import('../views/BeamQuotationList.vue')
 const BeamQuotationHistory = () => import('../views/BeamQuotationHistory.vue')
 const QuotationStatistics = () => import('../views/QuotationStatistics.vue')
+const QuotationHistory = () => import('../views/QuotationHistory.vue')
 const ApprovalLayout = () => import('../views/ApprovalLayout.vue')
 const Approval = () => import('../views/approval.vue')
 const ApprovalDetail = () => import('../views/approvalDetail.vue')
+const ApprovalHistory = () => import('../views/ApprovalHistory.vue')
 const MediumShelfWeightTable = () => import('../views/MediumShelfWeightTable.vue')
 const MemoManagement = () => import('../views/MemoManagement.vue')
 const MessageManagement = () => import('../views/MessageManagement.vue')
@@ -45,9 +48,22 @@ const routes = [
       },
       {
         path: 'quotation',
-        name: 'Quotation',
-        component: QuotationList,
-        meta: { title: '报价单' }
+        component: QuotationLayout,
+        meta: { title: '报价单' },
+        children: [
+          {
+            path: '',
+            name: 'Quotation',
+            component: QuotationList,
+            meta: { title: '报价单' }
+          },
+          {
+            path: 'history',
+            name: 'QuotationHistory',
+            component: QuotationHistory,
+            meta: { title: '历史记录' }
+          }
+        ]
       },
       {
         path: 'beam-quotation',
@@ -68,6 +84,7 @@ const routes = [
         ]
       },
       { path: 'beam-quotation-history', redirect: '/beam-quotation/history' },
+      { path: 'quotation-history', redirect: '/quotation/history' },
       {
         path: 'quotation-statistics',
         name: 'QuotationStatistics',
@@ -84,6 +101,18 @@ const routes = [
             path: '',
             name: 'Approval',
             component: Approval
+          },
+          {
+            path: 'history',
+            name: 'ApprovalHistory',
+            component: ApprovalHistory,
+            meta: { title: '历史记录', adminOnly: true }
+          },
+          {
+            path: 'history/:id',
+            name: 'ApprovalHistoryDetail',
+            component: ApprovalDetail,
+            meta: { title: '审批历史详情', adminOnly: true }
           },
           {
             path: ':id',

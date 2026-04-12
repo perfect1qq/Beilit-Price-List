@@ -131,7 +131,7 @@
 </template>
 
 <script setup>
-import { computed, h, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, h, onMounted, onUnmounted, reactive, ref, shallowRef } from 'vue'
 import { ElButton, ElMessage, ElMessageBox, ElTag } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { messageApi } from '@/api/message'
@@ -167,7 +167,7 @@ const pageSubtitle = computed(() => (
     : '当前账号只会看到被分配给自己的线索。'
 ))
 
-const messages = ref([])
+const messages = shallowRef([])
 const { loading, loadError, run: runListLoad, isLatest } = useCancelableLoader()
 const { keyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
 const total = ref(0)

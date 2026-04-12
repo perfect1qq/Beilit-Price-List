@@ -1,1050 +1,610 @@
 <template>
-  <div class="memo-page">
-    <MemoStatsRow :stats="stats" :scope-stat-copy="scopeStatCopy" />
+  <div class="memo-container">
+    <div class="stats-overview">
+      <div v-for="(stat, key) in statConfig" :key="key" class="stat-item">
+        <div class="stat-info">
+          <span class="stat-label">{{ stat.label }}</span>
+          <span :class="['stat-count', stat.class]">{{ stats[stat.key] }}</span>
+        </div>
+      </div>
+    </div>
 
-    <el-card shadow="never" class="memo-card">
-      <template #header>
-        <div class="page-header">
-          <div>
-            <div class="page-title">{{ pageTitle }}</div>
-          </div>
+    <div class="memo-wrapper">
+      <header class="memo-header">
+        <div class="header-left">
+          <h1 class="memo-title">{{ pageTitle }}</h1>
+          <div class="memo-badge">{{ activeListScope === 'today' ? 'LIVE' : 'ARCHIVE' }}</div>
+        </div>
 
-          <div class="header-tools">
+        <div class="header-right">
+          <div class="control-group">
             <el-segmented
               v-model="activeListScope"
               :options="listScopeOptions"
-              size="small"
+              class="custom-segmented"
               @change="handleListScopeChange"
             />
+          </div>
+
+          <div class="vertical-spacer"></div>
+
+          <div class="control-group search-container">
             <el-input
               v-model="keyword"
-              clearable
-              class="search-input"
-              placeholder="搜索标题、内容或标签"
+              placeholder="搜索标题或内容..."
               :prefix-icon="Search"
+              clearable
+              class="custom-search"
               @input="onKeywordInput"
             />
-            <el-date-picker
-              v-if="activeListScope === 'history'"
-              v-model="historyCreatedOn"
-              type="date"
-              value-format="YYYY-MM-DD"
-              placeholder="创建日期"
-              clearable
-              class="history-date-picker"
-              @change="onHistoryDateChange"
-            />
+            
+            <div class="date-picker-box" :class="{ 'is-expanded': activeListScope === 'history' }">
+              <el-date-picker
+                v-model="historyCreatedOn"
+                type="date"
+                value-format="YYYY-MM-DD"
+                placeholder="选择创建日期"
+                clearable
+                class="custom-date-picker"
+                @change="onHistoryDateChange"
+              />
+            </div>
+          </div>
+
+          <div class="vertical-spacer"></div>
+
+          <div class="control-group">
             <el-segmented
               v-model="activeFilter"
               :options="filterOptions"
-              size="small"
+              class="custom-segmented"
               @change="handleFilterChange"
             />
-            <el-button
-              v-if="activeListScope === 'today'"
-              type="primary"
-              :icon="Plus"
-              @click="openCreate"
-            >
-              新增任务
+          </div>
+
+          <div v-if="activeListScope === 'today'" class="action-box">
+            <el-button type="primary" :icon="Plus" class="main-add-btn" @click="openCreate">
+              新建任务
             </el-button>
           </div>
         </div>
-      </template>
+      </header>
 
-      <el-skeleton :loading="loading && !list.length" animated :rows="8">
-        <template #default>
-          <!-- 默认“全部”模式使用双栏板式，和高赞 GitHub 待办工具更接近。 -->
-          <div v-if="isBoardMode" class="memo-board">
-            <section class="memo-column">
-              <div class="column-head">
-                <div>
-                  <div class="column-title">未完成</div>
-                  <div class="column-subtitle">{{ stats.todoTotal }} 条</div>
+      <div class="memo-content">
+        <el-skeleton :loading="loading && !list.length" animated :rows="12">
+          <template #default>
+            <div v-show="isBoardMode" class="board-grid">
+              <section class="column">
+                <div class="column-head">
+                  <span class="col-indicator todo"></span>
+                  <span class="col-name">待处理</span>
+                  <span class="col-num">{{ todoList.length }}</span>
                 </div>
-                <el-tag size="small" type="warning" effect="light">待办</el-tag>
-              </div>
+                <div class="task-list">
+                  <div 
+                    v-for="item in todoList" 
+                    :key="item.id" 
+                    v-memo="[item.updatedAt, item.pinned, item.color]"
+                    :class="['card', item.color, { 'is-pinned': item.pinned }]"
+                  >
+                    <div class="card-inner">
+                      <div class="card-side">
+                        <el-checkbox :model-value="item.completed" @change="() => toggleCompleted(item)" />
+                      </div>
+                      <div class="card-main" @click="openEdit(item)">
+                        <div class="card-header">
+                          <span class="card-title">{{ item.title }}</span>
+                          <el-tag v-if="item.pinned" size="small" type="danger" effect="dark" round>置顶</el-tag>
+                        </div>
+                        <p class="card-body">{{ item.content }}</p>
+                        <div class="card-meta">
+                          <span class="tag">{{ item.label || '默认' }}</span>
+                          <span class="date">{{ formatTime(item.updatedAt) }}</span>
+                        </div>
+                      </div>
+                      <div class="card-actions">
+                        <el-dropdown trigger="click">
+                          <el-button link :icon="MoreFilled"></el-button>
+                          <template #dropdown>
+                            <el-dropdown-menu>
+                              <el-dropdown-item @click="openEdit(item)">编辑详情</el-dropdown-item>
+                              <el-dropdown-item @click="togglePinned(item)">{{ item.pinned ? '取消置顶' : '置顶任务' }}</el-dropdown-item>
+                              <el-dropdown-item @click="openHistory(item)">查看日志</el-dropdown-item>
+                              <el-dropdown-item divided style="color: #f56c6c" @click="removeMemo(item)">彻底删除</el-dropdown-item>
+                            </el-dropdown-menu>
+                          </template>
+                        </el-dropdown>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <el-empty v-if="!todoList.length" description="今日无事" :image-size="80" />
+              </section>
 
-              <div v-if="todoList.length" class="task-stack">
-                <article
-                  v-for="item in todoList"
-                  :key="item.id"
-                  class="task-card"
-                  :class="{ pinned: item.pinned }"
+              <section class="column">
+                <div class="column-head">
+                  <span class="col-indicator done"></span>
+                  <span class="col-name">已圆满</span>
+                  <span class="col-num">{{ doneList.length }}</span>
+                </div>
+                <div class="task-list">
+                  <div 
+                    v-for="item in doneList" 
+                    :key="item.id" 
+                    v-memo="[item.updatedAt, item.completed]"
+                    class="card is-completed"
+                  >
+                    <div class="card-inner">
+                      <div class="card-side">
+                        <el-checkbox :model-value="item.completed" @change="() => toggleCompleted(item)" />
+                      </div>
+                      <div class="card-main">
+                        <span class="card-title">{{ item.title }}</span>
+                        <div class="card-meta">
+                          <span class="date">完成于 {{ formatTime(item.completedAt || item.updatedAt) }}</span>
+                        </div>
+                      </div>
+                      <el-button link type="danger" :icon="Delete" @click="removeMemo(item)"></el-button>
+                    </div>
+                  </div>
+                </div>
+                <el-empty v-if="!doneList.length" description="继续加油" :image-size="80" />
+              </section>
+            </div>
+
+            <div v-show="!isBoardMode" class="list-view">
+              <div v-if="list.length" class="task-list single-stack">
+                <div 
+                  v-for="item in list" 
+                  :key="item.id" 
+                  v-memo="[item.updatedAt, item.completed, item.pinned]"
+                  :class="['card', item.color, { 'is-pinned': item.pinned, 'is-completed': item.completed }]"
                 >
-                  <div class="task-top">
-                    <el-checkbox
-                      :model-value="item.completed"
-                      :disabled="isActionLoading(item.id)"
-                      @change="(checked) => toggleCompleted(item, checked)"
-                    >
-                      <span class="task-check-label">已做</span>
-                    </el-checkbox>
-
-                    <div class="task-main">
-                      <div class="task-title-row">
-                        <h3 class="task-title">{{ item.title }}</h3>
-                        <el-tag v-if="item.pinned" size="small" type="danger" effect="light">置顶</el-tag>
-                        <el-tag size="small" effect="plain" :type="colorTagType(item.color)">
-                          {{ colorLabel(item.color) }}
-                        </el-tag>
+                   <div class="card-inner">
+                      <el-checkbox :model-value="item.completed" @change="() => toggleCompleted(item)" />
+                      <div class="card-main" @click="openEdit(item)">
+                        <div class="card-header">
+                          <span class="card-title">{{ item.title }}</span>
+                          <el-tag v-if="item.completed" size="small" type="success">DONE</el-tag>
+                        </div>
+                        <p class="card-body">{{ item.content }}</p>
                       </div>
-
-                      <div class="task-meta">
-                        <span>创建人：{{ item.ownerName }}</span>
-                        <span v-if="activeListScope === 'history'">创建于：{{ formatTime(item.createdAt) }}</span>
-                        <span>更新于：{{ formatTime(item.updatedAt) }}</span>
-                        <span v-if="item.label">标签：{{ item.label }}</span>
+                      <div class="card-actions">
+                        <el-button link @click="openEdit(item)">编辑</el-button>
+                        <el-button link type="danger" @click="removeMemo(item)">删除</el-button>
                       </div>
-                    </div>
-
-                    <div class="task-actions">
-                      <el-button link type="success" size="small" :loading="isActionLoading(item.id)" @click="toggleCompleted(item, true)">标记已做</el-button>
-                      <el-button link type="warning" size="small" @click="togglePinned(item)">
-                        {{ item.pinned ? '取消置顶' : '置顶' }}
-                      </el-button>
-                      <el-button link type="primary" size="small" @click="openEdit(item)">编辑</el-button>
-                      <el-button link type="info" size="small" @click="openHistory(item)">历史</el-button>
-                      <el-button link type="danger" size="small" @click="removeMemo(item)">删除</el-button>
-                    </div>
-                  </div>
-
-                  <p class="task-content">{{ item.content }}</p>
-                </article>
-              </div>
-              <el-empty v-else description="暂无未完成任务" />
-            </section>
-
-            <section class="memo-column done-column">
-              <div class="column-head">
-                <div>
-                  <div class="column-title">已完成</div>
-                  <div class="column-subtitle">{{ stats.doneTotal }} 条</div>
-                </div>
-                <el-tag size="small" type="success" effect="light">完成</el-tag>
-              </div>
-
-              <div v-if="doneList.length" class="task-stack">
-                <article
-                  v-for="item in doneList"
-                  :key="item.id"
-                  class="task-card done"
-                  :class="{ pinned: item.pinned }"
-                >
-                  <div class="task-top">
-                    <el-checkbox
-                      :model-value="item.completed"
-                      :disabled="isActionLoading(item.id)"
-                      @change="(checked) => toggleCompleted(item, checked)"
-                    >
-                      <span class="task-check-label">已做</span>
-                    </el-checkbox>
-
-                    <div class="task-main">
-                      <div class="task-title-row">
-                        <h3 class="task-title">{{ item.title }}</h3>
-                        <el-tag v-if="item.pinned" size="small" type="danger" effect="light">置顶</el-tag>
-                        <el-tag size="small" effect="plain" :type="colorTagType(item.color)">
-                          {{ colorLabel(item.color) }}
-                        </el-tag>
-                      </div>
-
-                      <div class="task-meta">
-                        <span>创建人：{{ item.ownerName }}</span>
-                        <span v-if="activeListScope === 'history'">创建于：{{ formatTime(item.createdAt) }}</span>
-                        <span>完成于：{{ formatTime(item.completedAt || item.updatedAt) }}</span>
-                        <span v-if="item.label">标签：{{ item.label }}</span>
-                      </div>
-                    </div>
-
-                    <div class="task-actions">
-                      <el-button link type="warning" size="small" :loading="isActionLoading(item.id)" @click="toggleCompleted(item, false)">改回未做</el-button>
-                      <el-button link type="warning" size="small" @click="togglePinned(item)">
-                        {{ item.pinned ? '取消置顶' : '置顶' }}
-                      </el-button>
-                      <el-button link type="primary" size="small" @click="openEdit(item)">编辑</el-button>
-                      <el-button link type="info" size="small" @click="openHistory(item)">历史</el-button>
-                      <el-button link type="danger" size="small" @click="removeMemo(item)">删除</el-button>
-                    </div>
-                  </div>
-
-                  <p class="task-content done-content">{{ item.content }}</p>
-                </article>
-              </div>
-              <el-empty v-else description="暂无已完成任务" />
-            </section>
-          </div>
-
-          <!-- 其他筛选模式保持列表视图，便于集中查看单一状态。 -->
-          <div v-else-if="list.length" class="task-list">
-            <article
-              v-for="item in list"
-              :key="item.id"
-              class="task-card task-list-card"
-              :class="{ pinned: item.pinned, done: item.completed }"
-            >
-              <div class="task-top">
-                <el-checkbox
-                  :model-value="item.completed"
-                  :disabled="isActionLoading(item.id)"
-                  @change="(checked) => toggleCompleted(item, checked)"
-                >
-                  <span class="task-check-label">已做</span>
-                </el-checkbox>
-
-                <div class="task-main">
-                  <div class="task-title-row">
-                    <h3 class="task-title">{{ item.title }}</h3>
-                    <el-tag v-if="item.completed" size="small" type="success" effect="light">已完成</el-tag>
-                    <el-tag v-if="item.pinned" size="small" type="danger" effect="light">置顶</el-tag>
-                    <el-tag size="small" effect="plain" :type="colorTagType(item.color)">
-                      {{ colorLabel(item.color) }}
-                    </el-tag>
-                  </div>
-
-                  <div class="task-meta">
-                    <span>创建人：{{ item.ownerName }}</span>
-                    <span v-if="activeListScope === 'history'">创建于：{{ formatTime(item.createdAt) }}</span>
-                    <span>更新于：{{ formatTime(item.updatedAt) }}</span>
-                    <span v-if="item.completedAt">完成于：{{ formatTime(item.completedAt) }}</span>
-                    <span v-if="item.label">标签：{{ item.label }}</span>
-                  </div>
-                </div>
-
-                <div class="task-actions">
-                  <el-button link type="success" size="small" :loading="isActionLoading(item.id)" @click="toggleCompleted(item, !item.completed)">
-                    {{ item.completed ? '改回未做' : '标记已做' }}
-                  </el-button>
-                  <el-button link type="warning" size="small" @click="togglePinned(item)">
-                    {{ item.pinned ? '取消置顶' : '置顶' }}
-                  </el-button>
-                  <el-button link type="primary" size="small" @click="openEdit(item)">编辑</el-button>
-                  <el-button link type="info" size="small" @click="openHistory(item)">历史</el-button>
-                  <el-button link type="danger" size="small" @click="removeMemo(item)">删除</el-button>
+                   </div>
                 </div>
               </div>
+              <el-empty v-else :description="emptyDescription" />
+            </div>
 
-              <p class="task-content">{{ item.content }}</p>
-            </article>
-          </div>
+            <div v-if="list.length > 0" class="load-more-container">
+              <el-button 
+                :loading="loading" 
+                plain 
+                round 
+                class="load-more-btn"
+                @click="loadNextPage"
+              >
+                向下加载更多任务
+              </el-button>
+            </div>
 
-          <el-empty v-else :description="emptyDescription" />
-        </template>
-      </el-skeleton>
-      <el-alert
-        v-if="loadError"
-        :title="loadError"
-        type="error"
-        show-icon
-        :closable="false"
-        class="load-error"
-      />
-
-      <div class="pager-wrap">
-        <el-pagination
-          v-model:current-page="page"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50]"
-          :total="stats.total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
+          </template>
+        </el-skeleton>
       </div>
-    </el-card>
+    </div>
 
-    <!-- 新增 / 编辑任务抽屉。 -->
-    <el-drawer
-      v-model="editorVisible"
-      :title="editorMode === 'create' ? '新增任务' : '修改任务'"
-      size="540px"
-      destroy-on-close
-    >
-      <el-form :model="form" label-width="72px" class="memo-editor">
-        <el-form-item label="标题" required>
-          <el-input v-model="form.title" placeholder="请输入要做的事情" />
+    <el-drawer v-model="editorVisible" :title="editorMode === 'create' ? '✨ 开启新任务' : '📝 更新任务细节'" size="540px" class="custom-drawer">
+      <el-form :model="form" label-position="top">
+        <el-form-item label="任务名称">
+          <el-input v-model="form.title" placeholder="输入核心目标" maxlength="40" show-word-limit />
         </el-form-item>
-        <el-form-item label="标签">
-          <el-input v-model="form.label" placeholder="例如：客户、今日、紧急" />
-        </el-form-item>
-        <el-form-item label="颜色">
-          <el-select v-model="form.color" placeholder="选择卡片颜色" style="width: 100%">
-            <el-option v-for="option in colorOptions" :key="option.value" :label="option.label" :value="option.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="置顶">
-          <el-switch v-model="form.pinned" active-text="置顶" inactive-text="普通任务" />
-        </el-form-item>
-        <el-form-item label="已做">
-          <el-switch v-model="form.completed" active-text="已完成" inactive-text="未完成" />
-        </el-form-item>
-        <el-form-item label="内容" required>
-          <el-input
-            v-model="form.content"
-            type="textarea"
-            :rows="10"
-            placeholder="记录今天要做的内容、执行细节或补充说明"
-            resize="none"
-          />
+        <div class="form-row">
+          <el-form-item label="分类" style="flex: 1">
+            <el-input v-model="form.label" placeholder="如：工作" />
+          </el-form-item>
+          <el-form-item label="主题色" style="flex: 1">
+            <el-select v-model="form.color">
+              <el-option v-for="c in colorOptions" :key="c.value" :label="c.label" :value="c.value" />
+            </el-select>
+          </el-form-item>
+        </div>
+        <div class="form-row toggle-row">
+          <el-form-item label="置顶显示">
+            <el-switch v-model="form.pinned" />
+          </el-form-item>
+          <el-form-item label="完成状态">
+            <el-switch v-model="form.completed" />
+          </el-form-item>
+        </div>
+        <el-form-item label="详细说明">
+          <el-input v-model="form.content" type="textarea" :rows="10" placeholder="记录具体步骤或想法..." />
         </el-form-item>
       </el-form>
-
       <template #footer>
-        <div class="drawer-footer">
-          <el-button @click="editorVisible = false">取消</el-button>
-          <el-button type="primary" :loading="saving" @click="saveMemo">保存</el-button>
+        <div class="drawer-btns">
+          <el-button @click="editorVisible = false">舍弃修改</el-button>
+          <el-button type="primary" :loading="saving" @click="saveMemo">确 认 保 存</el-button>
         </div>
       </template>
     </el-drawer>
 
-    <!-- 历史记录抽屉。 -->
     <el-drawer v-model="historyVisible" :title="historyTitle" size="420px">
-      <el-timeline v-if="historyList.length">
-        <el-timeline-item
-          v-for="item in historyList"
-          :key="item.id"
-          :timestamp="formatTime(item.createdAt)"
-          placement="top"
-        >
-          <el-card shadow="never" class="history-card">
-            <div class="history-head">
-              <el-tag size="small" :type="actionTag(item.action)">{{ actionLabel(item.action) }}</el-tag>
-              <span class="history-operator">{{ item.operatorName }}</span>
-            </div>
-            <p class="history-title">{{ item.title }}</p>
-            <p class="history-content">{{ item.content }}</p>
-          </el-card>
+       <el-timeline v-if="historyList.length" class="custom-timeline">
+        <el-timeline-item v-for="h in historyList" :key="h.id" :timestamp="formatTime(h.createdAt)" :type="h.action === 'complete' ? 'success' : 'primary'">
+          <div class="log-box">
+            <p class="log-user"><strong>{{ h.operatorName }}</strong> {{ actionLabel(h.action) }}</p>
+            <div class="log-content">{{ h.content }}</div>
+          </div>
         </el-timeline-item>
       </el-timeline>
-      <el-empty v-else description="暂无历史记录" />
+      <el-empty v-else />
     </el-drawer>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, shallowRef } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search } from '@element-plus/icons-vue'
+import { Plus, Search, MoreFilled, Delete } from '@element-plus/icons-vue'
 import { memoApi } from '@/api/memo'
 import { createDebounce } from '@/utils/debounce'
 import { formatDateTime } from '@/utils/navigation'
 import { useCancelableLoader } from '@/composables/useCancelableLoader'
 import { useListQueryState } from '@/composables/useListQueryState'
-import { useInstantListActions } from '@/composables/useInstantListActions'
-import MemoStatsRow from '@/components/memo/MemoStatsRow.vue'
 
-/**
- * 任务备忘录页面。
- * 设计目标：
- * 1. 以“未做 / 已做”作为核心状态，贴合日常待办使用方式；
- * 2. 默认展示双栏任务板，便于快速区分待办和完成项；
- * 3. 支持搜索、置顶、颜色标签、备注历史和分页，兼顾易用性和可维护性。
- */
-const list = ref([])
-const { loading, loadError, run: runListLoad, isLatest } = useCancelableLoader()
+// 1. 响应式状态：使用 shallowRef 优化大型列表性能
+const list = shallowRef([]) 
+const hasMore = ref(false)
+const { loading, run: runListLoad, isLatest } = useCancelableLoader()
 const saving = ref(false)
-const { keyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
-/** 列表范围：今日仅展示当日创建的备忘；历史为之前日期创建的备忘（与后端 scope 一致）。 */
+const { keyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 50, keyword: '' })
 const activeListScope = ref('today')
-/** 与浏览器本地时区一致，传给后端计算「当日」与按日筛选。 */
-const browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
-/** 历史列表：按创建日期（YYYY-MM-DD）筛选，空表示不限制日期。 */
 const historyCreatedOn = ref(null)
 const activeFilter = ref('all')
-const stats = reactive({
-  total: 0,
-  todoTotal: 0,
-  doneTotal: 0,
-  pinnedTotal: 0
-})
+const stats = reactive({ total: 0, todoTotal: 0, doneTotal: 0, pinnedTotal: 0 })
 
+// 2. 交互状态
 const editorVisible = ref(false)
 const editorMode = ref('create')
 const editingId = ref(null)
-const form = reactive({
-  title: '',
-  content: '',
-  label: '',
-  color: 'blue',
-  pinned: false,
-  completed: false
-})
-
+const form = reactive({ title: '', content: '', label: '', color: 'blue', pinned: false, completed: false })
 const historyVisible = ref(false)
-const historyTitle = ref('任务历史')
-const historyList = ref([])
-const { isActionLoading, withActionLock } = useInstantListActions(list)
+const historyTitle = ref('日志')
+const historyList = shallowRef([])
+
+// 3. 静态配置
+const statConfig = [
+  { label: '全部任务', key: 'total', class: '' },
+  { label: '未完成', key: 'todoTotal', class: 'todo' },
+  { label: '已完成', key: 'doneTotal', class: 'done' },
+  { label: '重要置顶', key: 'pinnedTotal', class: 'pinned' }
+]
 
 const listScopeOptions = [
-  { label: '今日', value: 'today' },
-  { label: '历史', value: 'history' }
+  { label: '今日任务', value: 'today' },
+  { label: '往期回顾', value: 'history' }
 ]
-
 const filterOptions = [
   { label: '全部', value: 'all' },
-  { label: '未完成', value: 'todo' },
-  { label: '已完成', value: 'done' },
+  { label: '待办', value: 'todo' },
+  { label: '完成', value: 'done' },
   { label: '置顶', value: 'pinned' }
 ]
-
 const colorOptions = [
-  { label: '蓝色', value: 'blue' },
-  { label: '绿色', value: 'green' },
-  { label: '橙色', value: 'amber' },
-  { label: '紫色', value: 'purple' },
-  { label: '玫红', value: 'rose' },
-  { label: '灰色', value: 'slate' }
+  { label: '经典蓝', value: 'blue' },
+  { label: '薄荷绿', value: 'green' },
+  { label: '珊瑚橙', value: 'amber' },
+  { label: '丁香紫', value: 'purple' },
+  { label: '玫瑰红', value: 'rose' }
 ]
 
-const pageTitle = computed(() =>
-  activeListScope.value === 'history' ? '历史备忘录' : '每日任务备忘录'
-)
-
-const emptyDescription = computed(() =>
-  activeListScope.value === 'history' ? '暂无历史备忘' : '今日暂无任务，点击右上角新增'
-)
-
-const scopeStatCopy = computed(() => {
-  if (activeListScope.value === 'history') {
-    return {
-      totalLabel: '历史条目',
-      totalTip: historyCreatedOn.value
-        ? `创建于 ${historyCreatedOn.value}（本地时区）`
-        : '本地「今日」之前创建的全部备忘',
-      todoTip: '当前列表中尚未标记已做的备忘',
-      doneTip: '当前列表中已勾选的备忘',
-      pinnedTip: '当前列表中置顶的备忘'
-    }
-  }
-  return {
-    totalLabel: '今日任务',
-    totalTip: '按您浏览器时区划分的「今日」内创建的备忘',
-    todoTip: '今日创建、尚未标记已做的任务',
-    doneTip: '今日创建、已打勾的任务',
-    pinnedTip: '今日创建且置顶的事项'
-  }
-})
-
+// 4. 计算逻辑
 const isBoardMode = computed(() => activeFilter.value === 'all')
-const todoList = computed(() => list.value.filter(item => !item.completed))
-const doneList = computed(() => list.value.filter(item => item.completed))
+const todoList = computed(() => list.value.filter(i => !i.completed))
+const doneList = computed(() => list.value.filter(i => i.completed))
+const pageTitle = computed(() => activeListScope.value === 'today' ? '今日任务' : '往期任务')
+const emptyDescription = computed(() => activeListScope.value === 'history' ? '这一天没有任何记录' : '今日还没有任务，给自己定个目标吧')
 
-const colorLabel = (color) => ({ blue: '蓝色', green: '绿色', amber: '橙色', purple: '紫色', rose: '玫红', slate: '灰色' }[color] || '默认')
-const colorTagType = (color) => ({ blue: 'primary', green: 'success', amber: 'warning', purple: 'info', rose: 'danger', slate: 'info' }[color] || 'info')
-
-/**
- * 根据当前筛选条件请求任务列表。
- * @param {number} targetPage - 目标页码
- */
-const loadList = async (targetPage = page.value) => {
-  const runResult = await runListLoad(async ({ signal, seq }) => {
+// 5. 方法函数
+const loadList = async (targetPage = page.value, append = false) => {
+  await runListLoad(async ({ signal, seq }) => {
     const params = {
       page: targetPage,
       pageSize: pageSize.value,
       keyword: keyword.value.trim(),
       filter: activeFilter.value,
-      tz: browserTimeZone
+      tz: Intl.DateTimeFormat().resolvedOptions().timeZone
     }
     if (activeListScope.value === 'history' && historyCreatedOn.value) {
       params.createdOn = historyCreatedOn.value
     }
-    const res =
-      activeListScope.value === 'history'
-        ? await memoApi.listHistory(params, { signal })
-        : await memoApi.list(params, { signal })
+    
+    const res = activeListScope.value === 'history' ? await memoApi.listHistory(params, { signal }) : await memoApi.list(params, { signal })
+    
     if (!isLatest(seq)) return
-    list.value = res.list || []
-    stats.total = Number(res.total || 0)
-    stats.todoTotal = Number(res.todoTotal || 0)
-    stats.doneTotal = Number(res.doneTotal || 0)
-    stats.pinnedTotal = Number(res.pinnedTotal || 0)
-    page.value = Number(res.page || targetPage)
-    pageSize.value = Number(res.pageSize || pageSize.value)
+    
+    list.value = append ? [...list.value, ...(res.list || [])] : (res.list || [])
+    hasMore.value = list.value.length < res.total
+    
+    Object.assign(stats, {
+      total: res.total || 0,
+      todoTotal: res.todoTotal || 0,
+      doneTotal: res.doneTotal || 0,
+      pinnedTotal: res.pinnedTotal || 0
+    })
   })
-  if (!runResult.ok && !runResult.canceled) {
-    ElMessage.error(loadError.value || '获取任务失败')
+}
+
+// 核心修改：加载下一页并给予提示
+const loadNextPage = async () => {
+  if (!hasMore.value) {
+    ElMessage.info({ message: '此时刻系统暂无更多可加载的数据', duration: 2000 })
+    return
+  }
+  page.value++
+  await loadList(page.value, true)
+  
+  if (!hasMore.value) {
+    ElMessage.info({ message: '已经到底啦，没有更多任务了', duration: 2000 })
   }
 }
 
-/**
- * 重置编辑表单。
- */
-const resetForm = () => {
-  form.title = ''
-  form.content = ''
-  form.label = ''
-  form.color = 'blue'
-  form.pinned = false
-  form.completed = false
-  editingId.value = null
-}
-
-/**
- * 打开新增任务抽屉。
- */
 const openCreate = () => {
   editorMode.value = 'create'
-  resetForm()
+  Object.assign(form, { title: '', content: '', label: '', color: 'blue', pinned: false, completed: false })
   editorVisible.value = true
 }
 
-/**
- * 打开编辑抽屉并回填数据。
- * @param {object} row - 任务数据
- */
-const openEdit = (row) => {
+const openEdit = (item) => {
   editorMode.value = 'edit'
-  editingId.value = row.id
-  form.title = row.title || ''
-  form.content = row.content || ''
-  form.label = row.label || ''
-  form.color = row.color || 'blue'
-  form.pinned = Boolean(row.pinned)
-  form.completed = Boolean(row.completed)
+  editingId.value = item.id
+  Object.assign(form, { ...item })
   editorVisible.value = true
 }
 
-/**
- * 统一构造更新 payload，避免编辑、置顶、完成状态维护多份逻辑。
- * @param {object} row - 当前任务
- * @param {object} patch - 需要覆盖的字段
- */
-const buildPayload = (row, patch = {}) => ({
-  title: row.title,
-  content: row.content,
-  label: row.label || '',
-  color: row.color || 'blue',
-  pinned: Boolean(row.pinned),
-  completed: Boolean(row.completed),
-  ...patch
-})
-
-const recalcStatsByList = () => {
-  const rows = Array.isArray(list.value) ? list.value : []
-  stats.total = rows.length
-  stats.todoTotal = rows.filter(item => !item.completed).length
-  stats.doneTotal = rows.filter(item => item.completed).length
-  stats.pinnedTotal = rows.filter(item => item.pinned).length
-}
-
-const appendCreatedMemoToList = (memo) => {
-  if (!memo || !memo.id) return
-  if (activeListScope.value !== 'today') return
-  const exists = list.value.some(item => item.id === memo.id)
-  if (exists) return
-
-  const passFilter = (
-    activeFilter.value === 'all' ||
-    (activeFilter.value === 'todo' && !memo.completed) ||
-    (activeFilter.value === 'done' && memo.completed) ||
-    (activeFilter.value === 'pinned' && memo.pinned)
-  )
-  if (!passFilter) return
-
-  list.value = [memo, ...list.value].slice(0, pageSize.value)
-}
-
-/**
- * 保存新增或修改任务。
- */
 const saveMemo = async () => {
-  if (!form.title.trim()) return ElMessage.warning('标题不能为空')
-  if (!form.content.trim()) return ElMessage.warning('内容不能为空')
-
-  const payload = {
-    title: form.title,
-    content: form.content,
-    label: form.label,
-    color: form.color,
-    pinned: form.pinned,
-    completed: form.completed
-  }
-
+  if (!form.title.trim()) return ElMessage.warning('请填写任务名称')
+  saving.value = true
   try {
-    saving.value = true
-    if (editorMode.value === 'create') {
-      const res = await memoApi.create(payload)
-      appendCreatedMemoToList(res?.memo)
-      recalcStatsByList()
-      ElMessage.success('任务已创建')
-    } else {
-      await memoApi.update(editingId.value, payload)
-      ElMessage.success('任务已更新')
-    }
+    if (editorMode.value === 'create') await memoApi.create(form)
+    else await memoApi.update(editingId.value, form)
+    ElMessage.success('已同步至云端')
     editorVisible.value = false
-    await loadList(1)
-  } catch (error) {
-    ElMessage.error(error?.response?.data?.message || '保存失败')
+    loadList(1)
   } finally {
     saving.value = false
   }
 }
 
-/**
- * 切换任务完成状态。
- * @param {object} row - 任务数据
- * @param {boolean} checked - 新状态
- */
-const toggleCompleted = async (row, checked) => {
-  const nextCompleted = Boolean(checked)
-  const prevCompleted = Boolean(row.completed)
-  const prevCompletedAt = row.completedAt
-
-  // 先做本地状态切换，避免点击后视觉上“还在未完成”。
-  row.completed = nextCompleted
-  row.completedAt = nextCompleted ? (prevCompletedAt || new Date().toISOString()) : null
-  recalcStatsByList()
-
-  const ok = await withActionLock(row.id, async () => {
-    try {
-      await memoApi.update(row.id, buildPayload(row, { completed: nextCompleted }))
-      ElMessage.success(nextCompleted ? '已标记为已做' : '已改回未做')
-      if (activeFilter.value === 'todo' && nextCompleted) {
-        list.value = list.value.filter(item => item.id !== row.id)
-      }
-      if (activeFilter.value === 'done' && !nextCompleted) {
-        list.value = list.value.filter(item => item.id !== row.id)
-      }
-      recalcStatsByList()
-      await loadList(activeFilter.value === 'all' ? page.value : 1)
-    } catch (error) {
-      row.completed = prevCompleted
-      row.completedAt = prevCompletedAt
-      recalcStatsByList()
-      ElMessage.error(error?.response?.data?.message || '操作失败')
-    }
-  })
-  return ok
-}
-
-/**
- * 切换任务置顶状态。
- * @param {object} row - 任务数据
- */
-const togglePinned = async (row) => {
-  const nextPinned = !row.pinned
-  const prevPinned = row.pinned
-  row.pinned = nextPinned
-  recalcStatsByList()
-
-  const ok = await withActionLock(row.id, async () => {
-    try {
-      await memoApi.update(row.id, buildPayload(row, { pinned: nextPinned }))
-      ElMessage.success(nextPinned ? '已置顶' : '已取消置顶')
-      if (activeFilter.value === 'pinned' && !nextPinned) {
-        list.value = list.value.filter(item => item.id !== row.id)
-      }
-      recalcStatsByList()
-      await loadList(page.value)
-    } catch (error) {
-      row.pinned = prevPinned
-      recalcStatsByList()
-      ElMessage.error(error?.response?.data?.message || '操作失败')
-    }
-  })
-  return ok
-}
-
-/**
- * 删除任务。
- * @param {object} row - 任务数据
- */
-const removeMemo = async (row) => {
+const toggleCompleted = async (item) => {
   try {
-    await ElMessageBox.confirm(`确定删除任务「${row.title}」吗？`, '提示', { type: 'warning' })
-    const snapshot = [...list.value]
-    list.value = list.value.filter(item => item.id !== row.id)
-    recalcStatsByList()
-
-    await withActionLock(row.id, async () => {
-      try {
-        await memoApi.remove(row.id)
-        ElMessage.success('删除成功')
-        await loadList(page.value)
-      } catch (error) {
-        list.value = snapshot
-        recalcStatsByList()
-        ElMessage.error(error?.response?.data?.message || '删除失败')
-      }
-    })
-  } catch {
-    // 用户取消删除时不做任何处理。
-  }
+    await memoApi.update(item.id, { ...item, completed: !item.completed })
+    loadList(1)
+  } catch (e) { ElMessage.error('网络繁忙，请重试') }
 }
 
-/**
- * 打开历史记录抽屉。
- * @param {object} row - 任务数据
- */
-const openHistory = async (row) => {
-  historyTitle.value = `${row.title} · 历史记录`
+const togglePinned = async (item) => {
+  try {
+    await memoApi.update(item.id, { ...item, pinned: !item.pinned })
+    loadList(1)
+  } catch (e) { ElMessage.error('操作失败') }
+}
+
+const removeMemo = async (item) => {
+  try {
+    await ElMessageBox.confirm('任务一旦删除将无法找回，确认继续吗？', '删除确认')
+    await memoApi.remove(item.id)
+    loadList(1)
+  } catch {}
+}
+
+const openHistory = async (item) => {
+  historyTitle.value = `${item.title} 的修订轨迹`
   historyVisible.value = true
-  try {
-    const res = await memoApi.history(row.id)
-    historyList.value = res.histories || []
-  } catch (error) {
-    historyList.value = []
-    ElMessage.error(error?.response?.data?.message || '获取历史失败')
-  }
+  const res = await memoApi.history(item.id)
+  historyList.value = res.histories || []
 }
 
-/**
- * 切换页码。
- * @param {number} val - 新页码
- */
-const handleCurrentChange = (val) => {
-  loadList(val)
-}
+const triggerSearch = createDebounce(() => { resetToFirstPage(); loadList(1); }, 300)
+const onKeywordInput = () => triggerSearch()
+const handleFilterChange = () => { resetToFirstPage(); loadList(1); }
+const handleListScopeChange = () => { historyCreatedOn.value = null; resetToFirstPage(); loadList(1); }
+const onHistoryDateChange = () => { resetToFirstPage(); loadList(1); }
+const formatTime = (v) => formatDateTime(v)
+const actionLabel = (a) => ({ create: '创建了任务', update: '更新了内容', complete: '完成了任务', reopen: '重新开启了任务' }[a] || a)
 
-/**
- * 切换每页条数。
- * @param {number} val - 新的 pageSize
- */
-const handleSizeChange = (val) => {
-  pageSize.value = val
-  resetToFirstPage()
-  loadList(page.value)
-}
-
-/**
- * 切换筛选条件。
- */
-const handleFilterChange = () => {
-  resetToFirstPage()
-  loadList(page.value)
-}
-
-/**
- * 今日 / 历史切换。
- */
-const handleListScopeChange = () => {
-  if (activeListScope.value === 'today') {
-    historyCreatedOn.value = null
-  }
-  resetToFirstPage()
-  loadList(1)
-}
-
-/**
- * 历史按创建日期筛选。
- */
-const onHistoryDateChange = () => {
-  resetToFirstPage()
-  loadList(1)
-}
-
-/**
- * 搜索输入防抖，避免每次键入都发请求。
- */
-const triggerSearch = createDebounce(() => {
-  resetToFirstPage()
-  loadList(page.value)
-}, 300)
-
-const onKeywordInput = () => {
-  triggerSearch()
-}
-
-const actionTag = (action) => ({ create: 'success', update: 'warning', delete: 'danger', complete: 'success', reopen: 'info' }[action] || 'info')
-const actionLabel = (action) => ({ create: '创建', update: '修改', delete: '删除', complete: '标记已做', reopen: '改回未做' }[action] || action)
-
-const formatTime = (value) => formatDateTime(value)
-
-onMounted(() => {
-  loadList(1)
-})
-
-onUnmounted(() => {
-  triggerSearch.cancel?.()
-})
+onMounted(() => loadList(1))
 </script>
 
 <style scoped>
-.memo-page {
-  padding: 0;
+/* 容器与背景 */
+.memo-container {
+  padding: 32px;
+  background-color: #fcfdfe;
+  min-height: 100vh;
+  color: #1a1f36;
 }
 
-.memo-stats {
-  margin-bottom: 16px;
+/* 顶部统计区：现代磁贴风 */
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 32px;
 }
-
-.stat-card {
+.stat-item {
+  background: #ffffff;
+  padding: 24px;
   border-radius: 16px;
-  border: none;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03);
+  border: 1px solid #f1f5f9;
+}
+.stat-label { font-size: 14px; color: #64748b; display: block; margin-bottom: 8px; font-weight: 500; }
+.stat-count { font-size: 32px; font-weight: 800; }
+.stat-count.todo { color: #f59e0b; }
+.stat-count.done { color: #10b981; }
+.stat-count.pinned { color: #ef4444; }
+
+/* 核心布局卡片 */
+.memo-wrapper {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05);
+  border: 1px solid #f1f5f9;
+  min-height: 600px;
 }
 
-.stat-label {
-  color: #64748b;
-  font-size: 13px;
-}
-
-.stat-value {
-  margin-top: 6px;
-  font-size: 30px;
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.stat-tip {
-  margin-top: 4px;
-  color: #94a3b8;
-  font-size: 12px;
-}
-
-.memo-card {
-  border-radius: 16px;
-  border: none;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
-}
-
-.page-header {
+/* 头部排版 */
+.memo-header {
+  padding: 28px;
+  border-bottom: 1px solid #f1f5f9;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
+  align-items: center;
   flex-wrap: wrap;
+  gap: 24px;
 }
+.header-left { display: flex; align-items: center; gap: 12px; }
+.memo-title { font-size: 24px; font-weight: 850; letter-spacing: -0.5px; margin: 0; }
+.memo-badge { font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; background: #f1f5f9; color: #475569; }
 
-.page-title {
-  font-size: 18px;
-  font-weight: 800;
-  color: #0f172a;
-}
+.header-right { display: flex; align-items: center; gap: 16px; }
+.vertical-spacer { width: 1px; height: 32px; background: #e2e8f0; margin: 0 4px; }
 
-.history-date-picker {
-  width: 150px;
-}
-
-.header-tools {
+/* 搜索与日期容器 */
+.search-container {
   display: flex;
   align-items: center;
   gap: 12px;
-  flex-wrap: wrap;
-}
-
-.search-input {
-  width: 280px;
-}
-
-.memo-board {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.memo-column {
-  min-width: 0;
-  border: 1px solid #e5e7eb;
-  border-radius: 18px;
-  background: #f8fafc;
-  padding: 14px;
-}
-
-.done-column {
-  background: #f8fbf8;
-}
-
-.column-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.column-title {
-  font-size: 16px;
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.column-subtitle {
-  margin-top: 4px;
-  color: #64748b;
-  font-size: 12px;
-}
-
-.task-stack,
-.task-list {
-  display: grid;
-  gap: 12px;
-}
-
-.task-card {
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
-  padding: 14px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.task-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
-}
-
-.task-card.pinned {
-  border-color: #fca5a5;
-  box-shadow: 0 10px 24px rgba(239, 68, 68, 0.08);
-}
-
-.task-card.done {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fff8 100%);
-}
-
-.task-top {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.task-main {
   flex: 1;
-  min-width: 0;
+  min-width: 450px;
 }
-
-.task-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.task-title {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 700;
-  color: #0f172a;
-  line-height: 1.4;
-}
-
-.task-check-label {
-  font-size: 12px;
-  color: #64748b;
-}
-
-.task-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  color: #64748b;
-  font-size: 12px;
-  margin-top: 8px;
-}
-
-.task-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: flex-end;
-}
-
-.task-content {
-  margin: 12px 0 0;
-  white-space: pre-wrap;
-  line-height: 1.7;
-  color: #334155;
-}
-
-.done-content {
-  color: #475569;
-}
-
-.task-list-card.done .task-title {
-  text-decoration: line-through;
-  color: #64748b;
-}
-
-.pager-wrap {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
-
-.load-error {
-  margin-top: 12px;
-}
-
-.memo-editor {
-  padding-right: 8px;
-}
-
-.drawer-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-.history-card {
+.custom-search { width: 240px; }
+.custom-search :deep(.el-input__wrapper) {
+  background-color: #f8fafc;
+  box-shadow: none !important;
   border-radius: 10px;
-  margin-bottom: 10px;
+  border: 1px solid #e2e8f0;
 }
 
-.history-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
+.date-picker-box {
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.date-picker-box.is-expanded {
+  width: 220px;
+  opacity: 1;
 }
 
-.history-title {
-  margin: 10px 0 8px;
+.custom-segmented {
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.main-add-btn {
+  border-radius: 10px;
+  font-weight: 700;
+  height: 40px;
+  padding: 0 24px;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+/* 看板视图布局 */
+.memo-content { padding: 28px; }
+.board-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.column { background: #f8fafc; border-radius: 16px; padding: 20px; border: 1px solid #f1f5f9; }
+.column-head { display: flex; align-items: center; margin-bottom: 20px; font-weight: 700; }
+.col-indicator { width: 10px; height: 10px; border-radius: 50%; margin-right: 10px; }
+.col-indicator.todo { background: #f59e0b; box-shadow: 0 0 10px rgba(245,158,11,0.3); }
+.col-indicator.done { background: #10b981; box-shadow: 0 0 10px rgba(16,185,129,0.3); }
+.col-num { margin-left: auto; color: #94a3b8; font-size: 12px; background: #fff; padding: 2px 10px; border-radius: 20px; }
+
+/* 任务卡片样式 */
+.task-list { display: flex; flex-direction: column; gap: 14px; }
+.card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #eef2f6;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  cursor: default;
+}
+.card:hover { transform: translateY(-3px); box-shadow: 0 12px 24px -8px rgba(0,0,0,0.08); border-color: #cbd5e1; }
+
+.card::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 15%; bottom: 15%;
+  width: 4px; border-radius: 0 4px 4px 0;
+}
+.card.blue::after { background: #3b82f6; }
+.card.green::after { background: #10b981; }
+.card.amber::after { background: #f59e0b; }
+.card.rose::after { background: #f43f5e; }
+.card.purple::after { background: #a855f7; }
+
+.card.is-completed { opacity: 0.6; }
+.card.is-completed .card-title { text-decoration: line-through; color: #94a3b8; }
+
+.card-inner { padding: 18px; display: flex; gap: 16px; align-items: flex-start; }
+.card-main { flex: 1; cursor: pointer; }
+.card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.card-title { font-size: 15px; font-weight: 700; color: #0f172a; line-height: 1.4; }
+.card-body { font-size: 13px; color: #475569; margin: 0 0 12px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card-meta { display: flex; justify-content: space-between; align-items: center; }
+.tag { font-size: 11px; background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 6px; font-weight: 600; }
+.date { font-size: 11px; color: #cbd5e1; }
+
+/* 核心增加：加载更多与底部提示的样式 */
+.load-more-container {
+  margin-top: 32px;
+  text-align: center;
+  padding-bottom: 16px;
+}
+.load-more-btn {
+  padding: 10px 32px;
   font-weight: 600;
-  color: #0f172a;
+}
+.no-more-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+}
+.no-more-text .line {
+  width: 40px;
+  height: 1px;
+  background-color: #e2e8f0;
 }
 
-.history-content {
-  margin: 0;
-  white-space: pre-wrap;
-  color: #334155;
-  line-height: 1.7;
+/* 表单与抽屉样式 */
+.form-row { display: flex; gap: 20px; }
+.toggle-row { background: #f8fafc; padding: 16px; border-radius: 12px; margin-bottom: 20px; }
+.drawer-btns { display: grid; grid-template-columns: 1fr 2fr; gap: 12px; }
+
+.log-box { background: #f1f5f9; padding: 12px; border-radius: 10px; }
+.log-user { font-size: 13px; margin: 0 0 4px; }
+.log-content { font-size: 12px; color: #64748b; }
+
+/* 响应式适配 */
+@media (max-width: 1280px) {
+  .search-container { min-width: 350px; }
+  .custom-search { width: 180px; }
 }
 
-.history-operator {
-  color: #64748b;
-  font-size: 12px;
-}
-
-@media (max-width: 980px) {
-  .memo-board {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .page-title {
-    font-size: 16px;
-  }
-
-  .header-tools {
-    width: 100%;
-    gap: 8px;
-  }
-
-  .header-tools :deep(.el-segmented) {
-    width: 100%;
-  }
-
-  .search-input {
-    width: 100%;
-  }
-
-  .history-date-picker {
-    width: 100%;
-  }
-
-  .task-top {
-    flex-direction: column;
-  }
-
-  .task-actions {
-    justify-content: flex-start;
-  }
-
-  .pager-wrap {
-    justify-content: flex-start;
-    overflow-x: auto;
-  }
+@media (max-width: 1024px) {
+  .stats-overview { grid-template-columns: 1fr 1fr; }
+  .board-grid { grid-template-columns: 1fr; }
+  .header-right { width: 100%; justify-content: flex-start; }
+  .search-container { width: 100%; min-width: auto; }
 }
 </style>

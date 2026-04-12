@@ -11,16 +11,12 @@
         
         <!-- 提交并保存报价单到后端数据库，使用 isSubmitting 防抖处理高并发重连机制 -->
         <el-button type="success" :icon="DocumentAdd" @click="handleSubmit" :loading="isSubmitting" :disabled="isViewMode">确认保存报价单</el-button>
-        <el-button :icon="List" @click="openHistoryDialog">查看历史记录</el-button>
-        <el-button v-if="isViewMode && enteredFromHistory" type="primary" plain @click="backToCreate">回到新增报价</el-button>
         
         <!-- 模式切换按钮 -->
         <QuotationModeActions
           :is-editing="isEditing"
           :is-view-mode="isViewMode"
-          :entered-from-history="enteredFromHistory"
           @reset="resetDraft"
-          @back="backToCreate"
           @switch-edit="switchToEdit"
         />
       </div>
@@ -160,114 +156,28 @@
         </el-table>
       </el-card>
     </el-card>
-
-    <el-dialog v-model="historyDialogVisible" title="历史报价单" width="1100px" :lock-scroll="true" append-to-body class="history-dialog">
-      <div class="history-toolbar">
-        <el-input v-model="searchKeyword" placeholder="按公司名称 / 名称搜索" clearable style="max-width: 340px" @input="onHistoryKeywordInput" />
-        <el-tag type="info">{{ role === 'admin' ? '管理员可查看所有人的报价单' : '仅显示自己的历史记录' }}</el-tag>
-      </div>
-
-      <div class="history-content-wrap">
-        <el-collapse v-if="groupedHistoryList.length" class="company-collapse">
-          <el-collapse-item v-for="group in groupedHistoryList" :key="group.companyName" :name="group.companyName">
-            <template #title>
-              <div class="collapse-title">
-                <span class="collapse-company">{{ group.companyName }}</span>
-                <el-tag size="small" type="info" effect="plain">{{ group.count }} 份</el-tag>
-              </div>
-            </template>
-
-            <el-table :data="group.records" stripe border :header-cell-style="headerStyle" class="smart-table">
-              <el-table-column prop="quotationNo" label="名称" min-width="150" />
-              <el-table-column prop="ownerName" label="提交人" width="120" v-if="role === 'admin'" />
-              <el-table-column prop="finalPrice" label="成交价" width="120" align="right">
-                <template #default="{ row }">¥ {{ formatMoney(row.finalPrice) }}</template>
-              </el-table-column>
-              <el-table-column prop="createDate" label="创建时间" width="120" />
-              <el-table-column label="状态" width="110" align="center">
-                <template #default="{ row }">
-                  <el-tag :type="statusTag(row.status)">{{ statusLabel(row.status) }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="260" fixed="right" align="center">
-                <template #default="{ row }">
-                  <el-button link type="primary" size="small" @click="viewHistory(row)">查看</el-button>
-                  <el-button link type="warning" size="small" :loading="isActionLoading(row.id)" @click="editHistory(row)" :disabled="row.status === 'approved' && role !== 'admin'">修改</el-button>
-                  <el-button link type="danger" size="small" :loading="isActionLoading(row.id)" @click="deleteHistory(row)">删除</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-collapse-item>
-        </el-collapse>
-        <el-empty v-else description="暂无历史报价单" />
-      </div>
-      <div class="history-pager">
-        <el-pagination
-          v-model:current-page="historyPage"
-          v-model:page-size="historyPageSize"
-          :page-sizes="[20, 50, 100]"
-          :total="historyTotal"
-          layout="total, sizes, prev, pager, next"
-          @current-change="handleHistoryPageChange"
-          @size-change="handleHistoryPageSizeChange"
-        />
-      </div>
-
-      <template #footer>
-        <el-button @click="historyDialogVisible = false">关闭</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Delete, DocumentAdd, List, Plus, Refresh } from '@element-plus/icons-vue'
+import { Delete, DocumentAdd, Plus, Refresh } from '@element-plus/icons-vue'
 import { quotationApi } from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
 import { useQuotationHistory } from '@/composables/useQuotationHistory'
-import { readCurrentUser } from '@/utils/navigation'
 import QuotationModeActions from '@/components/quotation/QuotationModeActions.vue'
 
-// 当前用户角色判断，处理只读/读写权限
-// 当前账号角色会影响报价单的查看和编辑权限。
-const role = ref(readCurrentUser().role || 'user')
 const headerStyle = { background: '#f8fafc', color: '#475569', fontWeight: 'bold', textAlign: 'center' }
 
 // 控制全页面并发状态的 Loading
 const parsing = ref(false)
 const isSubmitting = ref(false)
-const enteredFromHistory = ref(false)
 
 // 格式化金额：保留两位小数并添加千分位
 const formatMoney = (val) => {
   const num = Number(val || 0)
   return num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-}
-
-// 报价单状态对应的标签样式
-const statusTag = (status) => {
-  const tags = {
-    draft: 'info',
-    pending: 'warning',
-    approved: 'success',
-    rejected: 'danger',
-    deleted: 'info'
-  }
-  return tags[status] || 'info'
-}
-
-// 报价单状态对应的中文文案
-const statusLabel = (status) => {
-  const labels = {
-    draft: '草稿',
-    pending: '待审批',
-    approved: '已通过',
-    rejected: '已驳回',
-    deleted: '已删除'
-  }
-  return labels[status] || status
 }
 
 // --- [状态管理] 报价单草稿逻辑 ---
@@ -300,42 +210,18 @@ const {
   setFinalPriceManual, // 切换到手动指定成交价状态
   restoreAutoFinalPrice, // 恢复通过折扣计算成交价的状态
   loadRecord,
-  setMode,
   getPayload,
   originalPayloadStr // 暴露深比对历史快照
 } = useQuotationDraft()
 
 // --- [状态管理] 历史记录逻辑 ---
 const {
-  historyDialogVisible,
-  searchKeyword,
-  groupedHistoryList,
-  isActionLoading,
-  page: historyPage,
-  pageSize: historyPageSize,
-  total: historyTotal,
-  handlePageChange: handleHistoryPageChange,
-  handlePageSizeChange: handleHistoryPageSizeChange,
-  onKeywordInput: onHistoryKeywordInput,
   saveQuotation,
-  deleteHistory,
-  openHistoryDialog,
-  viewHistory: rawViewHistory,
-  editHistory: rawEditHistory
+  deleteHistory
 } = useQuotationHistory({ 
   api: quotationApi, 
   loadToEditor: (record, mode) => loadRecord(record, mode) 
 })
-
-const viewHistory = (record) => {
-  enteredFromHistory.value = true
-  rawViewHistory(record)
-}
-
-const editHistory = (record) => {
-  enteredFromHistory.value = false
-  rawEditHistory(record)
-}
 
 const handleManualFinalPriceChange = (value) => {
   if (isViewMode.value) return
@@ -435,54 +321,17 @@ const handleSubmit = async () => {
 
 const switchToEdit = () => {
   if (!isViewMode.value) return
-  enteredFromHistory.value = false
-  setMode('edit')
+  loadRecord({
+    id: editingHistoryId.value,
+    quotationNo: quotationNo.value,
+    companyName: companyName.value,
+    remark: remark.value,
+    discount: discount.value,
+    finalPrice: finalPrice.value,
+    isManual: isManualFinalPrice.value,
+    items: items.value
+  }, 'edit')
 }
-
-const backToCreate = () => {
-  enteredFromHistory.value = false
-  resetDraft()
-}
-
-const DIALOG_SCROLL_ROOT_LOCK = 'dialog-scroll-root-lock'
-let prevBodyPaddingRight = ''
-
-const setDialogRootLock = (locked) => {
-  const html = document.documentElement
-  const body = document.body
-  const app = document.getElementById('app')
-  if (!html || !body) return
-
-  if (locked) {
-    const scrollbarWidth = Math.max(0, window.innerWidth - html.clientWidth)
-    prevBodyPaddingRight = body.style.paddingRight || ''
-    html.classList.add(DIALOG_SCROLL_ROOT_LOCK)
-    body.classList.add(DIALOG_SCROLL_ROOT_LOCK)
-    app?.classList.add(DIALOG_SCROLL_ROOT_LOCK)
-    if (scrollbarWidth > 0) {
-      body.style.paddingRight = `${scrollbarWidth}px`
-    }
-    return
-  }
-
-  html.classList.remove(DIALOG_SCROLL_ROOT_LOCK)
-  body.classList.remove(DIALOG_SCROLL_ROOT_LOCK)
-  app?.classList.remove(DIALOG_SCROLL_ROOT_LOCK)
-  body.style.paddingRight = prevBodyPaddingRight
-}
-
-watch(historyDialogVisible, (visible) => {
-  setDialogRootLock(Boolean(visible))
-})
-
-onMounted(() => {
-  enteredFromHistory.value = false
-  resetDraft()
-})
-
-onBeforeUnmount(() => {
-  setDialogRootLock(false)
-})
 </script>
 
 <style scoped>
@@ -496,14 +345,6 @@ onBeforeUnmount(() => {
 .price-summary strong { color: #020617; font-size: 15px; }
 .price-actions { margin-top: 14px; }
 .hint-row { margin-top: 10px; color: #64748b; font-size: 13px; line-height: 1.6; }
-.history-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-.history-content-wrap { overflow: visible; }
-.company-collapse { border-top: 1px solid #e2e8f0; }
-.collapse-title { display: flex; align-items: center; gap: 10px; }
-.collapse-company { font-weight: 700; color: #1e293b; }
-.history-pager { margin-top: 14px; display: flex; justify-content: flex-end; }
-.history-dialog :deep(.el-dialog__body) { max-height: none; overflow: visible; }
-
 @media (max-width: 960px) {
   .price-summary { grid-template-columns: 1fr; }
 }
@@ -514,25 +355,5 @@ onBeforeUnmount(() => {
     gap: 8px;
   }
 
-  .history-toolbar {
-    margin-bottom: 10px;
-    align-items: flex-start;
-  }
-
-  .history-toolbar :deep(.el-input),
-  .history-toolbar :deep(.el-input__wrapper) {
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-
-  .history-pager {
-    justify-content: flex-start;
-    overflow-x: auto;
-  }
-
-  .collapse-title {
-    flex-wrap: wrap;
-    gap: 6px;
-  }
 }
 </style>

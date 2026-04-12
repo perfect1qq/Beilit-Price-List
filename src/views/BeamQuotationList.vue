@@ -4,7 +4,6 @@
       <div class="toolbar">
         <el-button type="primary" :icon="Plus" @click="addRow">添加一行</el-button>
         <el-button type="success" :icon="DocumentAdd" :loading="saving" @click="handleSave">提交保存</el-button>
-        <el-button :icon="List" @click="goToHistory">历史记录</el-button>
         
         <div class="name-group">
           <span class="label">横梁名称:</span>
@@ -45,12 +44,10 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Plus, Delete, DocumentAdd, List } from '@element-plus/icons-vue'
+import { Plus, Delete, DocumentAdd } from '@element-plus/icons-vue'
 import { beamApi } from '../api/beam'
 
-const router = useRouter()
 const recordName = ref('')
 const items = ref([{ name: '', length: '', spec: '', maxLoad: '' }])
 const saving = ref(false)
@@ -105,7 +102,6 @@ const handleSave = async () => {
   }
 }
 
-const goToHistory = () => router.push('/beam-quotation/history')
 </script>
 
 <style scoped>

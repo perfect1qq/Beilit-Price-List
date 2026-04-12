@@ -1,12 +1,19 @@
 <template>
   <div class="beam-quotation-history-container">
     <div v-if="viewState === 'list'" class="history-list-view">
-      <el-card shadow="never" class="history-card">
+      <el-card shadow="never" class="history-card" v-loading="loading">
         <div class="search-toolbar">
-          <el-input v-model="searchKeyword" placeholder="按横梁名称模糊搜索" clearable :prefix-icon="Search" style="width: 320px" />
+          <el-input
+            v-model="searchKeyword"
+            placeholder="按横梁名称模糊搜索"
+            clearable
+            :prefix-icon="Search"
+            style="width: 320px"
+            @input="onKeywordInput"
+          />
         </div>
 
-        <el-table :data="filteredHistoryList" stripe border style="width: 100%" :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }" class="smart-table">
+        <el-table :data="historyList" stripe border style="width: 100%" :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }" class="smart-table">
           <el-table-column label="时间" width="120" align="center">
             <template #default="{ row }">{{ formatDate(row.createdAt || row.updatedAt) }}</template>
           </el-table-column>
@@ -28,7 +35,19 @@
             </template>
           </el-table-column>
         </el-table>
-        <el-empty v-if="!filteredHistoryList.length" description="暂无数据" />
+        <el-empty v-if="!historyList.length" description="暂无数据" />
+
+        <div class="pager-wrap">
+          <el-pagination
+            v-model:current-page="page"
+            v-model:page-size="pageSize"
+            :page-sizes="[10, 20, 50]"
+            :total="total"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </div>
       </el-card>
     </div>
 
@@ -78,15 +97,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, Delete } from '@element-plus/icons-vue'
 import { beamApi } from '../api/beam'
 import { useInstantListActions } from '@/composables/useInstantListActions'
+import { useListQueryState } from '@/composables/useListQueryState'
+import { createDebounce } from '@/utils/debounce'
 
 const viewState = ref('list')
 const historyList = ref([])
-const searchKeyword = ref('')
+const { page, pageSize, keyword: searchKeyword, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
+const total = ref(0)
+const loading = ref(false)
 const { isActionLoading, withActionLock, replaceById, removeById } = useInstantListActions(historyList)
 
 // 编辑数据
@@ -95,17 +118,50 @@ const editingName = ref('')
 const editingItems = ref([])
 const originalDataStr = ref('') // 用于深比较
 
-const fetchList = async () => {
+const loadList = async (targetPage = page.value) => {
+  loading.value = true
   try {
-    const res = await beamApi.list()
-    historyList.value = res.list || []
-  } catch {}
+    const res = await beamApi.list({ page: targetPage, pageSize: pageSize.value, keyword: searchKeyword.value.trim() })
+    const rawList = res?.list || res?.records || res?.items || res || []
+    const list = Array.isArray(rawList) ? rawList : []
+    const hasPaginationMeta = Boolean(res && (Object.prototype.hasOwnProperty.call(res, 'total') || Object.prototype.hasOwnProperty.call(res, 'page') || Object.prototype.hasOwnProperty.call(res, 'pageSize')))
+
+    if (hasPaginationMeta) {
+      historyList.value = list
+      total.value = Number(res?.total ?? list.length ?? 0)
+    } else {
+      const start = (targetPage - 1) * pageSize.value
+      historyList.value = list.slice(start, start + pageSize.value)
+      total.value = list.length
+    }
+
+    page.value = Number(res?.page || targetPage)
+    pageSize.value = Number(res?.pageSize || pageSize.value)
+  } catch (error) {
+    ElMessage.error(error?.response?.data?.message || error?.message || '历史记录加载失败')
+  } finally {
+    loading.value = false
+  }
 }
 
-const filteredHistoryList = computed(() => {
-  const kw = searchKeyword.value.trim().toLowerCase()
-  return historyList.value.filter(item => (item.name || '').toLowerCase().includes(kw))
-})
+const triggerSearch = createDebounce(async () => {
+  resetToFirstPage()
+  await loadList(1)
+}, 300)
+
+const onKeywordInput = () => {
+  triggerSearch()
+}
+
+const handleCurrentChange = async (val) => {
+  await loadList(val)
+}
+
+const handleSizeChange = async (val) => {
+  pageSize.value = val
+  resetToFirstPage()
+  await loadList(1)
+}
 
 const enterDetail = (row, mode) => {
   editingId.value = row.id
@@ -117,9 +173,9 @@ const enterDetail = (row, mode) => {
   viewState.value = mode
 }
 
-const backToList = () => {
+const backToList = async () => {
   viewState.value = 'list'
-  fetchList()
+  await loadList(page.value)
 }
 
 const addRow = () => editingItems.value.push({ name: '', length: '', spec: '', maxLoad: '' })
@@ -161,7 +217,7 @@ const handleUpdate = async () => {
 
     backToList()
   } catch {
-    await fetchList()
+    await loadList(page.value)
     ElMessage.error('历史记录里面有相同的横梁名称')
   }
 }
@@ -174,10 +230,10 @@ const handleDelete = async (row) => {
       await beamApi.remove(row.id)
     })
     ElMessage.success('删除成功')
-    fetchList()
+    await loadList(page.value)
   } catch (error) {
     if (error !== 'cancel') {
-      await fetchList()
+      await loadList(page.value)
       ElMessage.error(error?.message || '删除失败')
     }
   }
@@ -193,7 +249,7 @@ const formatDate = (d) => {
   return `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`
 }
 
-onMounted(fetchList)
+onMounted(loadList)
 </script>
 
 <style scoped>
@@ -203,6 +259,7 @@ onMounted(fetchList)
 .detail-toolbar { justify-content: flex-start; }
 .name-display { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .label { font-weight: bold; color: #475569; }
+.pager-wrap { margin-top: 16px; display: flex; justify-content: flex-end; }
 
 @media (max-width: 768px) {
   .search-toolbar,
@@ -226,6 +283,10 @@ onMounted(fetchList)
   .name-display :deep(.el-input),
   .name-display :deep(.el-input__wrapper) {
     width: 100% !important;
+  }
+
+  .pager-wrap {
+    justify-content: center;
   }
 }
 </style>
