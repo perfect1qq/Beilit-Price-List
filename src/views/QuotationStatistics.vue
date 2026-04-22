@@ -1,14 +1,21 @@
 <template>
+
+  <!-- * @module views/QuotationStatistics
+  * @description 报价单统计页面
+  *
+  * 功能：
+  * - 重型货架解析汇总
+  * - AI 智能解析报价文本
+  * - 统计数据可视化展示 -->
+
+
   <!-- 重型货架解析汇总页面 -->
   <div class="page">
     <section class="panel editor">
       <h1>重型货架部件智能汇总</h1>
-      
+
       <!-- 文本解析区 -->
-      <textarea
-        v-model="rawText"
-        placeholder="把货架报价单内的文本内容直接粘贴到这里，点击生成汇总即可自动计算..."
-      />
+      <textarea v-model="rawText" placeholder="把货架报价单内的文本内容直接粘贴到这里，点击生成汇总即可自动计算..." />
 
       <div class="toolbar">
         <button type="button" class="primary" @click="parseNow" :disabled="loading">
@@ -64,6 +71,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { quotationStatisticsApi } from '../api/quotation'
+import { to } from '@/utils/async'
 import { ElMessage } from 'element-plus'
 
 const rawText = ref('')
@@ -75,32 +83,32 @@ const loading = ref(false)
 /**
  * 触发后端解析文本接口
  */
-async function parseNow() {
+async function parseNow () {
   if (!rawText.value.trim()) {
     return ElMessage.warning('请先提供完整的货架报价文本用于解析。')
   }
 
   loading.value = true
-  try {
-    const result = await quotationStatisticsApi.parse(rawText.value)
-    parts.value = result.parts || []
-    errors.value = result.errors || []
-    warnings.value = result.warnings || []
-
-    if (errors.value.length) {
-      ElMessage.warning('文本存在无法精准识别的内容区块，请检查页面“错误”反馈。')
-    } else {
-      ElMessage.success('文本解析及计算转换成功')
-    }
-  } catch (error) {
-    ElMessage.error(error?.response?.data?.message || '智能引擎解析失败，请检查文本格式或服务端运行状态。')
-  } finally {
+  const [err, result] = await to(quotationStatisticsApi.parse(rawText.value))
+  if (err) {
+    ElMessage.error(err?.response?.data?.message || '智能引擎解析失败，请检查文本格式或服务端运行状态。')
     loading.value = false
+    return
   }
+  parts.value = result.parts || []
+  errors.value = result.errors || []
+  warnings.value = result.warnings || []
+
+  if (errors.value.length) {
+    ElMessage.warning('文本存在无法精准识别的内容区块，请检查页面"错误"反馈。')
+  } else {
+    ElMessage.success('文本解析及计算转换成功')
+  }
+  loading.value = false
 }
 
 /** 清空当前分析状态 */
-function clearText() {
+function clearText () {
   rawText.value = ''
   parts.value = []
   errors.value = []
@@ -131,7 +139,7 @@ const summaryCards = computed(() => {
   background: white;
   color: #0f172a;
   box-sizing: border-box;
-  
+
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
@@ -145,34 +153,130 @@ const summaryCards = computed(() => {
   margin-bottom: 20px;
 }
 
-h1 { margin: 0 0 16px; font-size: 20px; font-weight: 800; color: #1e293b; }
-h2 { margin: 0 0 12px; font-size: 16px; font-weight: bold; border-left: 4px solid #6366f1; padding-left: 10px; line-height: 1.1; }
+h1 {
+  margin: 0 0 16px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: bold;
+  border-left: 4px solid #6366f1;
+  padding-left: 10px;
+  line-height: 1.1;
+}
 
 textarea {
-  width: 100%; min-height: 240px; resize: vertical; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; font-size: 14px; line-height: 1.6; outline: none; box-sizing: border-box; background: #f8fafc; transition: all 0.3s;
+  width: 100%;
+  min-height: 240px;
+  resize: vertical;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  outline: none;
+  box-sizing: border-box;
+  background: #f8fafc;
+  transition: all 0.3s;
 }
 
-textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); background: #fff;}
+textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  background: #fff;
+}
 
-.toolbar { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
 
 button {
-  border: 0; border-radius: 6px; padding: 10px 18px; cursor: pointer; background: #e2e8f0; color: #0f172a; font-weight: 500; transition: all 0.2s; font-size: 14px;
+  border: 0;
+  border-radius: 6px;
+  padding: 10px 18px;
+  cursor: pointer;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-weight: 500;
+  transition: all 0.2s;
+  font-size: 14px;
 }
-button:hover { filter: brightness(0.95); transform: translateY(-1px); }
 
-button.primary { background: #6366f1; color: #fff; box-shadow: 0 4px 6px rgba(99, 102, 241, 0.3); }
-button.primary:hover { background: #4f46e5; }
-button.ghost { background: #f1f5f9; border: 1px solid #e2e8f0;}
+button:hover {
+  filter: brightness(0.95);
+  transform: translateY(-1px);
+}
 
-.error-box { border: 1px solid #fca5a5; background: #fef2f2; color: #991b1b; }
-.warn-box { border: 1px solid #fde68a; background: #fffbeb; color: #92400e; }
-.error-box ul, .warn-box ul { margin: 0; padding-left: 20px; }
+button.primary {
+  background: #6366f1;
+  color: #fff;
+  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.3);
+}
 
-.table-wrap { overflow-x: hidden; overflow-y: visible; border: 1px solid #e2e8f0; border-radius: 8px; }
-table { width: 100%; border-collapse: collapse; table-layout: auto; }
-th, td { padding: 12px 14px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 14px; vertical-align: middle; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
-th { background: #f8fafc; font-weight: bold; color: #475569; }
+button.primary:hover {
+  background: #4f46e5;
+}
+
+button.ghost {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+}
+
+.error-box {
+  border: 1px solid #fca5a5;
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.warn-box {
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.error-box ul,
+.warn-box ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.table-wrap {
+  overflow-x: hidden;
+  overflow-y: visible;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: auto;
+}
+
+th,
+td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  font-size: 14px;
+  vertical-align: middle;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+th {
+  background: #f8fafc;
+  font-weight: bold;
+  color: #475569;
+}
 
 
 @media (max-width: 720px) {
@@ -205,7 +309,8 @@ th { background: #f8fafc; font-weight: bold; color: #475569; }
     min-width: 540px;
   }
 
-  th, td {
+  th,
+  td {
     padding: 10px;
     font-size: 13px;
   }

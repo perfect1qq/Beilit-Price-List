@@ -45,7 +45,7 @@
                       @click="handleNoticeClick(item)"
                     >
                       <div class="notice-item-icon" :class="item.type">
-                        <el-icon><InfoFilled v-if="item.type === 'quotation_submitted'" /><CircleCheckFilled v-else /></el-icon>
+                        <el-icon><InfoFilled v-if="item.type === 'quotation_submitted'" /><Bell v-else-if="item.type === 'memo_reminder'" /><CircleCheckFilled v-else /></el-icon>
                       </div>
                       <div class="notice-content">
                         <div class="notice-text">{{ item.content }}</div>
@@ -372,6 +372,7 @@ onUnmounted(() => {
 .notice-item {
   padding: 12px 14px;
   display: flex;
+  align-items: center;
   gap: 12px;
   cursor: pointer;
   border-bottom: 1px solid rgba(241, 245, 249, 0.9);
@@ -395,6 +396,9 @@ onUnmounted(() => {
 }
 .notice-item-icon.quotation_submitted {
   background: linear-gradient(135deg, #f59e0b, #f97316);
+}
+.notice-item-icon.memo_reminder {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
 }
 .notice-item-icon.default {
   background: linear-gradient(135deg, #22c55e, #14b8a6);

@@ -27,7 +27,7 @@
     <el-form :model="assignForm" label-width="90px">
       <el-form-item label="指派对象" required>
         <el-select v-model="assignForm.userId" placeholder="请选择业务员" filterable style="width: 100%">
-          <el-option v-for="u in staffList" :key="u.id" :label="u.username" :value="u.id" />
+          <el-option v-for="u in staffList" :key="u.id" :label="(u.name || '').trim() || u.username" :value="u.id" />
         </el-select>
       </el-form-item>
     </el-form>

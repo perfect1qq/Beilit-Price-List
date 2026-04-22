@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { ElMessage, ElNotification } from 'element-plus'
+import { to } from '@/utils/async'
 
 /**
  * 顶栏通知中心逻辑（轮询、已读、跳转）封装。
@@ -17,59 +18,57 @@ export const useNavbarNotifications = ({ request, router, userRole }) => {
   }
 
   const fetchUnreadCount = async () => {
-    try {
-      const resCount = await request.get('/api/notifications/unread-count')
-      const newCount = resCount.data?.count ?? 0
-      const oldCount = unreadApprovalCount.value
+    const [countErr, resCount] = await to(request.get('/api/notifications/unread-count'))
+    if (countErr) return
 
-      const resList = await request.get('/api/notifications')
-      noticeList.value = (resList.data.list || []).slice(0, 10)
+    const newCount = resCount.data?.count ?? 0
+    const oldCount = unreadApprovalCount.value
 
-      if (newCount > oldCount) {
-        triggerBellRing()
-        const latest = noticeList.value?.[0]
-        if (latest && !isInitialLoad.value) {
-          ElNotification({
-            title: '系统消息待处理',
-            message: latest.content,
-            type: 'warning',
-            position: 'top-right',
-            duration: 4500,
-            offset: 60,
-            onClick: () => handleNoticeClick(latest)
-          })
-        }
+    const [listErr, resList] = await to(request.get('/api/notifications'))
+    if (listErr) return
+    noticeList.value = (resList.data.list || []).slice(0, 10)
+
+    if (newCount > oldCount) {
+      triggerBellRing()
+      const latest = noticeList.value?.[0]
+      if (latest && !isInitialLoad.value) {
+        ElNotification({
+          title: '系统消息待处理',
+          message: latest.content,
+          type: 'warning',
+          position: 'top-right',
+          duration: 4500,
+          offset: 60,
+          onClick: () => handleNoticeClick(latest)
+        })
       }
-      unreadApprovalCount.value = newCount
-      isInitialLoad.value = false
-    } catch {
-      // ignore
     }
+    unreadApprovalCount.value = newCount
+    isInitialLoad.value = false
   }
 
   const handleNoticeClick = async (notice) => {
     if (!notice?.id) return
-    try {
-      await request.put(`/api/notifications/${notice.id}/read`)
-      await fetchUnreadCount()
-      const targetPath = notice.type === 'quotation_submitted'
-        ? `/approval/${notice.relatedId}?mode=edit`
+    const [err] = await to(request.put(`/api/notifications/${notice.id}/read`))
+    if (err) return
+    await fetchUnreadCount()
+    const targetPath = notice.type === 'quotation_submitted'
+      ? `/approval/${notice.relatedId}?mode=edit`
+      : notice.type === 'memo_reminder'
+        ? `/memo-management?highlight=${notice.relatedId}`
         : '/quotation'
-      router.push(targetPath)
-    } catch (err) {
-      console.error('处理通知失败', err)
-    }
+    router.push(targetPath)
   }
 
   const markAllAsRead = async (e) => {
     if (e) e.stopPropagation()
-    try {
-      await request.post('/api/notifications/read-all')
-      await fetchUnreadCount()
-      ElMessage.success('已全部标记为已读')
-    } catch {
+    const [err] = await to(request.post('/api/notifications/read-all'))
+    if (err) {
       ElMessage.error('操作失败')
+      return
     }
+    await fetchUnreadCount()
+    ElMessage.success('已全部标记为已读')
   }
 
   const goNoticePage = () => {

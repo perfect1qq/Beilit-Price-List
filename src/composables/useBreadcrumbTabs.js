@@ -2,11 +2,8 @@ import { computed, reactive, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { resolveRouteDisplayTitle, readCurrentUser } from '@/utils/navigation'
 
-/**
- * 标签页缓存前缀。
- * 说明：不同账号使用不同的缓存 key，避免超级管理员与测试账号互相串页。
- */
 const STORAGE_PREFIX = 'beilit.visited-views'
+const SESSION_KEY = 'beilit.tab-session-id'
 
 const HOME_VIEW = Object.freeze({
   path: '/home',
@@ -82,8 +79,34 @@ const dedupeAndFixHome = (list) => {
   return result
 }
 
+const isNewTabSession = () => {
+  if (typeof window === 'undefined') return false
+  const existing = window.sessionStorage.getItem(SESSION_KEY)
+  if (!existing) {
+    const sessionId = `tab-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+    window.sessionStorage.setItem(SESSION_KEY, sessionId)
+    return true
+  }
+  return false
+}
+
+const clearStaleTabs = (userKey) => {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.removeItem(getStorageKey(userKey))
+  } catch {
+    // ignore
+  }
+}
+
 const loadViews = (userKey) => {
   if (typeof window === 'undefined') return [HOME_VIEW]
+  
+  if (isNewTabSession()) {
+    clearStaleTabs(userKey)
+    return [HOME_VIEW]
+  }
+  
   try {
     const saved = window.localStorage.getItem(getStorageKey(userKey))
     if (!saved) return [HOME_VIEW]

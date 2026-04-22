@@ -1,19 +1,24 @@
+/**
+* @module views/BeamQuotationHistory
+* @description 横梁载重单历史记录页面
+*
+* 功能：
+* - 查看所有历史横梁载重单（按公司分组）
+* - 搜索和分页
+* - 查看/编辑/删除历史记录
+*/
+
 <template>
   <div class="beam-quotation-history-container">
     <div v-if="viewState === 'list'" class="history-list-view">
       <el-card shadow="never" class="history-card" v-loading="loading">
         <div class="search-toolbar">
-          <el-input
-            v-model="searchKeyword"
-            placeholder="按横梁名称模糊搜索"
-            clearable
-            :prefix-icon="Search"
-            style="width: 320px"
-            @input="onKeywordInput"
-          />
+          <el-input v-model="searchKeyword" placeholder="按横梁名称模糊搜索" clearable :prefix-icon="Search" style="width: 320px"
+            @input="onKeywordInput" />
         </div>
 
-        <el-table :data="historyList" stripe border style="width: 100%" :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }" class="smart-table">
+        <el-table :data="historyList" stripe border style="width: 100%"
+          :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }" class="smart-table">
           <el-table-column label="时间" width="120" align="center">
             <template #default="{ row }">{{ formatDate(row.createdAt || row.updatedAt) }}</template>
           </el-table-column>
@@ -27,121 +32,167 @@
           <el-table-column label="最大载重(kg)" width="140" align="center">
             <template #default="{ row }">{{ getFirstItemValue(row, 'maxLoad') }}</template>
           </el-table-column>
-          <el-table-column label="操作" width="200" align="center">
+          <el-table-column label="操作" :width="isGuest ? 80 : 200" align="center">
             <template #default="{ row }">
               <el-button link type="primary" @click="enterDetail(row, 'view')">查看</el-button>
-              <el-button link type="warning" :loading="isActionLoading(row.id)" @click="enterDetail(row, 'edit')">修改</el-button>
-              <el-button link type="danger" :loading="isActionLoading(row.id)" @click="handleDelete(row)">删除</el-button>
+              <template v-if="!isGuest">
+                <el-button link type="warning" :loading="isActionLoading(row.id)"
+                  @click="enterDetail(row, 'edit')">修改</el-button>
+                <el-button link type="danger" :loading="isActionLoading(row.id)"
+                  @click="handleDelete(row)">删除</el-button>
+              </template>
             </template>
           </el-table-column>
         </el-table>
         <el-empty v-if="!historyList.length" description="暂无数据" />
 
         <div class="pager-wrap">
-          <el-pagination
-            v-model:current-page="page"
-            v-model:page-size="pageSize"
-            :page-sizes="[10, 20, 50]"
-            :total="total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-          />
+          <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]"
+            :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
+            @current-change="handleCurrentChange" />
         </div>
       </el-card>
     </div>
 
     <div v-else class="history-detail-view">
       <el-card shadow="never" class="editor-card">
-        <div class="detail-toolbar">
-          <el-button @click="backToList">返回列表</el-button>
-          <el-button v-if="viewState === 'edit'" type="success" @click="handleUpdate">提交修改</el-button>
-          
-          <div class="name-display">
-            <span class="label">记录名称:</span>
-            <el-input v-model="editingName" :disabled="viewState === 'view'" style="width: 250px" placeholder="必填" />
-          </div>
-        </div>
+        <el-form ref="formRef" :model="formModel">
+          <div class="detail-toolbar">
+            <el-button @click="backToList">返回列表</el-button>
+            <el-button v-if="viewState === 'edit'" type="success" @click="handleUpdate">提交修改</el-button>
 
-        <el-table :data="editingItems" border stripe style="width: 100%; margin-top: 20px" :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }" class="smart-table">
-          <el-table-column label="横梁名称" min-width="180" align="center">
-            <template #default="{ row }">
-              <el-input v-model="row.name" size="small" :disabled="viewState === 'view'" placeholder="必填" />
-            </template>
-          </el-table-column>
-          <el-table-column label="长度(mm)" min-width="140" align="center">
-            <template #default="{ row }">
-              <el-input v-model="row.length" size="small" :disabled="viewState === 'view'" placeholder="必填" />
-            </template>
-          </el-table-column>
-          <el-table-column label="规格(mm)" min-width="160" align="center">
-            <template #default="{ row }">
-              <el-input v-model="row.spec" size="small" :disabled="viewState === 'view'" placeholder="必填" />
-            </template>
-          </el-table-column>
-          <el-table-column label="最大载重(kg)" min-width="150" align="center">
-            <template #default="{ row }">
-              <el-input v-model="row.maxLoad" size="small" :disabled="viewState === 'view'" placeholder="必填" />
-            </template>
-          </el-table-column>
-          <el-table-column v-if="viewState === 'edit'" label="操作" width="90" align="center">
-            <template #default="{ $index }">
-              <el-button link type="danger" :icon="Delete" @click="removeRow($index)" />
-            </template>
-          </el-table-column>
-        </el-table>
-        <el-button v-if="viewState === 'edit'" type="primary" plain :icon="Plus" @click="addRow" style="margin-top: 15px; width: 100%">添加一行</el-button>
+            <div class="name-display">
+              <span class="label">记录名称:</span>
+              <el-form-item prop="recordName" :rules="recordNameRule">
+                <el-input v-model="formModel.recordName" :disabled="viewState === 'view'" style="width: 250px"
+                  placeholder="必填" />
+              </el-form-item>
+            </div>
+          </div>
+
+          <el-table :data="editingItems" border stripe style="width: 100%; margin-top: 20px"
+            :header-cell-style="{ background: '#f8f8f9', textAlign: 'center' }" class="smart-table">
+            <el-table-column label="横梁名称" min-width="180" align="center">
+              <template #default="{ row, $index }">
+                <el-form-item :prop="'editingItems.' + $index + '.name'" :rules="beamNameRule">
+                  <el-input v-model="row.name" size="small" :disabled="viewState === 'view'" placeholder="必填" />
+                </el-form-item>
+              </template>
+            </el-table-column>
+            <el-table-column label="长度(mm)" min-width="140" align="center">
+              <template #default="{ row, $index }">
+                <el-form-item :prop="'editingItems.' + $index + '.length'"
+                  :rules="[{ required: true, message: '请输入长度', trigger: 'blur' }, { validator: (rule, value, callback) => { if (value && !value.trim()) callback(new Error('长度不能只包含空格')); else callback(); }, trigger: 'blur' }]">
+                  <el-input v-model="row.length" size="small" :disabled="viewState === 'view'" placeholder="必填" />
+                </el-form-item>
+              </template>
+            </el-table-column>
+            <el-table-column label="规格(mm)" min-width="160" align="center">
+              <template #default="{ row, $index }">
+                <el-form-item :prop="'editingItems.' + $index + '.spec'"
+                  :rules="[{ required: true, message: '请输入规格', trigger: 'blur' }, { validator: (rule, value, callback) => { if (value && !value.trim()) callback(new Error('规格不能只包含空格')); else callback(); }, trigger: 'blur' }]">
+                  <el-input v-model="row.spec" size="small" :disabled="viewState === 'view'" placeholder="必填" />
+                </el-form-item>
+              </template>
+            </el-table-column>
+            <el-table-column label="最大载重(kg)" min-width="150" align="center">
+              <template #default="{ row, $index }">
+                <el-form-item :prop="'editingItems.' + $index + '.maxLoad'" :rules="positiveDecimalRule('最大载重')">
+                  <el-input v-model="row.maxLoad" size="small" :disabled="viewState === 'view'" placeholder="必填" />
+                </el-form-item>
+              </template>
+            </el-table-column>
+            <el-table-column v-if="viewState === 'edit'" label="操作" width="90" align="center">
+              <template #default="{ $index }">
+                <el-button link type="danger" :icon="Delete" @click="removeRow($index)" />
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-form>
+        <el-button v-if="viewState === 'edit'" type="primary" plain :icon="Plus" @click="addRow"
+          style="margin-top: 15px; width: 100%">添加一行</el-button>
       </el-card>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, reactive, watch, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, Delete } from '@element-plus/icons-vue'
 import { beamApi } from '../api/beam'
+import { to } from '@/utils/async'
 import { useInstantListActions } from '@/composables/useInstantListActions'
-import { useListQueryState } from '@/composables/useListQueryState'
+import { usePagination } from '@/composables/usePagination'
 import { createDebounce } from '@/utils/debounce'
+import { beamNameRule, recordNameRule, positiveIntegerRule, positiveDecimalRule } from '@/utils/formRules'
+import { usePermissions } from '@/composables/usePermissions'
+
+const { isGuest } = usePermissions()
 
 const viewState = ref('list')
 const historyList = ref([])
-const { page, pageSize, keyword: searchKeyword, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
-const total = ref(0)
 const loading = ref(false)
-const { isActionLoading, withActionLock, replaceById, removeById } = useInstantListActions(historyList)
-
-// 编辑数据
 const editingId = ref(null)
 const editingName = ref('')
 const editingItems = ref([])
-const originalDataStr = ref('') // 用于深比较
+const originalDataStr = ref('')
+const formRef = ref(null)
+const formModel = reactive({
+  recordName: '',
+  editingItems: editingItems
+})
 
-const loadList = async (targetPage = page.value) => {
+watch(editingName, (val) => { formModel.recordName = val })
+
+const page = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+const searchKeyword = ref('')
+
+const { isActionLoading, withActionLock, replaceById, removeById } = useInstantListActions(historyList)
+
+const loadList = async (targetPage) => {
+  if (!targetPage) targetPage = page.value || 1
+  if (loading.value) return
   loading.value = true
-  try {
-    const res = await beamApi.list({ page: targetPage, pageSize: pageSize.value, keyword: searchKeyword.value.trim() })
-    const rawList = res?.list || res?.records || res?.items || res || []
-    const list = Array.isArray(rawList) ? rawList : []
-    const hasPaginationMeta = Boolean(res && (Object.prototype.hasOwnProperty.call(res, 'total') || Object.prototype.hasOwnProperty.call(res, 'page') || Object.prototype.hasOwnProperty.call(res, 'pageSize')))
-
-    if (hasPaginationMeta) {
-      historyList.value = list
-      total.value = Number(res?.total ?? list.length ?? 0)
-    } else {
-      const start = (targetPage - 1) * pageSize.value
-      historyList.value = list.slice(start, start + pageSize.value)
-      total.value = list.length
-    }
-
-    page.value = Number(res?.page || targetPage)
-    pageSize.value = Number(res?.pageSize || pageSize.value)
-  } catch (error) {
-    ElMessage.error(error?.response?.data?.message || error?.message || '历史记录加载失败')
-  } finally {
+  const [err, res] = await to(beamApi.list({ page: targetPage, pageSize: pageSize.value, keyword: searchKeyword.value.trim() }))
+  if (err) {
+    ElMessage.error(err?.response?.data?.message || err?.message || '历史记录加载失败')
     loading.value = false
+    return
   }
+  const rawList = res?.list || res?.records || res?.items || res || []
+  const list = Array.isArray(rawList) ? rawList : []
+  const hasPaginationMeta = Boolean(res && (Object.prototype.hasOwnProperty.call(res, 'total') || Object.prototype.hasOwnProperty.call(res, 'page') || Object.prototype.hasOwnProperty.call(res, 'pageSize')))
+
+  if (hasPaginationMeta) {
+    historyList.value = list
+    total.value = Number(res?.total ?? list.length ?? 0)
+  } else {
+    const start = (targetPage - 1) * pageSize.value
+    historyList.value = list.slice(start, start + pageSize.value)
+    total.value = list.length
+  }
+
+  page.value = Number(res?.page || targetPage)
+  pageSize.value = Number(res?.pageSize || pageSize.value)
+  loading.value = false
+}
+
+const handleCurrentChange = (val) => {
+  page.value = val
+  loadList(page.value)
+}
+
+const handleSizeChange = (val) => {
+  pageSize.value = val
+  page.value = 1
+  loadList(1)
+}
+
+const resetToFirstPage = () => {
+  page.value = 1
 }
 
 const triggerSearch = createDebounce(async () => {
@@ -153,23 +204,22 @@ const onKeywordInput = () => {
   triggerSearch()
 }
 
-const handleCurrentChange = async (val) => {
-  await loadList(val)
-}
-
-const handleSizeChange = async (val) => {
-  pageSize.value = val
-  resetToFirstPage()
-  await loadList(1)
-}
 
 const enterDetail = (row, mode) => {
   editingId.value = row.id
   editingName.value = row.name
-  editingItems.value = typeof row.items === 'string' ? JSON.parse(row.items) : JSON.parse(JSON.stringify(row.items))
-  
-  // 保存一份原始数据的字符串，用于比对
-  originalDataStr.value = JSON.stringify({ name: editingName.value, items: editingItems.value })
+  let parsedItems = []
+  try {
+    parsedItems = typeof row.items === 'string' ? JSON.parse(row.items) : JSON.parse(JSON.stringify(row.items || []))
+    if (!Array.isArray(parsedItems)) parsedItems = []
+  } catch {
+    parsedItems = []
+  }
+  editingItems.value = parsedItems
+  formModel.recordName = row.name
+  formModel.items = parsedItems
+
+  originalDataStr.value = JSON.stringify({ name: row.name, items: parsedItems })
   viewState.value = mode
 }
 
@@ -189,79 +239,135 @@ const removeRow = (index) => {
 }
 
 const handleUpdate = async () => {
-  // 需求 1：判断用户是否修改了数据
-  const currentDataStr = JSON.stringify({ name: editingName.value, items: editingItems.value })
+  const [validateErr] = await to(formRef.value?.validate())
+  if (validateErr) return
+
+  const currentName = formModel.recordName
+  const currentDataStr = JSON.stringify({ name: currentName, items: editingItems.value })
   if (currentDataStr === originalDataStr.value) {
     return ElMessage.warning('您没有修改任何数据，无需提交修改。')
   }
 
-  if (!editingName.value.trim()) return ElMessage.warning('记录名称不能为空！')
-
-  // 需求 3：必填项校验
-  if (editingItems.value.length === 0) {
-    return ElMessage.warning('表格数据不能为空，请添加数据！')
-  }
-  const hasEmptyField = editingItems.value.some(item => 
-    !item.name?.trim() || !item.length?.trim() || !item.spec?.trim() || !item.maxLoad?.trim()
-  )
-  if (hasEmptyField) {
-    return ElMessage.warning('表格中的横梁名称、长度、规格、最大载重均为必填项，缺一不可！')
-  }
-
-  try {
-    replaceById(editingId.value, { name: editingName.value, items: JSON.parse(JSON.stringify(editingItems.value)) })
-    await withActionLock(editingId.value, async () => {
-      await beamApi.update(editingId.value, { name: editingName.value, items: editingItems.value })
-    })
-    ElMessage.success('修改成功！')
-
-    backToList()
-  } catch {
+  replaceById(editingId.value, { name: currentName, items: JSON.parse(JSON.stringify(editingItems.value)) })
+  const [err] = await to(withActionLock(editingId.value, async () => {
+    await beamApi.update(editingId.value, { name: currentName, items: editingItems.value })
+  }))
+  if (err) {
     await loadList(page.value)
     ElMessage.error('历史记录里面有相同的横梁名称')
+    return
   }
+  ElMessage.success('修改成功！')
+  backToList()
 }
 
 const handleDelete = async (row) => {
-  try {
-    await ElMessageBox.confirm(`确定删除“${row.name}”？`, '提示', { type: 'warning' })
-    removeById(row.id)
-    await withActionLock(row.id, async () => {
-      await beamApi.remove(row.id)
-    })
-    ElMessage.success('删除成功')
+  const [confirmErr] = await to(ElMessageBox.confirm(`确定删除"${row.name}"？`, '提示', { type: 'warning' }))
+  if (confirmErr) return
+
+  removeById(row.id)
+  const [err] = await to(withActionLock(row.id, async () => {
+    await beamApi.remove(row.id)
+  }))
+  if (err) {
     await loadList(page.value)
-  } catch (error) {
-    if (error !== 'cancel') {
-      await loadList(page.value)
-      ElMessage.error(error?.message || '删除失败')
-    }
+    ElMessage.error(err?.message || '删除失败')
+    return
   }
+  ElMessage.success('删除成功')
+  await loadList(page.value)
 }
 
 const getFirstItemValue = (row, f) => {
-  const items = typeof row.items === 'string' ? JSON.parse(row.items) : row.items
-  return items?.[0]?.[f] || '-'
+  try {
+    const items = typeof row.items === 'string' ? JSON.parse(row.items) : row.items
+    return items?.[0]?.[f] || '-'
+  } catch {
+    return '-'
+  }
 }
 const formatDate = (d) => {
   if (!d) return '-'
   const date = new Date(d)
-  return `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
 }
 
 onMounted(loadList)
 </script>
 
 <style scoped>
-.beam-quotation-history-container { padding: 0; }
-.history-card, .editor-card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-.search-toolbar, .detail-toolbar { margin-bottom: 20px; display: flex; align-items: center; gap: 15px; }
-.detail-toolbar { justify-content: flex-start; }
-.name-display { margin-left: auto; display: flex; align-items: center; gap: 10px; }
-.label { font-weight: bold; color: #475569; }
-.pager-wrap { margin-top: 16px; display: flex; justify-content: flex-end; }
+.beam-quotation-history-container {
+  padding: 0;
+}
+
+.history-card,
+.editor-card {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.search-toolbar,
+.detail-toolbar {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.detail-toolbar {
+  justify-content: flex-start;
+}
+
+.name-display {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  vertical-align: middle;
+}
+
+.label {
+  font-weight: bold;
+  color: #475569;
+  vertical-align: middle;
+  line-height: normal;
+}
+
+.name-display :deep(.el-form-item) {
+  vertical-align: middle;
+  margin-bottom: 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.name-display :deep(.el-form-item__error) {
+  font-size: 11px;
+  line-height: 1.6;
+  padding-top: 2px;
+  position: absolute;
+  top: 100%;
+  left: 0;
+}
+
+.pager-wrap {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 22px;
+}
+
+:deep(.el-form-item__error) {
+  font-size: 11px;
+  line-height: 1.6;
+  padding-top: 2px;
+}
 
 @media (max-width: 768px) {
+
   .search-toolbar,
   .detail-toolbar {
     margin-bottom: 12px;

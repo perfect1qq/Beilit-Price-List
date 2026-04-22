@@ -1,3 +1,13 @@
+/**
+ * @module views/HomeView
+ * @description 系统首页/工作台
+ * 
+ * 功能：
+ * - 欢迎信息展示
+ * - 快捷入口卡片（报价单、横梁载重单、美金换算）
+ * - 用户信息展示
+ */
+
 <template>
   <div class="home-page">
     <el-card class="hero-card" shadow="never">
@@ -49,7 +59,7 @@ onMounted(() => {
   if (saved) {
     try {
       const user = JSON.parse(saved)
-      userName.value = user.username || '管理员'
+      userName.value = user.name?.trim() || user.username || '管理员'
     } catch {
       userName.value = '管理员'
     }

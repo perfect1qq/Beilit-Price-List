@@ -1,4 +1,18 @@
+/**
+ * @file global.css
+ * @description 全局样式定义
+ * 
+ * 包含：
+ * - CSS 变量（主题色、圆角等）
+ * - 基础样式重置
+ * - Element Plus 组件样式覆盖
+ * - 智能表格样式
+ * - 响应式布局适配
+ */
+
+/* ==================== CSS 变量（主题配置） ==================== */
 :root {
+  /* 主色调 */
   --el-color-primary: #3b82f6;
   --el-color-primary-light-3: #60a5fa;
   --el-color-primary-light-5: #93c5fd;
@@ -7,14 +21,18 @@
   --el-color-primary-light-9: #eff6ff;
   --el-color-primary-dark-2: #2563eb;
 
+  /* 功能色 */
   --el-color-success: #10b981;
   --el-color-warning: #f59e0b;
   --el-color-danger: #ef4444;
   --el-color-info: #64748b;
 
+  /* 圆角 */
   --el-border-radius-base: 10px;
   --el-border-radius-small: 8px;
 }
+
+/* ==================== 基础样式重置 ==================== */
 
 html,
 body,
@@ -27,10 +45,7 @@ body,
   overflow-y: visible;
 }
 
-html,
-body {
-  overflow-y: auto;
-}
+html, body { overflow-y: auto }
 
 * {
   box-sizing: border-box;
@@ -44,6 +59,9 @@ body {
   scrollbar-gutter: stable;
 }
 
+/* ==================== Element Plus 组件样式覆盖 ==================== */
+
+/* 容器最小宽度修复 */
 .el-container,
 .el-main,
 .el-aside,
@@ -60,16 +78,11 @@ body {
   overflow-y: visible;
 }
 
-/* 弹窗打开时强制根节点禁滚，避免出现第二根纵向滚动条。 */
+/* 弹窗滚动锁定 */
 html.dialog-scroll-root-lock,
 html.dialog-scroll-root-lock body,
 html.dialog-scroll-root-lock body #app,
-html.dialog-scroll-root-lock body .el-main {
-  overflow: hidden !important;
-}
-
-/* 当任意 Element Plus 弹窗打开时，禁止应用容器滚动，
-   仅保留遮罩层/弹窗一根纵向滚动条。 */
+html.dialog-scroll-root-lock body .el-main,
 body.el-popup-parent--hidden,
 body.el-popup-parent--hidden #app,
 body.el-popup-parent--hidden .el-main {
@@ -81,6 +94,7 @@ body.el-popup-parent--hidden .el-main {
   overflow-x: hidden !important;
 }
 
+/* 统一圆角 */
 .el-card,
 .el-dialog,
 .el-dropdown-menu,
@@ -97,6 +111,7 @@ body.el-popup-parent--hidden .el-main {
   border-radius: 8px;
 }
 
+/* 主按钮增强效果 */
 .el-button--primary {
   box-shadow: 0 2px 4px rgba(59, 130, 246, 0.18);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -107,11 +122,8 @@ body.el-popup-parent--hidden .el-main {
   box-shadow: 0 4px 8px rgba(59, 130, 246, 0.22);
 }
 
-/* 更接近成熟后台系统的表格方式：
-   - 表格宽度占满容器
-   - 使用固定布局，列宽更稳定
-   - 文本列按需要自动换行，短内容仍保持单行显示
-   - 操作列按钮不强制换行 */
+/* ==================== 智能表格样式 ==================== */
+
 .el-table.smart-table {
   width: 100% !important;
   table-layout: auto !important;
@@ -164,10 +176,10 @@ body.el-popup-parent--hidden .el-main {
   height: auto !important;
 }
 
+/* ==================== 响应式布局适配 ==================== */
+
 @media (max-width: 768px) {
-  body {
-    font-size: 14px;
-  }
+  body { font-size: 14px }
 
   .el-dialog {
     width: min(94vw, 560px) !important;
@@ -178,10 +190,9 @@ body.el-popup-parent--hidden .el-main {
     width: min(94vw, 420px) !important;
   }
 
-  .el-form-item {
-    margin-bottom: 14px;
-  }
+  .el-form-item { margin-bottom: 14px }
 
+  /* 表格移动端适配 */
   .el-table.smart-table .el-table__inner-wrapper,
   .el-table.smart-table .el-table__header-wrapper,
   .el-table.smart-table .el-table__body-wrapper,
@@ -198,6 +209,7 @@ body.el-popup-parent--hidden .el-main {
     font-size: 13px;
   }
 
+  /* 工具栏响应式 */
   .toolbar,
   .history-toolbar,
   .search-toolbar,
@@ -243,4 +255,3 @@ body.el-popup-parent--hidden .el-main {
     min-height: 34px;
   }
 }
-

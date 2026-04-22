@@ -1,3 +1,13 @@
+/**
+ * @module views/UsdConversion
+ * @description 美金汇率换算工具页面
+ * 
+ * 功能：
+ * - 人民币 ↔ 美金汇率换算
+ * - 实时汇率查询
+ * - 批量金额转换
+ */
+
 <template>
   <div class="usd-conversion-page">
     <el-card class="box-card">

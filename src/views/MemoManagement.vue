@@ -1,13 +1,17 @@
+/**
+ * @module views/MemoManagement
+ * @description 备忘录管理页面
+ * 
+ * 功能：
+ * - 创建、编辑、删除备忘录
+ * - 按日期范围筛选（今日/归档）
+ * - 备忘录统计概览
+ * - 游客只读模式
+ */
+
 <template>
   <div class="memo-container">
-    <div class="stats-overview">
-      <div v-for="(stat, key) in statConfig" :key="key" class="stat-item">
-        <div class="stat-info">
-          <span class="stat-label">{{ stat.label }}</span>
-          <span :class="['stat-count', stat.class]">{{ stats[stat.key] }}</span>
-        </div>
-      </div>
-    </div>
+    <MemoStatsRow :stats="stats" :scope-stat-copy="scopeStatCopy" />
 
     <div class="memo-wrapper">
       <header class="memo-header">
@@ -18,51 +22,30 @@
 
         <div class="header-right">
           <div class="control-group">
-            <el-segmented
-              v-model="activeListScope"
-              :options="listScopeOptions"
-              class="custom-segmented"
-              @change="handleListScopeChange"
-            />
+            <el-segmented v-model="activeListScope" :options="listScopeOptions" class="custom-segmented"
+              @change="handleListScopeChange" />
           </div>
 
           <div class="vertical-spacer"></div>
 
           <div class="control-group search-container">
-            <el-input
-              v-model="keyword"
-              placeholder="搜索标题或内容..."
-              :prefix-icon="Search"
-              clearable
-              class="custom-search"
-              @input="onKeywordInput"
-            />
+            <el-input v-model="keyword" placeholder="搜索标题或内容..." :prefix-icon="Search" clearable class="custom-search"
+              @input="onKeywordInput" />
 
             <div class="date-picker-box" :class="{ 'is-expanded': activeListScope === 'history' }">
-              <el-date-picker
-                v-model="historyCreatedOn"
-                type="date"
-                value-format="YYYY-MM-DD"
-                placeholder="选择创建日期"
-                clearable
-                class="custom-date-picker"
-                @change="onHistoryDateChange"
-              />
+              <el-date-picker v-model="historyCreatedOn" type="date" value-format="YYYY-MM-DD" placeholder="选择创建日期"
+                clearable class="custom-date-picker" @change="onHistoryDateChange" />
             </div>
           </div>
 
           <div class="vertical-spacer"></div>
 
           <div class="control-group">
-            <el-segmented
-              v-model="activeFilter"
-              :options="filterOptions"
-              class="custom-segmented"
-              @change="handleFilterChange"
-            />
+            <el-segmented v-model="activeFilter" :options="filterOptions" class="custom-segmented"
+              @change="handleFilterChange" />
           </div>
 
-          <div v-if="activeListScope === 'today'" class="action-box">
+          <div v-if="activeListScope === 'today' && !isGuest" class="action-box">
             <el-button type="primary" :icon="Plus" class="main-add-btn" @click="openCreate">
               新建任务
             </el-button>
@@ -82,12 +65,8 @@
                 </div>
 
                 <div class="task-list">
-                  <div
-                    v-for="item in todoList"
-                    :key="item.id"
-                    v-memo="[item.updatedAt, item.pinned, item.color]"
-                    :class="['card', item.color, { 'is-pinned': item.pinned }]"
-                  >
+                  <div v-for="item in todoList" :key="item.id" v-memo="[item.updatedAt, item.pinned, item.color]"
+                    :class="['card', item.color, { 'is-pinned': item.pinned }]">
                     <div class="card-inner">
                       <div class="card-side">
                         <el-checkbox :model-value="item.completed" @change="() => toggleCompleted(item)" />
@@ -141,12 +120,8 @@
                 </div>
 
                 <div class="task-list">
-                  <div
-                    v-for="item in doneList"
-                    :key="item.id"
-                    v-memo="[item.updatedAt, item.completed]"
-                    class="card is-completed"
-                  >
+                  <div v-for="item in doneList" :key="item.id" v-memo="[item.updatedAt, item.completed]"
+                    class="card is-completed">
                     <div class="card-inner">
                       <div class="card-side">
                         <el-checkbox :model-value="item.completed" @change="() => toggleCompleted(item)" />
@@ -170,12 +145,9 @@
 
             <div v-show="!isBoardMode" class="list-view">
               <div v-if="list.length" class="task-list single-stack">
-                <div
-                  v-for="item in list"
-                  :key="item.id"
-                  v-memo="[item.updatedAt, item.completed, item.pinned]"
-                  :class="['card', item.color, { 'is-pinned': item.pinned, 'is-completed': item.completed }]"
-                >
+                <div v-for="item in list" :key="item.id" v-memo="[item.updatedAt, item.completed, item.pinned]"
+                  :class="['card', item.color, { 'is-pinned': item.pinned, 'is-completed': item.completed, 'is-highlighted': highlightId === item.id }]"
+                  :data-memo-id="item.id">
                   <div class="card-inner">
                     <el-checkbox :model-value="item.completed" @change="() => toggleCompleted(item)" />
                     <div class="card-main" @click="openEdit(item)">
@@ -186,8 +158,10 @@
                       <p class="card-body">{{ item.content }}</p>
                     </div>
                     <div class="card-actions">
-                      <el-button link @click="openEdit(item)">编辑</el-button>
-                      <el-button link type="danger" @click="removeMemo(item)">删除</el-button>
+                      <template v-if="!isGuest">
+                        <el-button link @click="openEdit(item)">编辑</el-button>
+                        <el-button link type="danger" @click="removeMemo(item)">删除</el-button>
+                      </template>
                     </div>
                   </div>
                 </div>
@@ -214,20 +188,16 @@
       </div>
     </div>
 
-    <el-drawer
-      v-model="editorVisible"
-      :title="editorMode === 'create' ? '✨ 开启新任务' : '📝 更新任务细节'"
-      size="540px"
-      class="custom-drawer"
-    >
-      <el-form :model="form" label-position="top">
-        <el-form-item label="任务名称">
-          <el-input v-model="form.title" placeholder="输入核心目标" maxlength="40" show-word-limit />
+    <el-drawer v-model="editorVisible" :title="editorMode === 'create' ? '✨ 开启新任务' : '📝 更新任务细节'" size="540px"
+      class="custom-drawer">
+      <el-form ref="formRef" :model="form" label-position="top">
+        <el-form-item label="任务名称" prop="title" :rules="memoTitleRule" required>
+          <el-input v-model="form.title" placeholder="输入核心目标" maxlength="100" show-word-limit />
         </el-form-item>
 
         <div class="form-row">
-          <el-form-item label="分类" style="flex: 1">
-            <el-input v-model="form.label" placeholder="如：工作" />
+          <el-form-item label="分类" prop="label" :rules="memoLabelRule" required>
+            <el-input v-model="form.label" placeholder="如：工作" maxlength="20" show-word-limit />
           </el-form-item>
           <el-form-item label="主题色" style="flex: 1">
             <el-select v-model="form.color">
@@ -245,8 +215,14 @@
           </el-form-item>
         </div>
 
-        <el-form-item label="详细说明">
-          <el-input v-model="form.content" type="textarea" :rows="10" placeholder="记录具体步骤或想法..." />
+        <el-form-item label="提醒时间">
+          <el-date-picker v-model="form.remindAt" type="datetime" placeholder="选择提醒时间" style="width: 100%"
+            format="YYYY-MM-DD HH:mm" value-format="YYYY-MM-DDTHH:mm:ss" />
+        </el-form-item>
+
+        <el-form-item label="详细说明" prop="content" :rules="memoContentRule" required>
+          <el-input v-model="form.content" type="textarea" :rows="10" placeholder="记录具体步骤或想法..." maxlength="2000"
+            show-word-limit />
         </el-form-item>
       </el-form>
 
@@ -260,12 +236,8 @@
 
     <el-drawer v-model="historyVisible" :title="historyTitle" size="420px">
       <el-timeline v-if="historyList.length" class="custom-timeline">
-        <el-timeline-item
-          v-for="h in historyList"
-          :key="h.id"
-          :timestamp="formatTime(h.createdAt)"
-          :type="h.action === 'complete' ? 'success' : 'primary'"
-        >
+        <el-timeline-item v-for="h in historyList" :key="h.id" :timestamp="formatTime(h.createdAt)"
+          :type="h.action === 'complete' ? 'success' : 'primary'">
           <div class="log-box">
             <p class="log-user"><strong>{{ h.operatorName }}</strong> {{ actionLabel(h.action) }}</p>
             <div class="log-content">{{ h.content }}</div>
@@ -278,18 +250,25 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, reactive, ref, shallowRef } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, reactive, ref, shallowRef } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, MoreFilled, Delete } from '@element-plus/icons-vue'
 import { memoApi } from '@/api/memo'
 import { createDebounce } from '@/utils/debounce'
+import { to } from '@/utils/async'
 import { formatDateTime } from '@/utils/navigation'
 import { useCancelableLoader } from '@/composables/useCancelableLoader'
 import { useListQueryState } from '@/composables/useListQueryState'
+import { memoTitleRule, memoLabelRule, memoContentRule } from '@/utils/formRules'
+import { usePermissions } from '@/composables/usePermissions'
+import MemoStatsRow from '@/components/memo/MemoStatsRow.vue'
 
 // 1. 响应式状态：使用 shallowRef 优化大型列表性能
+const { isGuest, canEdit, canDelete } = usePermissions()
 const list = shallowRef([])
 const hasMore = ref(false)
+const formRef = ref(null)
 const { loading, run: runListLoad, isLatest } = useCancelableLoader()
 const saving = ref(false)
 const { keyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 50, keyword: '' })
@@ -298,11 +277,27 @@ const historyCreatedOn = ref(null)
 const activeFilter = ref('all')
 const stats = reactive({ total: 0, todoTotal: 0, doneTotal: 0, pinnedTotal: 0 })
 
+/** 统计区域显示文本配置（根据当前模式动态切换） */
+const scopeStatCopy = computed(() => {
+  const isHistory = activeListScope.value === 'history'
+  return {
+    mode: isHistory ? 'history' : 'today',
+    totalLabel: isHistory ? '往期任务' : '全部任务',
+    totalTip: isHistory ? '历史创建的任务总数' : '当前视图的任务总数',
+    todoTip: isHistory ? '往期未完成任务' : '待处理事项',
+    doneTip: isHistory ? '往期已完成' : '已完成的任务',
+    pinnedTip: isHistory ? '历史置顶' : '重要置顶'
+  }
+})
+
+const route = useRoute()
+const highlightId = ref(null)
+
 // 2. 交互状态
 const editorVisible = ref(false)
 const editorMode = ref('create')
 const editingId = ref(null)
-const form = reactive({ title: '', content: '', label: '', color: 'blue', pinned: false, completed: false })
+const form = reactive({ title: '', content: '', label: '', color: 'blue', pinned: false, completed: false, remindAt: null })
 const historyVisible = ref(false)
 const historyTitle = ref('日志')
 const historyList = shallowRef([])
@@ -431,47 +426,58 @@ const openEdit = item => {
 }
 
 const saveMemo = async () => {
-  if (!form.title.trim()) return ElMessage.warning('请填写任务名称')
+  const [validateErr] = await to(formRef.value?.validate())
+  if (validateErr) return
+
   saving.value = true
-  try {
-    if (editorMode.value === 'create') await memoApi.create(form)
-    else await memoApi.update(editingId.value, form)
-    ElMessage.success('已同步至云端')
-    editorVisible.value = false
-    page.value = 1
-    await loadList(1)
-  } finally {
-    saving.value = false
+  if (editorMode.value === 'create') {
+    const [err] = await to(memoApi.create(form))
+    if (err) {
+      saving.value = false
+      return
+    }
+  } else {
+    const [err] = await to(memoApi.update(editingId.value, form))
+    if (err) {
+      saving.value = false
+      return
+    }
   }
+  ElMessage.success('已同步至云端')
+  editorVisible.value = false
+  page.value = 1
+  await loadList(1)
+  saving.value = false
 }
 
 const toggleCompleted = async item => {
-  try {
-    await memoApi.update(item.id, { ...item, completed: !item.completed })
-    page.value = 1
-    await loadList(1)
-  } catch (e) {
+  const [err] = await to(memoApi.update(item.id, { ...item, completed: !item.completed }))
+  if (err) {
     ElMessage.error('网络繁忙，请重试')
+    return
   }
+  page.value = 1
+  await loadList(1)
 }
 
 const togglePinned = async item => {
-  try {
-    await memoApi.update(item.id, { ...item, pinned: !item.pinned })
-    page.value = 1
-    await loadList(1)
-  } catch (e) {
+  const [err] = await to(memoApi.update(item.id, { ...item, pinned: !item.pinned }))
+  if (err) {
     ElMessage.error('操作失败')
+    return
   }
+  page.value = 1
+  await loadList(1)
 }
 
 const removeMemo = async item => {
-  try {
-    await ElMessageBox.confirm('任务一旦删除将无法找回，确认继续吗？', '删除确认')
-    await memoApi.remove(item.id)
-    page.value = 1
-    await loadList(1)
-  } catch {}
+  const [confirmErr] = await to(ElMessageBox.confirm('任务一旦删除将无法找回，确认继续吗？', '删除确认'))
+  if (confirmErr) return
+
+  const [err] = await to(memoApi.remove(item.id))
+  if (err) return
+  page.value = 1
+  await loadList(1)
 }
 
 const openHistory = async item => {
@@ -511,16 +517,26 @@ const onHistoryDateChange = () => {
 const formatTime = v => formatDateTime(v)
 
 const actionLabel = a =>
-  ({
-    create: '创建了任务',
-    update: '更新了内容',
-    complete: '完成了任务',
-    reopen: '重新开启了任务'
-  }[a] || a)
+({
+  create: '创建了任务',
+  update: '更新了内容',
+  complete: '完成了任务',
+  reopen: '重新开启了任务'
+}[a] || a)
 
 onMounted(async () => {
+  highlightId.value = route.query.highlight ? Number(route.query.highlight) : null
   await loadList(1)
   initInfiniteObserver()
+  if (highlightId.value) {
+    nextTick(() => {
+      const el = document.querySelector(`[data-memo-id="${highlightId.value}"]`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        el.classList.add('highlight-flash')
+      }
+    })
+  }
 })
 
 onUnmounted(() => {
@@ -547,6 +563,7 @@ onUnmounted(() => {
   gap: 24px;
   margin-bottom: 32px;
 }
+
 .stat-item {
   background: #ffffff;
   padding: 24px;
@@ -554,6 +571,7 @@ onUnmounted(() => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.03);
   border: 1px solid #f1f5f9;
 }
+
 .stat-label {
   font-size: 14px;
   color: #64748b;
@@ -561,16 +579,20 @@ onUnmounted(() => {
   margin-bottom: 8px;
   font-weight: 500;
 }
+
 .stat-count {
   font-size: 32px;
   font-weight: 800;
 }
+
 .stat-count.todo {
   color: #f59e0b;
 }
+
 .stat-count.done {
   color: #10b981;
 }
+
 .stat-count.pinned {
   color: #ef4444;
 }
@@ -594,17 +616,20 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 24px;
 }
+
 .header-left {
   display: flex;
   align-items: center;
   gap: 12px;
 }
+
 .memo-title {
   font-size: 24px;
   font-weight: 850;
   letter-spacing: -0.5px;
   margin: 0;
 }
+
 .memo-badge {
   font-size: 10px;
   font-weight: 800;
@@ -619,6 +644,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 16px;
 }
+
 .vertical-spacer {
   width: 1px;
   height: 32px;
@@ -634,9 +660,11 @@ onUnmounted(() => {
   flex: 1;
   min-width: 450px;
 }
+
 .custom-search {
   width: 240px;
 }
+
 .custom-search :deep(.el-input__wrapper) {
   background-color: #f8fafc;
   box-shadow: none !important;
@@ -650,6 +678,7 @@ onUnmounted(() => {
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
 .date-picker-box.is-expanded {
   width: 220px;
   opacity: 1;
@@ -673,37 +702,44 @@ onUnmounted(() => {
 .memo-content {
   padding: 28px;
 }
+
 .board-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 32px;
 }
+
 .column {
   background: #f8fafc;
   border-radius: 16px;
   padding: 20px;
   border: 1px solid #f1f5f9;
 }
+
 .column-head {
   display: flex;
   align-items: center;
   margin-bottom: 20px;
   font-weight: 700;
 }
+
 .col-indicator {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   margin-right: 10px;
 }
+
 .col-indicator.todo {
   background: #f59e0b;
   box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
 }
+
 .col-indicator.done {
   background: #10b981;
   box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
 }
+
 .col-num {
   margin-left: auto;
   color: #94a3b8;
@@ -719,6 +755,7 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 14px;
 }
+
 .card {
   background: #ffffff;
   border-radius: 14px;
@@ -727,6 +764,7 @@ onUnmounted(() => {
   position: relative;
   cursor: default;
 }
+
 .card:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.08);
@@ -742,18 +780,23 @@ onUnmounted(() => {
   width: 4px;
   border-radius: 0 4px 4px 0;
 }
+
 .card.blue::after {
   background: #3b82f6;
 }
+
 .card.green::after {
   background: #10b981;
 }
+
 .card.amber::after {
   background: #f59e0b;
 }
+
 .card.rose::after {
   background: #f43f5e;
 }
+
 .card.purple::after {
   background: #a855f7;
 }
@@ -761,9 +804,29 @@ onUnmounted(() => {
 .card.is-completed {
   opacity: 0.6;
 }
+
 .card.is-completed .card-title {
   text-decoration: line-through;
   color: #94a3b8;
+}
+
+.card.is-highlighted {
+  animation: highlight-pulse 1.5s ease-out;
+  box-shadow: 0 0 0 3px #3b82f6, 0 12px 24px -8px rgba(59, 130, 246, 0.3);
+}
+
+@keyframes highlight-pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.02);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 .card-inner {
@@ -772,22 +835,26 @@ onUnmounted(() => {
   gap: 16px;
   align-items: flex-start;
 }
+
 .card-main {
   flex: 1;
   cursor: pointer;
 }
+
 .card-header {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 6px;
 }
+
 .card-title {
   font-size: 15px;
   font-weight: 700;
   color: #0f172a;
   line-height: 1.4;
 }
+
 .card-body {
   font-size: 13px;
   color: #475569;
@@ -798,11 +865,13 @@ onUnmounted(() => {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
 .card-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
+
 .tag {
   font-size: 11px;
   background: #f1f5f9;
@@ -811,6 +880,7 @@ onUnmounted(() => {
   border-radius: 6px;
   font-weight: 600;
 }
+
 .date {
   font-size: 11px;
   color: #cbd5e1;
@@ -822,6 +892,7 @@ onUnmounted(() => {
   text-align: center;
   padding-bottom: 16px;
 }
+
 .no-more-text {
   display: flex;
   align-items: center;
@@ -831,11 +902,13 @@ onUnmounted(() => {
   font-size: 13px;
   font-weight: 500;
 }
+
 .no-more-text .line {
   width: 40px;
   height: 1px;
   background-color: #e2e8f0;
 }
+
 .load-more-sentinel {
   width: 100%;
   height: 1px;
@@ -846,12 +919,14 @@ onUnmounted(() => {
   display: flex;
   gap: 20px;
 }
+
 .toggle-row {
   background: #f8fafc;
   padding: 16px;
   border-radius: 12px;
   margin-bottom: 20px;
 }
+
 .drawer-btns {
   display: grid;
   grid-template-columns: 1fr 2fr;
@@ -863,10 +938,12 @@ onUnmounted(() => {
   padding: 12px;
   border-radius: 10px;
 }
+
 .log-user {
   font-size: 13px;
   margin: 0 0 4px;
 }
+
 .log-content {
   font-size: 12px;
   color: #64748b;
@@ -877,6 +954,7 @@ onUnmounted(() => {
   .search-container {
     min-width: 350px;
   }
+
   .custom-search {
     width: 180px;
   }
@@ -886,16 +964,29 @@ onUnmounted(() => {
   .stats-overview {
     grid-template-columns: 1fr 1fr;
   }
+
   .board-grid {
     grid-template-columns: 1fr;
   }
+
   .header-right {
     width: 100%;
     justify-content: flex-start;
   }
+
   .search-container {
     width: 100%;
     min-width: auto;
   }
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 22px;
+}
+
+:deep(.el-form-item__error) {
+  font-size: 11px;
+  line-height: 1.6;
+  padding-top: 2px;
 }
 </style>

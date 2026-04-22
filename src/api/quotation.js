@@ -1,102 +1,69 @@
-import request from '@/utils/request'
-
 /**
- * 报价单综合业务总栈 API
- * 覆盖：报价增删改查、OA流程生命周期（送审、驳回）、系统通知铃铛
+ * @module api/quotation
+ * @description 报价单相关 API 接口封装
+ * 
+ * 提供报价单的完整 CRUD 操作和业务接口：
+ * - 列表查询、创建、更新、删除、详情
+ * - 审批流程（通过/驳回）
+ * - AI 智能解析文本
+ * - 统计数据获取
+ * 
+ * 所有接口通过 unwrap() 包装，自动提取 response.data
  */
-export const quotationApi = {
-  /** 获取筛选后的报价单报表 */
-  async list(params = {}, config = {}) {
-    const res = await request.get('/api/quotations', { params, ...config })
-    return res.data
-  },
 
-  /** 提取单个报价单的详情记录 */
-  async get(id) {
-    const res = await request.get(`/api/quotations/${id}`)
-    return res.data
-  },
+import request from '../utils/request'
+import { unwrap } from '../utils/unwrap'
 
-  /** 持久化新建一个草稿/现成报价单 */
-  async create(payload) {
-    const res = await request.post('/api/quotations', payload)
-    return res.data
-  },
+/** 获取报价单列表 */
+const list = () => request.get('/api/quotations')
 
-  /** 提交并覆盖修改报价单内容 */
-  async update(id, payload) {
-    const res = await request.put(`/api/quotations/${id}`, payload)
-    return res.data
-  },
+/** 创建新报价单 */
+const create = (data) => request.post('/api/quotations', data)
 
-  /** 业务侧：向上级发起送审流程 */
-  async submit(id) {
-    const res = await request.post(`/api/quotations/${id}/submit`)
-    return res.data
-  },
+/** 更新报价单 */
+const update = (id, data) => request.put(`/api/quotations/${id}`, data)
 
-  /** 业务侧：撤回处于待审批状态的单据 */
-  async recall(id) {
-    const res = await request.post(`/api/quotations/${id}/recall`)
-    return res.data
-  },
+/** 删除报价单 */
+const remove = (id) => request.delete(`/api/quotations/${id}`)
 
-  /** 管理侧：同意该报价单流程 */
-  async approve(id, comment = '同意') {
-    const res = await request.post(`/api/quotations/${id}/approve`, { comment })
-    return res.data
-  },
+/** 获取报价单详情 */
+const get = (id) => request.get(`/api/quotations/${id}`)
 
-  /** 管理侧：拒绝并打回该报价单 */
-  async reject(id, comment = '驳回') {
-    const res = await request.post(`/api/quotations/${id}/reject`, { comment })
-    return res.data
-  },
+/** 获取统计数据 */
+const getStatistics = () => request.get('/api/quotations')
 
-  /** 废弃指定的报价单 */
-  async remove(id) {
-    const res = await request.delete(`/api/quotations/${id}`)
-    return res.data
-  },
+/** AI 智能解析粘贴文本为结构化数据 */
+const parseText = (text) => request.post('/api/tools/quotation-parse', { text })
 
-  /** 智能 NLP：将剪贴板的散乱文本转译为货架数据包 */
-  async parseText(text) {
-    const res = await request.post('/api/quotation-parse', { text })
-    return res.data
-  },
+/** 审批通过 */
+const approve = (id, comment) => request.post(`/api/quotations/${id}/approve`, { comment })
 
-  /** 获取右上角小铃铛的未读计数器 */
-  async getUnreadNotificationsCount() {
-    const res = await request.get('/api/notifications/unread-count')
-    return res.data
-  },
+/** 审批驳回 */
+const reject = (id, comment) => request.post(`/api/quotations/${id}/reject`, { comment })
 
-  /** 下拉抽屉：获取最近通知历史 */
-  async getNotifications() {
-    const res = await request.get('/api/notifications')
-    return res.data
-  },
+/** 解析统计文本 */
+const parseStatistics = (rawText) =>
+  request.post('/api/calculate', { text: rawText, type: 'statistics' })
 
-  /** 标记具体某条小铃铛消息为已读 */
-  async markNotificationAsRead(id) {
-    const res = await request.put(`/api/notifications/${id}/read`)
-    return res.data
-  },
-
-  /** 全部通知一键已读 */
-  async markAllNotificationsAsRead() {
-    const res = await request.post('/api/notifications/read-all')
-    return res.data
-  }
+/** 报价单 API 对象（对外导出） */
+const quotationApi = {
+  list: unwrap(list),
+  create: unwrap(create),
+  update: unwrap(update),
+  remove: unwrap(remove),
+  get: unwrap(get),
+  getStatistics: unwrap(getStatistics),
+  parseText: unwrap(parseText),
+  approve: unwrap(approve),
+  reject: unwrap(reject),
+  parse: unwrap(parseStatistics)
 }
 
-/**
- * 货架重量统计模块独立接口
- */
-export const quotationStatisticsApi = {
-  /** 把重型货架文本化为重量与件数列表 */
-  async parse(rawText) {
-    const res = await request.post('/api/calculate', { text: rawText, type: 'net_panel' })
-    return res.data
-  }
+/** 统计专用 API（简化版） */
+const quotationStatisticsApi = {
+  getStatistics: unwrap(getStatistics),
+  parse: unwrap(parseStatistics)
 }
+
+export { quotationApi, quotationStatisticsApi }
+export default quotationApi

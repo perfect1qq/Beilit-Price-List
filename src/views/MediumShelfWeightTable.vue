@@ -1,9 +1,19 @@
 <template>
-  <!-- 中型货架自重计算与报价模块 -->
+
+  <!-- * @module views/MediumShelfWeightTable
+ * @description 中型货架重量计算表页面
+ * 
+ * 功能：
+ * - 中型货架自重计算
+ * - 载重参数配置
+ * - 重量与报价关联计算 -->
+
+
+
   <div class="medium-weight-page">
     <!-- 独立应用卡片外壳，去除圆角增强后台感 -->
     <el-card class="page-card" shadow="never" v-loading="loading">
-      
+
       <!-- 顶部工具栏：包含标题、副标题提示和主要的业务按钮组合 -->
       <div class="toolbar">
         <div>
@@ -16,38 +26,25 @@
 
         <!-- 增删改查操作区 -->
         <div class="toolbar-actions">
-          <!-- 在非编辑态下显示的“编辑”入口按钮 -->
-          <el-button
-            v-if="!editMode"
-            type="primary"
-            :icon="Edit"
-            @click="startEdit"
-          >
-            编辑
-          </el-button>
+          <template v-if="!isGuest">
+            <el-button v-if="!editMode" type="primary" :icon="Edit" @click="startEdit">
+              编辑
+            </el-button>
 
-          <!-- 当进入编辑态后，展示具体的执行动作（添加、保存、撤回） -->
-          <template v-else>
-            <el-button :icon="Plus" @click="addSummaryRow">新增汇总行</el-button>
-            <el-button :icon="Plus" @click="addDetailRow">新增明细行</el-button>
-            <el-button :loading="saving" type="success" @click="saveData">保存</el-button>
-            <el-button @click="cancelEdit">取消</el-button>
+            <template v-else>
+              <el-button :icon="Plus" @click="addSummaryRow">新增汇总行</el-button>
+              <el-button :icon="Plus" @click="addDetailRow">新增明细行</el-button>
+              <el-button :loading="saving" type="success" @click="saveData">保存</el-button>
+              <el-button @click="cancelEdit">取消</el-button>
+            </template>
           </template>
 
-          <!-- 任何状态下都允许刷新的逃生通道 -->
           <el-button :icon="Refresh" @click="loadData" :loading="loading">刷新</el-button>
         </div>
       </div>
 
       <!-- 全局级别的错误展示横幅，用于拦截严重的数据解析异常 -->
-      <el-alert
-        v-if="errorMsg"
-        class="mb-16"
-        type="error"
-        :title="errorMsg"
-        :closable="false"
-        show-icon
-      />
+      <el-alert v-if="errorMsg" class="mb-16" type="error" :title="errorMsg" :closable="false" show-icon />
 
       <!-- 当存在可显示的数据时，渲染两个数据表格区块；否则显示空状态 -->
       <template v-if="summaryRows.length || detailRows.length">
@@ -57,67 +54,43 @@
             <div class="section-title">中型货架重量表</div>
           </template>
 
-          <el-table :data="displaySummaryRows" border stripe class="table smart-table" :header-cell-style="{ background: '#f8f8f9', color: '#515a6e', fontWeight: 'bold', textAlign: 'center' }">
+          <el-table :data="displaySummaryRows" border stripe class="table smart-table"
+            :header-cell-style="{ background: '#f8f8f9', color: '#515a6e', fontWeight: 'bold', textAlign: 'center' }">
             <el-table-column prop="index" label="序号" width="70" align="center" />
 
             <el-table-column label="名称" min-width="120" align="center">
               <template #default="{ row }">
-                <el-input
-                  v-if="editMode"
-                  v-model="row.name"
-                  size="small"
-                  placeholder="名称"
-                />
-            <span v-else class="config-text">
-  {{ formatConfigText(row.name) }}
-</span>
+                <el-input v-if="editMode" v-model="row.name" size="small" placeholder="名称" />
+                <span v-else class="config-text">
+                  {{ formatConfigText(row.name) }}
+                </span>
               </template>
             </el-table-column>
 
             <el-table-column label="规格" min-width="120" align="center">
               <template #default="{ row }">
-                <el-input
-                  v-if="editMode"
-                  v-model="row.spec"
-                  size="small"
-                  placeholder="规格"
-                />
+                <el-input v-if="editMode" v-model="row.spec" size="small" placeholder="规格" />
                 <span v-else>{{ row.spec }}</span>
               </template>
             </el-table-column>
 
             <el-table-column label="层数" width="90" align="center">
               <template #default="{ row }">
-                <el-input
-                  v-if="editMode"
-                  v-model="row.layers"
-                  size="small"
-                  placeholder="层数"
-                />
+                <el-input v-if="editMode" v-model="row.layers" size="small" placeholder="层数" />
                 <span v-else>{{ row.layers }}</span>
               </template>
             </el-table-column>
 
             <el-table-column label="载重" width="110" align="center">
               <template #default="{ row }">
-                <el-input
-                  v-if="editMode"
-                  v-model="row.load"
-                  size="small"
-                  placeholder="载重"
-                />
+                <el-input v-if="editMode" v-model="row.load" size="small" placeholder="载重" />
                 <span v-else>{{ row.load }}</span>
               </template>
             </el-table-column>
 
             <el-table-column label="总自重" width="110" align="center">
               <template #default="{ row }">
-                <el-input
-                  v-if="editMode"
-                  v-model="row.totalWeight"
-                  size="small"
-                  placeholder="总自重"
-                />
+                <el-input v-if="editMode" v-model="row.totalWeight" size="small" placeholder="总自重" />
                 <span v-else>{{ row.totalWeight }}</span>
               </template>
             </el-table-column>
@@ -125,48 +98,27 @@
             <el-table-column label="配件分拆重量">
               <el-table-column label="立柱片" width="110" align="center">
                 <template #default="{ row }">
-                  <el-input
-                    v-if="editMode"
-                    v-model="row.uprightWeight"
-                    size="small"
-                    placeholder="立柱片"
-                  />
+                  <el-input v-if="editMode" v-model="row.uprightWeight" size="small" placeholder="立柱片" />
                   <span v-else>{{ row.uprightWeight }}</span>
                 </template>
               </el-table-column>
 
               <el-table-column label="横梁" width="110" align="center">
                 <template #default="{ row }">
-                  <el-input
-                    v-if="editMode"
-                    v-model="row.beamWeight"
-                    size="small"
-                    placeholder="横梁"
-                  />
+                  <el-input v-if="editMode" v-model="row.beamWeight" size="small" placeholder="横梁" />
                   <span v-else>{{ row.beamWeight }}</span>
                 </template>
               </el-table-column>
 
               <el-table-column label="层板" width="110" align="center">
                 <template #default="{ row }">
-                  <el-input
-                    v-if="editMode"
-                    v-model="row.shelfWeight"
-                    size="small"
-                    placeholder="层板"
-                  />
+                  <el-input v-if="editMode" v-model="row.shelfWeight" size="small" placeholder="层板" />
                   <span v-else>{{ row.shelfWeight }}</span>
                 </template>
               </el-table-column>
             </el-table-column>
 
-            <el-table-column
-              v-if="editMode"
-              label="操作"
-              width="90"
-              align="center"
-              fixed="right"
-            >
+            <el-table-column v-if="editMode" label="操作" width="90" align="center" fixed="right">
               <template #default="{ $index }">
                 <el-button type="danger" link @click="removeSummaryRow($index)">
                   删除
@@ -182,88 +134,49 @@
             <div class="section-title">层数规格明细</div>
           </template>
 
-          <el-table
-            :data="displayDetailRows"
-            border
-            stripe
-            class="table smart-table"
+          <el-table :data="displayDetailRows" border stripe class="table smart-table"
             :header-cell-style="{ background: '#f8f8f9', color: '#515a6e', fontWeight: 'bold', textAlign: 'center' }"
-            :span-method="editMode ? undefined : detailSpanMethod"
-            row-key="index"
-          >
+            :span-method="editMode ? undefined : detailSpanMethod" row-key="index">
             <el-table-column prop="index" label="序号" width="70" align="center" />
 
             <el-table-column label="层数" width="90" align="center">
               <template #default="{ row }">
-                <el-input
-                  v-if="editMode"
-                  v-model="row.layerGroup"
-                  size="small"
-                  placeholder="层数"
-                />
+                <el-input v-if="editMode" v-model="row.layerGroup" size="small" placeholder="层数" />
                 <span v-else>{{ row.layerGroup }}</span>
               </template>
             </el-table-column>
 
             <el-table-column label="规格（L*W*H）" min-width="170" align="center">
               <template #default="{ row }">
-                <el-input
-                  v-if="editMode"
-                  v-model="row.spec"
-                  size="small"
-                  placeholder="规格"
-                />
+                <el-input v-if="editMode" v-model="row.spec" size="small" placeholder="规格" />
                 <span v-else>{{ row.spec }}</span>
               </template>
             </el-table-column>
 
             <el-table-column label="载重（kg/层）" width="120" align="center">
               <template #default="{ row }">
-                <el-input
-                  v-if="editMode"
-                  v-model="row.loadPerLayer"
-                  size="small"
-                  placeholder="载重"
-                />
+                <el-input v-if="editMode" v-model="row.loadPerLayer" size="small" placeholder="载重" />
                 <span v-else>{{ row.loadPerLayer }}</span>
               </template>
             </el-table-column>
-<el-table-column label="报价" min-width="200" align="center">
-  <template #default="{ row }">
-    <div class="wrap-text">
-      <el-input
-        v-if="editMode"
-        v-model="row.quote"
-        type="textarea"
-        :rows="2"
-        resize="none"
-      />
-      <span v-else>{{ row.quote }}</span>
-    </div>
-  </template>
-</el-table-column>
-   <el-table-column label="实际" min-width="200" align="center">
-  <template #default="{ row }">
-    <div class="wrap-text">
-      <el-input
-        v-if="editMode"
-        v-model="row.actual"
-        type="textarea"
-        :rows="2"
-        resize="none"
-      />
-      <span v-else>{{ row.actual }}</span>
-    </div>
-  </template>
-</el-table-column>
+            <el-table-column label="报价" min-width="200" align="center">
+              <template #default="{ row }">
+                <div class="wrap-text">
+                  <el-input v-if="editMode" v-model="row.quote" type="textarea" :rows="2" resize="none" />
+                  <span v-else>{{ row.quote }}</span>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column label="实际" min-width="200" align="center">
+              <template #default="{ row }">
+                <div class="wrap-text">
+                  <el-input v-if="editMode" v-model="row.actual" type="textarea" :rows="2" resize="none" />
+                  <span v-else>{{ row.actual }}</span>
+                </div>
+              </template>
+            </el-table-column>
 
-            <el-table-column
-              v-if="editMode"
-              label="操作"
-              width="90"
-              align="center"
-              fixed="right"
-            >
+            <el-table-column v-if="editMode" label="操作" width="90" align="center" fixed="right">
               <template #default="{ $index }">
                 <el-button type="danger" link @click="removeDetailRow($index)">
                   删除
@@ -284,6 +197,10 @@ import { computed, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit, Plus, Refresh } from '@element-plus/icons-vue'
 import { mediumShelfWeightApi } from '@/api/mediumShelfWeight'
+import { to } from '@/utils/async'
+import { usePermissions } from '@/composables/usePermissions'
+
+const { isGuest } = usePermissions()
 
 // ================= 全局状态声明 =================
 const loading = ref(false) // 整体网络加载锁，防止被连点
@@ -299,7 +216,7 @@ const detailRows = ref([]) // 表 2: 层级明细列
 
 // ================= 数据源 (编辑态/草稿) =================
 const draftSummaryRows = ref([]) // 编辑时对复本进行操作，不污染原数据
-const draftDetailRows = ref([]) 
+const draftDetailRows = ref([])
 
 // ================= 工具与格式化函数 =================
 const normalizeList = (list = []) => (Array.isArray(list) ? list : [])
@@ -394,17 +311,15 @@ const applyConfig = (config) => {
 const loadData = async () => {
   loading.value = true
   errorMsg.value = ''
-
-  try {
-    const res = await mediumShelfWeightApi.getConfig()
-    applyConfig(res?.config)
-    // ElMessage.success('配置数据同步加载成功')
-  } catch (error) {
-    errorMsg.value = error?.response?.data?.message ?? '由于网络或服务端异常，加载中型货架重量表失败'
+  const [err, res] = await to(mediumShelfWeightApi.getConfig())
+  if (err) {
+    errorMsg.value = err?.response?.data?.message ?? '由于网络或服务端异常，加载中型货架重量表失败'
     ElMessage.error(errorMsg.value)
-  } finally {
     loading.value = false
+    return
   }
+  applyConfig(res?.config)
+  loading.value = false
 }
 
 const startEdit = () => {
@@ -431,31 +346,25 @@ const addDetailRow = () => {
 }
 
 const removeSummaryRow = async (index) => {
-  try {
-    await ElMessageBox.confirm('确定删除这一行汇总数据吗？', '提示', {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    draftSummaryRows.value.splice(index, 1)
-    reindexRows(draftSummaryRows.value)
-  } catch {
-    // 取消删除，不处理
-  }
+  const [confirmErr] = await to(ElMessageBox.confirm('确定删除这一行汇总数据吗？', '提示', {
+    confirmButtonText: '删除',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }))
+  if (confirmErr) return
+  draftSummaryRows.value.splice(index, 1)
+  reindexRows(draftSummaryRows.value)
 }
 
 const removeDetailRow = async (index) => {
-  try {
-    await ElMessageBox.confirm('确定删除这一行明细数据吗？', '提示', {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    draftDetailRows.value.splice(index, 1)
-    reindexRows(draftDetailRows.value)
-  } catch {
-    // 取消删除，不处理
-  }
+  const [confirmErr] = await to(ElMessageBox.confirm('确定删除这一行明细数据吗？', '提示', {
+    confirmButtonText: '删除',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }))
+  if (confirmErr) return
+  draftDetailRows.value.splice(index, 1)
+  reindexRows(draftDetailRows.value)
 }
 
 /**
@@ -533,28 +442,26 @@ const saveData = async () => {
   if (!validateRows()) return
 
   saving.value = true
-  try {
-    const payload = {
-      summaryRows: reindexRows(cloneRows(draftSummaryRows.value)),
-      detailRows: reindexRows(cloneRows(draftDetailRows.value))
-    }
-
-    const res = await mediumShelfWeightApi.saveConfig({
-      title: configTitle.value,
-      payload
-    })
-
-    applyConfig(res.config)
-    editMode.value = false
-    draftSummaryRows.value = []
-    draftDetailRows.value = []
-    ElMessage.success('保存成功')
-  } catch (error) {
-    const msg = error?.response?.data?.message || '保存失败'
-    ElMessage.error(msg)
-  } finally {
-    saving.value = false
+  const payload = {
+    summaryRows: reindexRows(cloneRows(draftSummaryRows.value)),
+    detailRows: reindexRows(cloneRows(draftDetailRows.value))
   }
+  const [err, res] = await to(mediumShelfWeightApi.saveConfig({
+    title: configTitle.value,
+    payload
+  }))
+  if (err) {
+    const msg = err?.response?.data?.message || '保存失败'
+    ElMessage.error(msg)
+    saving.value = false
+    return
+  }
+  applyConfig(res.config)
+  editMode.value = false
+  draftSummaryRows.value = []
+  draftDetailRows.value = []
+  ElMessage.success('保存成功')
+  saving.value = false
 }
 
 onMounted(() => {
@@ -608,12 +515,15 @@ onMounted(() => {
   font-size: 15px;
   font-weight: bold;
   color: #1e293b;
-  border-left: 4px solid #6366f1; /* 使用统一的靛蓝色调 */
+  border-left: 4px solid #6366f1;
+  /* 使用统一的靛蓝色调 */
   padding-left: 10px;
   line-height: 1;
 }
+
 .config-text {
-  white-space: pre-line;   /* 让 \n 生效 */
+  white-space: pre-line;
+  /* 让 \n 生效 */
   line-height: 1.6;
   word-break: break-word;
 }

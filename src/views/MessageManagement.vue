@@ -9,14 +9,8 @@
           </div>
 
           <div class="header-tools">
-            <el-input
-              v-model="keyword"
-              clearable
-              class="search-input"
-              placeholder="搜索联系方式或留言内容"
-              :prefix-icon="Search"
-              @input="onKeywordInput"
-            />
+            <el-input v-model="keyword" clearable class="search-input" placeholder="搜索联系方式或留言内容" :prefix-icon="Search"
+              @input="onKeywordInput" />
             <el-tag :type="isAdmin ? 'success' : 'info'" effect="plain">
               {{ isAdmin ? '管理员视图' : '测试账号视图' }}
             </el-tag>
@@ -24,14 +18,7 @@
         </div>
       </template>
 
-      <el-table
-        v-if="!useVirtualTable"
-        :data="messages"
-        stripe
-        border
-        v-loading="loading"
-        class="smart-table"
-      >
+      <el-table v-if="!useVirtualTable" :data="messages" stripe border v-loading="loading" class="smart-table">
         <el-table-column label="提交时间" width="160" align="center">
           <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
         </el-table-column>
@@ -44,34 +31,32 @@
               <el-tag :type="row.status === 'assigned' ? 'success' : 'warning'" size="small">
                 {{ row.status === 'assigned' ? '已指派' : '待处理' }}
               </el-tag>
-        
+
             </div>
           </template>
         </el-table-column>
 
         <el-table-column label="跟进人" width="110" align="center">
           <template #default="{ row }">
-            {{ row.assignee?.username || '—' }}
+            {{ (row.assignee?.name || '').trim() || row.assignee?.username || '—' }}
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" :width="isAdmin ? 260 : 200" fixed="right" align="center">
+        <el-table-column label="操作" :width="isAdmin ? 260 : (isGuest ? 100 : 200)" fixed="right" align="center">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openView(row)">查看</el-button>
-            <template v-if="isAdmin">
-              <el-button link type="primary" size="small" :loading="isActionLoading(row.id)" @click="openAssign(row)">指派</el-button>
-              <el-button link type="danger" size="small" :loading="isActionLoading(row.id)" @click="doDelete(row)">删除</el-button>
+            <template v-if="!isGuest">
+              <template v-if="isAdmin">
+                <el-button link type="primary" size="small" :loading="isActionLoading(row.id)"
+                  @click="openAssign(row)">指派</el-button>
+                <el-button link type="danger" size="small" :loading="isActionLoading(row.id)"
+                  @click="doDelete(row)">删除</el-button>
+              </template>
+              <el-button v-else link type="danger" size="small" :loading="isActionLoading(row.id)"
+                @click="doHideFromList(row)">
+                删除
+              </el-button>
             </template>
-            <el-button
-              v-else
-              link
-              type="danger"
-              size="small"
-              :loading="isActionLoading(row.id)"
-              @click="doHideFromList(row)"
-            >
-              删除
-            </el-button>
           </template>
         </el-table-column>
 
@@ -82,50 +67,23 @@
       <div v-else class="virtual-table-wrap">
         <el-auto-resizer>
           <template #default="{ height, width }">
-            <el-table-v2
-              :columns="virtualColumns"
-              :data="messages"
-              :width="width"
-              :height="Math.max(420, height)"
-              :row-height="54"
-              fixed
-            />
+            <el-table-v2 :columns="virtualColumns" :data="messages" :width="width" :height="Math.max(420, height)"
+              :row-height="54" fixed />
           </template>
         </el-auto-resizer>
       </div>
-      <el-alert
-        v-if="loadError"
-        :title="loadError"
-        type="error"
-        show-icon
-        :closable="false"
-        class="load-error"
-      />
+      <el-alert v-if="loadError" :title="loadError" type="error" show-icon :closable="false" class="load-error" />
 
       <div class="pager-wrap">
-        <el-pagination
-          v-model:current-page="page"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50]"
-          :total="total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
+        <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]"
+          :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
+          @current-change="handleCurrentChange" />
       </div>
     </el-card>
 
-    <MessageDialogs
-      v-model:view-visible="viewVisible"
-      v-model:assign-visible="assignVisible"
-      :view-title="viewTitle"
-      :view-row="viewRow"
-      :assign-form="assignForm"
-      :staff-list="staffList"
-      :assign-loading="assignLoading"
-      :format-time="formatTime"
-      @confirm-assign="confirmAssign"
-    />
+    <MessageDialogs v-model:view-visible="viewVisible" v-model:assign-visible="assignVisible" :view-title="viewTitle"
+      :view-row="viewRow" :assign-form="assignForm" :staff-list="staffList" :assign-loading="assignLoading"
+      :format-time="formatTime" @confirm-assign="confirmAssign" />
 
   </div>
 </template>
@@ -137,10 +95,12 @@ import { Search } from '@element-plus/icons-vue'
 import { messageApi } from '@/api/message'
 import { userApi } from '@/api/user'
 import { createDebounce } from '@/utils/debounce'
+import { to } from '@/utils/async'
 import { getMessagePageTitle, readCurrentUser, formatDateTime } from '@/utils/navigation'
 import { useCancelableLoader } from '@/composables/useCancelableLoader'
-import { useListQueryState } from '@/composables/useListQueryState'
+import { usePagination } from '@/composables/usePagination'
 import { useInstantListActions } from '@/composables/useInstantListActions'
+import { usePermissions } from '@/composables/usePermissions'
 import MessageDialogs from '@/components/message/MessageDialogs.vue'
 
 /**
@@ -159,18 +119,19 @@ const refreshCurrentUser = () => {
   currentUser.value = readCurrentUser()
 }
 
-const isAdmin = computed(() => currentUser.value.role === 'admin')
-const pageTitle = computed(() => getMessagePageTitle(currentUser.value.role))
-const pageSubtitle = computed(() => (
-  isAdmin.value
-    ? '管理员可查看全部线索、统一指派业务员，并按需删除无效线索。'
-    : '当前账号只会看到被分配给自己的线索。'
-))
+const { isAdmin, isGuest, canEdit, canDelete } = usePermissions()
+const pageTitle = computed(() => {
+  if (isGuest.value) return '留言板（只读）'
+  return getMessagePageTitle(currentUser.value.role)
+})
+const pageSubtitle = computed(() => {
+  if (isGuest.value) '游客仅可查看留言内容，无法进行任何操作。'
+  if (isAdmin.value) return '管理员可查看全部线索、统一指派业务员，并按需删除无效线索。'
+  return '当前账号只会看到被分配给自己的线索。'
+})
 
 const messages = shallowRef([])
 const { loading, loadError, run: runListLoad, isLatest } = useCancelableLoader()
-const { keyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
-const total = ref(0)
 const VIRTUAL_TABLE_THRESHOLD = 80
 const useVirtualTable = computed(() => messages.value.length >= VIRTUAL_TABLE_THRESHOLD)
 
@@ -184,11 +145,17 @@ const assignLoading = ref(false)
 const assignForm = reactive({ messageId: null, userId: null })
 const { isActionLoading, withActionLock, replaceById, removeById } = useInstantListActions(messages)
 
+const keyword = ref('')
+const page = ref(1)
+const pageSize = ref(10)
+const total = ref(0)
+
 /**
  * 拉取留言列表。
  * @param {number} targetPage - 目标页码
  */
-const loadMessages = async (targetPage = page.value) => {
+const loadMessages = async (targetPage) => {
+  if (!targetPage) targetPage = page.value || 1
   const runResult = await runListLoad(async ({ signal, seq }) => {
     const res = await messageApi.list({
       page: targetPage,
@@ -206,17 +173,28 @@ const loadMessages = async (targetPage = page.value) => {
   }
 }
 
+const handleCurrentChange = (val) => {
+  page.value = val
+  loadMessages(page.value)
+}
+
+const handleSizeChange = (val) => {
+  pageSize.value = val
+  page.value = 1
+  loadMessages(1)
+}
+
+const resetToFirstPage = () => {
+  page.value = 1
+}
+
 /**
  * 管理员拉取可指派的测试账号。
  */
 const loadStaff = async () => {
   if (!isAdmin.value) return
-  try {
-    const res = await userApi.list()
-    staffList.value = (res.users || []).filter((u) => u.role !== 'admin')
-  } catch {
-    staffList.value = []
-  }
+  const [, res] = await to(userApi.list())
+  staffList.value = (res?.users || []).filter((u) => u.role !== 'admin')
 }
 
 const triggerSearch = createDebounce(() => {
@@ -226,16 +204,6 @@ const triggerSearch = createDebounce(() => {
 
 const onKeywordInput = () => {
   triggerSearch()
-}
-
-const handleCurrentChange = (val) => {
-  loadMessages(val)
-}
-
-const handleSizeChange = (val) => {
-  pageSize.value = val
-  resetToFirstPage()
-  loadMessages(page.value)
 }
 
 /**
@@ -273,23 +241,23 @@ const confirmAssign = async () => {
   replaceById(currentId, {
     assignedTo: assignForm.userId,
     status: 'assigned',
-    assignee: selectedUser ? { id: selectedUser.id, username: selectedUser.username } : before.assignee
+    assignee: selectedUser ? { id: selectedUser.id, username: selectedUser.username, name: selectedUser.name } : before.assignee
   })
 
-  try {
-    assignLoading.value = true
-    await withActionLock(currentId, async () => {
-      await messageApi.assign(currentId, assignForm.userId)
-    })
-    ElMessage.success('指派成功')
-    assignVisible.value = false
-    await loadMessages(page.value)
-  } catch (error) {
+  assignLoading.value = true
+  const [err] = await to(withActionLock(currentId, async () => {
+    await messageApi.assign(currentId, assignForm.userId)
+  }))
+  if (err) {
     replaceById(currentId, before)
-    ElMessage.error(error?.message || error?.response?.data?.message || '指派失败')
-  } finally {
+    ElMessage.error(err?.message || err?.response?.data?.message || '指派失败')
     assignLoading.value = false
+    return
   }
+  ElMessage.success('指派成功')
+  assignVisible.value = false
+  await loadMessages(page.value)
+  assignLoading.value = false
 }
 
 /**
@@ -297,25 +265,25 @@ const confirmAssign = async () => {
  * @param {object} row
  */
 const doHideFromList = async (row) => {
-  try {
-    await ElMessageBox.confirm(
-      '确定从「我的指派」中删除这条留言吗？删除后您将不再看到它，超级管理员仍可在后台查看完整数据。',
-      '提示',
-      { type: 'warning' }
-    )
-    removeById(row.id)
-    total.value = Math.max(0, Number(total.value || 0) - 1)
-    await withActionLock(row.id, async () => {
-      await messageApi.hideFromAssignee(row.id)
-    })
-    ElMessage.success('已从我的列表移除')
+  const [confirmErr] = await to(ElMessageBox.confirm(
+    '确定从「我的指派」中删除这条留言吗？删除后您将不再看到它，超级管理员仍可在后台查看完整数据。',
+    '提示',
+    { type: 'warning' }
+  ))
+  if (confirmErr) return
+
+  removeById(row.id)
+  total.value = Math.max(0, Number(total.value || 0) - 1)
+  const [err] = await to(withActionLock(row.id, async () => {
+    await messageApi.hideFromAssignee(row.id)
+  }))
+  if (err) {
     await loadMessages(page.value)
-  } catch (error) {
-    if (error !== 'cancel') {
-      await loadMessages(page.value)
-      ElMessage.error(error?.message || error?.response?.data?.message || '操作失败')
-    }
+    ElMessage.error(err?.message || err?.response?.data?.message || '操作失败')
+    return
   }
+  ElMessage.success('已从我的列表移除')
+  await loadMessages(page.value)
 }
 
 /**
@@ -323,22 +291,21 @@ const doHideFromList = async (row) => {
  * 仅管理员可见该操作。
  */
 const doDelete = async (row) => {
-  try {
-    await ElMessageBox.confirm('确定删除这条留言吗？', '提示', { type: 'warning' })
-    removeById(row.id)
-    total.value = Math.max(0, Number(total.value || 0) - 1)
-    await withActionLock(row.id, async () => {
-      await messageApi.remove(row.id)
-    })
-    ElMessage.success('已删除')
+  const [confirmErr] = await to(ElMessageBox.confirm('确定删除这条留言吗？', '提示', { type: 'warning' }))
+  if (confirmErr) return
+
+  removeById(row.id)
+  total.value = Math.max(0, Number(total.value || 0) - 1)
+  const [err] = await to(withActionLock(row.id, async () => {
+    await messageApi.remove(row.id)
+  }))
+  if (err) {
     await loadMessages(page.value)
-  } catch (error) {
-    if (error !== 'cancel') {
-      await loadMessages(page.value)
-      ElMessage.error(error?.message || error?.response?.data?.message || '删除失败')
-    }
-    // 用户取消时不提示。
+    ElMessage.error(err?.message || err?.response?.data?.message || '删除失败')
+    return
   }
+  ElMessage.success('已删除')
+  await loadMessages(page.value)
 }
 
 const virtualColumns = computed(() => {
@@ -389,7 +356,7 @@ const virtualColumns = computed(() => {
       title: '跟进人',
       width: 130,
       align: 'center',
-      cellRenderer: ({ rowData }) => rowData?.assignee?.username || '—'
+      cellRenderer: ({ rowData }) => ((rowData?.assignee?.name || '').trim() || rowData?.assignee?.username) || '—'
     }
   ]
 
@@ -412,42 +379,42 @@ const virtualColumns = computed(() => {
         ),
         ...(isAdmin.value
           ? [
-              h(
-                ElButton,
-                {
-                  type: 'primary',
-                  link: true,
-                  size: 'small',
-                  loading: isActionLoading(rowData?.id),
-                  onClick: () => openAssign(rowData)
-                },
-                () => '指派'
-              ),
-              h(
-                ElButton,
-                {
-                  type: 'danger',
-                  link: true,
-                  size: 'small',
-                  loading: isActionLoading(rowData?.id),
-                  onClick: () => doDelete(rowData)
-                },
-                () => '删除'
-              )
-            ]
+            h(
+              ElButton,
+              {
+                type: 'primary',
+                link: true,
+                size: 'small',
+                loading: isActionLoading(rowData?.id),
+                onClick: () => openAssign(rowData)
+              },
+              () => '指派'
+            ),
+            h(
+              ElButton,
+              {
+                type: 'danger',
+                link: true,
+                size: 'small',
+                loading: isActionLoading(rowData?.id),
+                onClick: () => doDelete(rowData)
+              },
+              () => '删除'
+            )
+          ]
           : [
-              h(
-                ElButton,
-                {
-                  type: 'danger',
-                  link: true,
-                  size: 'small',
-                  loading: isActionLoading(rowData?.id),
-                  onClick: () => doHideFromList(rowData)
-                },
-                () => '删除'
-              )
-            ])
+            h(
+              ElButton,
+              {
+                type: 'danger',
+                link: true,
+                size: 'small',
+                loading: isActionLoading(rowData?.id),
+                onClick: () => doHideFromList(rowData)
+              },
+              () => '删除'
+            )
+          ])
       ])
   })
 

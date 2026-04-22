@@ -1,10 +1,17 @@
+/**
+ * @module api/http
+ * @description Axios 基础实例配置
+ * 
+ * 提供全局统一的 axios 实例，
+ * 用于创建其他 API 模块的请求实例。
+ */
+
 import axios from 'axios'
 
+/** API 基础 URL 配置 */
 const normalizeBaseURL = () => {
   const envBase = String(import.meta.env.VITE_API_BASE_URL || '').trim()
-  if (envBase) return envBase
-  // 本地开发默认直连后端，避免因未配置环境变量导致全部接口报错。
-  return 'http://localhost:3000'
+  return envBase || 'http://localhost:3000'
 }
 
 const http = axios.create({

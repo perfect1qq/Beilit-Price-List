@@ -1,51 +1,86 @@
+/**
+ * @module router
+ * @description Vue Router 路由配置
+ * 
+ * 统一路由管理，采用懒加载策略：
+ * - 所有页面组件使用 dynamic import 按需加载
+ * - 通过 meta 字段控制权限和标题
+ * - 支持滚动位置恢复
+ */
+
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { applyAuthGuard } from '@/router/guards/authGuard'
 
-/**
- * 路由表统一采用按需加载，降低首屏包体积。
- * 说明：
- * - 登录、注册页保留独立入口；
- * - 主站页面全部使用动态 import 懒加载；
- * - 通过 meta.title 统一生成标签页标题。
- */
+/** ==================== 页面组件懒加载 ==================== */
+
 const Login = () => import('../views/login.vue')
+const Register = () => import('../views/register.vue')
 const MainLayout = () => import('../layout/index.vue')
 const HomeView = () => import('../views/HomeView.vue')
+const UserManagement = () => import('../views/UserManagement.vue')
+
+/** 报价单模块 */
 const QuotationLayout = () => import('../views/QuotationLayout.vue')
 const QuotationList = () => import('../views/QuotationList.vue')
+const QuotationHistory = () => import('../views/QuotationHistory.vue')
+const QuotationStatistics = () => import('../views/QuotationStatistics.vue')
+
+/** 横梁载重模块 */
 const BeamQuotationLayout = () => import('../views/BeamQuotationLayout.vue')
 const BeamQuotationList = () => import('../views/BeamQuotationList.vue')
 const BeamQuotationHistory = () => import('../views/BeamQuotationHistory.vue')
-const QuotationStatistics = () => import('../views/QuotationStatistics.vue')
-const QuotationHistory = () => import('../views/QuotationHistory.vue')
+
+/** 审批模块 */
 const ApprovalLayout = () => import('../views/ApprovalLayout.vue')
 const Approval = () => import('../views/approval.vue')
 const ApprovalDetail = () => import('../views/approvalDetail.vue')
 const ApprovalHistory = () => import('../views/ApprovalHistory.vue')
+
+/** 其他页面 */
 const MediumShelfWeightTable = () => import('../views/MediumShelfWeightTable.vue')
 const MemoManagement = () => import('../views/MemoManagement.vue')
 const MessageManagement = () => import('../views/MessageManagement.vue')
+const UsdConversion = () => import('../views/UsdConversion.vue')
+
+/** ==================== 路由表 ==================== */
 
 const routes = [
-  { path: '/login', component: Login, meta: { public: true, title: '登录' } },
-  { path: '/register', component: () => import('../views/register.vue'), meta: { public: true, title: '注册' } },
+  /** 公开页面（无需登录） */
+  {
+    path: '/login',
+    component: Login,
+    meta: { public: true, title: '登录' }
+  },
+  {
+    path: '/register',
+    component: Register,
+    meta: { public: true, title: '注册' }
+  },
+
+  /** 主布局（需要登录） */
   {
     path: '/',
     component: MainLayout,
     children: [
       { path: '', redirect: '/home' },
+      
+      /** 首页 */
       {
         path: 'home',
         name: 'Home',
         component: HomeView,
         meta: { title: '首页' }
       },
+      
+      /** 用户管理（仅管理员） */
       {
         path: 'user-management',
         name: 'UserManagement',
-        component: () => import('../views/UserManagement.vue'),
+        component: UserManagement,
         meta: { title: '用户管理', adminOnly: true }
       },
+
+      /** 报价单模块 */
       {
         path: 'quotation',
         component: QuotationLayout,
@@ -65,6 +100,8 @@ const routes = [
           }
         ]
       },
+
+      /** 横梁载重模块 */
       {
         path: 'beam-quotation',
         component: BeamQuotationLayout,
@@ -83,15 +120,16 @@ const routes = [
           }
         ]
       },
-      { path: 'beam-quotation-history', redirect: '/beam-quotation/history' },
-      { path: 'quotation-history', redirect: '/quotation/history' },
+
+      /** 报价单统计 */
       {
         path: 'quotation-statistics',
         name: 'QuotationStatistics',
         component: QuotationStatistics,
         meta: { title: '报价单统计' }
       },
-      { path: 'Quotation-statistics', redirect: '/quotation-statistics' },
+
+      /** 审批管理（仅管理员） */
       {
         path: 'approval',
         component: ApprovalLayout,
@@ -122,24 +160,32 @@ const routes = [
           }
         ]
       },
+
+      /** 中型货架重量表 */
       {
         path: 'medium-shelf-weight',
         name: 'MediumShelfWeight',
         component: MediumShelfWeightTable,
         meta: { title: '中型货架重量表' }
       },
+
+      /** 备忘录 */
       {
         path: 'memo-management',
         name: 'MemoManagement',
         component: MemoManagement,
         meta: { title: '备忘录' }
       },
+
+      /** 美金换算 */
       {
         path: 'usd-conversion',
         name: 'UsdConversion',
-        component: () => import('../views/UsdConversion.vue'),
+        component: UsdConversion,
         meta: { title: '美金换算' }
       },
+
+      /** 留言管理 */
       {
         path: 'message',
         name: 'MessageManagement',
@@ -147,16 +193,21 @@ const routes = [
         meta: { title: '留言管理' }
       }
     ]
-  }
+  },
+
+  /** 兼容旧路径的重定向 */
+  { path: '/beam-quotation-history', redirect: '/beam-quotation/history' },
+  { path: '/quotation-history', redirect: '/quotation/history' },
+  { path: '/Quotation-statistics', redirect: '/quotation-statistics' }
 ]
 
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes,
+  
+  /** 滚动行为：支持返回时恢复位置，否则滚动到顶部 */
   scrollBehavior(to, from, savedPosition) {
-    if (savedPosition) {
-      return savedPosition
-    }
+    if (savedPosition) return savedPosition
     return { top: 0, left: 0 }
   }
 })

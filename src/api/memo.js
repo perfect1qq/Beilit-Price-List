@@ -1,37 +1,43 @@
-import request from '@/utils/request'
+/**
+ * @module api/memo
+ * @description 备忘录相关 API 接口封装
+ * 
+ * 提供备忘录的 CRUD 操作：
+ * - 列表查询（支持分页）
+ * - 创建、更新、删除
+ * - 历史记录查看
+ */
 
-export const memoApi = {
-  /**
-   * 备忘录列表。
-   * @param {object} params - page, pageSize, keyword, filter；tz：IANA 时区（建议传浏览器 Intl）；createdOn：仅历史用 YYYY-MM-DD
-   */
-  async list(params = {}, config = {}) {
-    const res = await request.get('/api/memos', { params, ...config })
-    return res.data
-  },
-  /** 历史列表（早于「今日」创建），等价于 list({ ...params, scope: 'history' })。 */
-  async listHistory(params = {}, config = {}) {
-    const res = await request.get('/api/memos/history', { params, ...config })
-    return res.data
-  },
-  async get(id) {
-    const res = await request.get(`/api/memos/${id}`)
-    return res.data
-  },
-  async create(payload) {
-    const res = await request.post('/api/memos', payload)
-    return res.data
-  },
-  async update(id, payload) {
-    const res = await request.put(`/api/memos/${id}`, payload)
-    return res.data
-  },
-  async remove(id) {
-    const res = await request.delete(`/api/memos/${id}`)
-    return res.data
-  },
-  async history(id) {
-    const res = await request.get(`/api/memos/${id}/history`)
-    return res.data
-  }
+import request from '../utils/request'
+import { unwrap } from '../utils/unwrap'
+
+/** 获取备忘录列表 */
+const list = (params) => request.get('/api/memos', { params })
+
+/** 获取备忘录历史记录列表 */
+const listHistory = (params, opts) => request.get('/api/memos/history', { params, ...(opts || {}) })
+
+/** 创建新备忘录 */
+const create = (data) => request.post('/api/memos', data)
+
+/** 更新备忘录 */
+const update = (id, data) => request.put(`/api/memos/${id}`, data)
+
+/** 删除备忘录 */
+const remove = (id) => request.delete(`/api/memos/${id}`)
+
+/** 获取单条备忘录的修改历史 */
+const history = (id) => request.get(`/api/memos/${id}/history`)
+
+/** 备忘录 API 对象（对外导出） */
+const memoApi = {
+  list: unwrap(list),
+  listHistory: unwrap(listHistory),
+  create: unwrap(create),
+  update: unwrap(update),
+  remove: unwrap(remove),
+  history: unwrap(history)
 }
+
+export { memoApi }
+export default memoApi
