@@ -23,7 +23,7 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('element-plus')) return 'vendor-element-plus'
+            if (id.includes('element-plus') || id.includes('@element-plus')) return 'vendor-element-plus'
             if (id.includes('vue') || id.includes('pinia') || id.includes('vue-router')) return 'vendor-vue'
             if (id.includes('axios')) return 'vendor-axios'
             return 'vendor-misc'

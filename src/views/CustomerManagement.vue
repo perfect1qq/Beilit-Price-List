@@ -20,14 +20,18 @@
         <el-table-column prop="customerName" label="客户姓名" min-width="100" align="center" />
         <el-table-column prop="contactInfo" label="联系方式" min-width="130" align="center" />
         <el-table-column prop="ownerName" label="负责人" min-width="90" align="center" />
-        <el-table-column label="跟进次数" width="90" align="center">
+        <el-table-column label="合作状态" width="110" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.followUpCount > 0 ? 'success' : 'info'" size="small">{{ row.followUpCount }}</el-tag>
+            <el-tag :type="row.cooperationStatus === '已合作' ? 'success' : 'warning'" size="small">
+              {{ row.cooperationStatus || '未合作' }}
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" width="110" align="center">
+        <el-table-column label="客户类型" width="100" align="center">
           <template #default="{ row }">
-            {{ formatDate(row.createdAt) }}
+            <el-tag :type="getCustomerTypeTagType(row.customerType)" size="small">
+              {{ row.customerType || '终端' }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" fixed="right" :width="isGuest ? 100 : 220" align="center">
@@ -60,6 +64,19 @@
         </el-form-item>
         <el-form-item label="联系方式" prop="contactInfo">
           <el-input v-model="formData.contactInfo" placeholder="请输入联系方式（电话、微信等）" maxlength="100" show-word-limit />
+        </el-form-item>
+        <el-form-item label="合作状态" prop="cooperationStatus">
+          <el-select v-model="formData.cooperationStatus" placeholder="选择合作状态" style="width: 100%">
+            <el-option label="未合作" value="未合作" />
+            <el-option label="已合作" value="已合作" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="客户类型" prop="customerType">
+          <el-select v-model="formData.customerType" placeholder="选择客户类型" style="width: 100%">
+            <el-option label="终端" value="终端" />
+            <el-option label="经销商" value="经销商" />
+            <el-option label="待确认" value="待确认" />
+          </el-select>
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="formData.remark" type="textarea" :rows="3" placeholder="请输入备注信息（可选）" maxlength="500"
@@ -195,6 +212,8 @@ const formData = reactive({
   companyName: '',
   customerName: '',
   contactInfo: '',
+  cooperationStatus: '未合作',
+  customerType: '终端',
   remark: ''
 })
 
@@ -254,6 +273,8 @@ const resetForm = () => {
   formData.companyName = ''
   formData.customerName = ''
   formData.contactInfo = ''
+  formData.cooperationStatus = '未合作'
+  formData.customerType = '终端'
   formData.remark = ''
   editingId.value = null
 }
@@ -270,6 +291,8 @@ const handleEdit = (row) => {
   formData.companyName = row.companyName
   formData.customerName = row.customerName
   formData.contactInfo = row.contactInfo
+  formData.cooperationStatus = row.cooperationStatus || '未合作'
+  formData.customerType = row.customerType || '终端'
   formData.remark = row.remark
   dialogTitle.value = '编辑客户'
   dialogVisible.value = true
@@ -391,6 +414,11 @@ const handleDeleteFollowUp = async (item) => {
 
 const getFollowTypeTagType = (type) => {
   const map = { '电话': '', '微信': 'success', '邮件': 'warning', '上门': 'danger', '其他': 'info' }
+  return map[type] || 'info'
+}
+
+const getCustomerTypeTagType = (type) => {
+  const map = { '终端': 'info', '经销商': 'primary', '待确认': 'warning' }
   return map[type] || 'info'
 }
 

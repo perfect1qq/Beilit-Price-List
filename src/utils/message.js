@@ -5,16 +5,38 @@ const extractMessage = (err, fallback = '操作失败') => {
   return err?.response?.data?.message || err?.message || fallback
 }
 
-const showError = (err, fallback = '操作失败') =>
-  ElMessage.error(extractMessage(err, fallback))
+const showError = (err, fallback = '操作失败') => {
+  const msg = extractMessage(err, fallback)
+  try {
+    ElMessage.error(msg)
+  } catch (e) {
+    console.error('[showError]', msg, e)
+    alert(msg)
+  }
+}
 
-const showSuccess = (msg = '操作成功') =>
-  ElMessage.success(msg)
+const showSuccess = (msg = '操作成功') => {
+  try {
+    ElMessage.success(msg)
+  } catch (e) {
+    console.log('[showSuccess]', msg)
+  }
+}
 
-const showWarning = (msg) =>
-  ElMessage.warning(msg)
+const showWarning = (msg) => {
+  try {
+    ElMessage.warning(msg)
+  } catch (e) {
+    console.warn('[showWarning]', msg)
+  }
+}
 
-const showInfo = (msg) =>
-  ElMessage.info(msg)
+const showInfo = (msg) => {
+  try {
+    ElMessage.info(msg)
+  } catch (e) {
+    console.info('[showInfo]', msg)
+  }
+}
 
 export { showError, showSuccess, showWarning, showInfo, extractMessage }
