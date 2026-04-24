@@ -25,10 +25,6 @@ export default defineConfig({
             if (id.includes('axios')) return 'vendor-axios'
             return 'vendor-misc'
           }
-          if (id.includes('/src/views/')) return 'views'
-          if (id.includes('/src/components/')) return 'components'
-          if (id.includes('/src/composables/')) return 'composables'
-          if (id.includes('/src/utils/')) return 'utils'
           return undefined
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
@@ -37,12 +33,9 @@ export default defineConfig({
       }
     },
     target: 'es2020',
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
-      }
+    minify: 'esbuild',
+    esbuild: {
+      drop: ['console', 'debugger']
     }
   }
 })
