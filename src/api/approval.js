@@ -3,7 +3,7 @@ import { unwrap } from '../utils/unwrap'
 
 const submitApproval = (id) => request.post(`/api/quotations/${id}/submit`)
 const approve = (id) => request.post(`/api/quotations/${id}/approve`)
-const reject = (id, reason) =>request.post(`/api/quotations/${id}/reject`, { reason })
+const reject = (id, comment) => request.post(`/api/quotations/${id}/reject`, { comment })
 const list = (params) => request.get('/api/approvals', { params })
 const get = (id) => request.get(`/api/approvals/${id}`)
 const listHistory = (params) => request.get('/api/approvals/history', { params })

@@ -43,7 +43,7 @@ const reject = (id, comment) => request.post(`/api/quotations/${id}/reject`, { c
 
 /** 解析统计文本 */
 const parseStatistics = (rawText) =>
-  request.post('/api/calculate', { text: rawText, type: 'statistics' })
+  request.post('/api/tools/calculate', { text: rawText, type: 'statistics' })
 
 /** 报价单 API 对象（对外导出） */
 const quotationApi = {

@@ -72,6 +72,30 @@ const getErrorMessage = (error) => {
  */
 const pendingControllers = new Map()
 
+const serializeRequestPart = (value) => {
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'string') return value
+  if (typeof value !== 'object') return JSON.stringify(value)
+
+  if (value instanceof URLSearchParams) {
+    return JSON.stringify([...value.entries()].sort(([a], [b]) => a.localeCompare(b)))
+  }
+
+  if (value instanceof FormData) {
+    return '[form-data]'
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map(item => serializeRequestPart(item)).join(',')}]`
+  }
+
+  const entries = Object.entries(value)
+    .filter(([key, item]) => !(key === '_t' && item !== undefined))
+    .sort(([a], [b]) => a.localeCompare(b))
+
+  return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${serializeRequestPart(item)}`).join(',')}}`
+}
+
 /**
  * 生成请求的唯一标识符
  * 
@@ -84,8 +108,9 @@ const pendingControllers = new Map()
 const generateRequestKey = (config) => {
   const method = String(config?.method || 'get').toLowerCase()
   const url = config?.url || ''
-  const params = config?.params ? JSON.stringify(config.params) : ''
-  return `${method}:${url}:${params}`
+  const params = serializeRequestPart(config?.params)
+  const data = method === 'get' ? '' : serializeRequestPart(config?.data)
+  return `${method}:${url}:${params}:${data}`
 }
 
 /**
