@@ -22,23 +22,36 @@
         </div>
       </div>
 
-      <PageTable :data="list" :loading="loading" :total="total" v-model:current-page="page" v-model:page-size="pageSize"
-        empty-description="暂无审批历史" @page-change="(p) => loadList(p)">
-        <el-table-column prop="quotationNo" label="名称" width="180" />
-        <el-table-column prop="companyName" label="公司名称" min-width="180" />
-        <el-table-column prop="ownerName" label="提交人" width="120" />
-        <el-table-column prop="createDate" label="创建时间" width="120" />
-        <el-table-column label="状态" width="110" align="center">
-          <template #default="{ row }">
-            <el-tag :type="tagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="140" align="center" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="openDetail(row.id)">查看详情</el-button>
-          </template>
-        </el-table-column>
-      </PageTable>
+      <CardList :data="list" :loading="loading" :total="total" v-model:current-page="page" v-model:page-size="pageSize"
+        :columns="2" empty-description="暂无审批历史" @page-change="(p) => loadList(p)">
+        <template #card="{ item }">
+          <div class="history-card-item">
+            <div class="card-header">
+              <h3 class="quotation-name">{{ item.quotationNo }}</h3>
+              <el-tag :type="tagType(item.status)" size="small">{{ statusLabel(item.status) }}</el-tag>
+            </div>
+
+            <div class="card-body">
+              <div class="info-row">
+                <span class="label">🏢 公司名称：</span>
+                <span class="value">{{ item.companyName || '-' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">👤 提交人：</span>
+                <span class="value">{{ item.ownerName || '-' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">📅 创建时间：</span>
+                <span class="value">{{ item.createDate || '-' }}</span>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <el-button link type="primary" size="small" @click.stop="openDetail(item.id)">查看详情</el-button>
+            </div>
+          </div>
+        </template>
+      </CardList>
     </el-card>
   </div>
 </template>
@@ -46,12 +59,11 @@
 <script setup>
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { createDebounce } from '@/utils/debounce'
 import { to } from '@/utils/async'
 import { showError } from '@/utils/message'
 import { approvalApi } from '@/api/approval'
 import { useListQueryState } from '@/composables/useListQueryState'
-import PageTable from '@/components/common/PageTable.vue'
+import CardList from '@/components/common/CardList.vue'
 import SearchBar from '@/components/common/SearchBar.vue'
 
 const router = useRouter()
@@ -81,11 +93,6 @@ const loadList = async (targetPage = page.value) => {
   pageSize.value = Number(res.pageSize || pageSize.value)
   loading.value = false
 }
-
-const onKeywordInput = createDebounce(() => {
-  resetToFirstPage()
-  loadList(1)
-}, 300)
 
 const openDetail = (id) => {
   router.push({ name: 'ApprovalHistoryDetail', params: { id } })
@@ -154,4 +161,6 @@ onMounted(() => loadList(1))
     width: 100%;
   }
 }
+
+/* 审批历史卡片特有样式（通用样式已移至global.css） */
 </style>

@@ -34,51 +34,60 @@
       </template>
 
       <!-- 数据展示核心区：用户实体列表 -->
-      <PageTable :data="filteredUsers" :loading="loading" :show-pagination="false" empty-description="暂无用户数据"
-        :empty-image-size="100">
-        <el-table-column type="index" label="序号" width="70" align="center" />
-        <el-table-column prop="username" label="用户名" min-width="130" show-overflow-tooltip align="center" />
-        <el-table-column prop="name" label="姓名" min-width="110" align="center">
-          <template #default="{ row }">
-            <el-input v-if="row._editingName" v-model="row._editNameValue" size="small" placeholder="输入姓名"
-              @blur="handleNameBlur(row)" @keyup.enter="confirmNameChange(row)" />
-            <span v-else class="editable-name" @click="startEditName(row)">{{ row.name || '—' }}</span>
-          </template>
-        </el-table-column>
+      <CardList :data="filteredUsers" :loading="loading" :show-pagination="false" :columns="3"
+        empty-description="暂无用户数据" :empty-image-size="100">
+        <template #card="{ item }">
+          <div class="user-card-item">
+            <div class="card-header">
+              <h3 class="username">{{ item.username }}</h3>
+              <el-tag :type="item.role === 'admin' ? 'danger' : item.role === 'user' ? 'primary' : 'info'" size="small">
+                {{ item.role === 'admin' ? '管理员' : item.role === 'user' ? '业务员' : '游客(只读)' }}
+              </el-tag>
+            </div>
 
-        <!-- ================= 角色列：支持管理员手动切换系统权限 ================= -->
-        <el-table-column prop="role" label="角色 (点击修改)" width="140" align="center">
-          <template #default="{ row }">
-            <el-select :model-value="row.role" size="small" placeholder="选择角色"
-              @change="(val) => handleRoleChange(row, val)" :disabled="row.id === currentUser.id">
-              <el-option label="管理员" value="admin" />
-              <el-option label="业务员" value="user" />
-              <el-option label="游客(只读)" value="guest" />
-            </el-select>
-          </template>
-        </el-table-column>
+            <div class="card-body">
+              <div class="info-row">
+                <span class="label">👤 姓名：</span>
+                <span class="value">
+                  <el-input v-if="item._editingName" v-model="item._editNameValue" size="small" placeholder="输入姓名"
+                    @blur="handleNameBlur(item)" @keyup.enter="confirmNameChange(item)" />
+                  <span v-else class="editable-name" @click="startEditName(item)">
+                    {{ item.name || '—' }}
+                    <el-icon class="edit-icon">
+                      <Edit />
+                    </el-icon>
+                  </span>
+                </span>
+              </div>
+              <div class="info-row">
+                <span class="label">🔐 角色：</span>
+                <span class="value">
+                  <el-select :model-value="item.role" size="small" placeholder="选择角色"
+                    @change="(val) => handleRoleChange(item, val)" :disabled="item.id === currentUser.id">
+                    <el-option label="管理员" value="admin" />
+                    <el-option label="业务员" value="user" />
+                    <el-option label="游客(只读)" value="guest" />
+                  </el-select>
+                </span>
+              </div>
+              <div class="info-row">
+                <span class="label">📅 注册时间：</span>
+                <span class="value">{{ formatDate(item.createdAt) }}</span>
+              </div>
+            </div>
 
-        <el-table-column prop="createdAt" label="注册时间" width="160" align="center">
-          <template #default="{ row }">
-            {{ formatDate(row.createdAt) }}
-          </template>
-        </el-table-column>
-
-        <!-- 操作列：支持针对特定用户打回密码和删除用户 -->
-        <el-table-column label="操作" fixed="right" min-width="180" align="center">
-          <template #default="{ row }">
-            <div class="action-btns">
-              <el-button type="warning" size="small" plain :icon="Lock" @click="handleResetClick(row)">
+            <div class="card-footer">
+              <el-button type="warning" size="small" plain :icon="Lock" @click.stop="handleResetClick(item)">
                 重置密码
               </el-button>
-              <el-button type="danger" size="small" plain :icon="Delete" @click="handleDelete(row)"
-                :disabled="row.id === currentUser.id">
+              <el-button type="danger" size="small" plain :icon="Delete" @click.stop="handleDelete(item)"
+                :disabled="item.id === currentUser.id">
                 删除
               </el-button>
             </div>
-          </template>
-        </el-table-column>
-      </PageTable>
+          </div>
+        </template>
+      </CardList>
     </el-card>
 
     <!-- 重置密码对话框 -->
@@ -102,17 +111,16 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessageBox } from 'element-plus'
-import { Lock, Refresh, Delete } from '@element-plus/icons-vue'
+import { Lock, Refresh, Delete, Edit } from '@element-plus/icons-vue'
 import { userApi } from '@/api/user'
 import { to } from '@/utils/async'
 import { formatDate } from '@/utils/date'
 import { showError, showSuccess, showWarning } from '@/utils/message'
-import { TABLE_HEADER_STYLE } from '@/constants/table'
 import SearchBar from '@/components/common/SearchBar.vue'
-import PageTable from '@/components/common/PageTable.vue'
+import CardList from '@/components/common/CardList.vue'
 
 const loading = ref(false)
-const users = ref([]) // 所有用户列表
+const users = ref([])
 const search = ref('') // 搜索关键词
 const currentUser = ref({}) // 当前登录用户的信息
 
@@ -340,11 +348,24 @@ onMounted(() => {
   padding: 2px 6px;
   border-radius: 4px;
   transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .editable-name:hover {
   background-color: #e8f0fe;
   color: #6366f1;
+}
+
+.edit-icon {
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.editable-name:hover .edit-icon {
+  opacity: 1;
 }
 
 .action-btns {
@@ -357,4 +378,6 @@ onMounted(() => {
 .action-btns .el-button {
   padding: 5px 12px;
 }
+
+/* 用户卡片特有样式（通用样式已移至global.css） */
 </style>

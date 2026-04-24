@@ -26,29 +26,40 @@
       </div>
     </div>
 
-    <PageTable :data="list" :loading="loading" :total="total" v-model:current-page="page" v-model:page-size="pageSize"
-      empty-description="暂无待审批记录" @page-change="(p) => loadList(p)">
-      <el-table-column prop="quotationNo" label="名称" min-width="150" show-overflow-tooltip align="center" />
-      <el-table-column prop="companyName" label="公司名称" min-width="160" show-overflow-tooltip align="center" />
-      <el-table-column prop="ownerName" label="提交人" min-width="90" align="center" />
-      <el-table-column prop="createDate" label="创建时间" width="110" align="center" />
-      <el-table-column label="状态" width="90" align="center">
-        <template #default="{ row }">
-          <el-tag :type="tagType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" fixed="right" min-width="240" align="center">
-        <template #default="{ row }">
-          <div class="action-btns">
-            <el-button type="primary" size="small" round @click="editDetail(row.id)">详情</el-button>
-            <el-button type="success" size="small" plain :loading="isActionLoading(row.id)"
-              @click="approveRow(row)">通过</el-button>
-            <el-button type="danger" size="small" plain :loading="isActionLoading(row.id)"
-              @click="rejectRow(row)">驳回</el-button>
+    <CardList :data="list" :loading="loading" :total="total" v-model:current-page="page" v-model:page-size="pageSize"
+      :columns="2" empty-description="暂无待审批记录" @page-change="(p) => loadList(p)">
+      <template #card="{ item }">
+        <div class="approval-card-item">
+          <div class="card-header">
+            <h3 class="quotation-name">{{ item.quotationNo }}</h3>
+            <el-tag :type="tagType(item.status)" size="small">{{ statusLabel(item.status) }}</el-tag>
           </div>
-        </template>
-      </el-table-column>
-    </PageTable>
+
+          <div class="card-body">
+            <div class="info-row">
+              <span class="label">🏢 公司名称：</span>
+              <span class="value">{{ item.companyName || '-' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">👤 提交人：</span>
+              <span class="value">{{ item.ownerName || '-' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">📅 创建时间：</span>
+              <span class="value">{{ item.createDate || '-' }}</span>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <el-button type="primary" size="small" round @click.stop="editDetail(item.id)">详情</el-button>
+            <el-button type="success" size="small" plain :loading="isActionLoading(item.id)"
+              @click.stop="approveRow(item)">通过</el-button>
+            <el-button type="danger" size="small" plain :loading="isActionLoading(item.id)"
+              @click.stop="rejectRow(item)">驳回</el-button>
+          </div>
+        </div>
+      </template>
+    </CardList>
   </el-card>
 </template>
 
@@ -56,14 +67,13 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
-import { createDebounce } from '@/utils/debounce'
 import { to } from '@/utils/async'
 import { approvalApi } from '@/api/approval'
 import { quotationApi } from '@/api/quotation'
 import { messageApi } from '@/api/message'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { useListQueryState } from '@/composables/useListQueryState'
-import PageTable from '@/components/common/PageTable.vue'
+import CardList from '@/components/common/CardList.vue'
 import SearchBar from '@/components/common/SearchBar.vue'
 import { showError, showSuccess } from '@/utils/message'
 
@@ -97,11 +107,6 @@ const loadList = async (targetPage = page.value) => {
   void messageApi.markAllAsRead()
   loading.value = false
 }
-
-const onKeywordInput = createDebounce(() => {
-  resetToFirstPage()
-  loadList(1)
-}, 300)
 
 const editDetail = (id) => {
   router.push({ path: `/approval/${id}`, query: { mode: 'edit' } })
@@ -215,5 +220,67 @@ onMounted(() => loadList(1))
 
 .action-btns .el-button {
   padding: 5px 12px;
+}
+
+.approval-card-item {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.approval-card-item .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.approval-card-item .quotation-name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+  line-height: 1.4;
+  flex: 1;
+  margin-right: 12px;
+  word-break: break-all;
+}
+
+.approval-card-item .card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.approval-card-item .info-row {
+  display: flex;
+  align-items: flex-start;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.approval-card-item .info-row .label {
+  color: #909399;
+  white-space: nowrap;
+  min-width: 100px;
+  font-weight: 500;
+}
+
+.approval-card-item .info-row .value {
+  color: #606266;
+  flex: 1;
+  word-break: break-all;
+}
+
+.approval-card-item .card-footer {
+  padding-top: 12px;
+  border-top: 1px solid #f0f2f5;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }
 </style>

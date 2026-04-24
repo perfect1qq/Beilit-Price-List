@@ -85,9 +85,9 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
 import { to } from '@/utils/async'
+import { showError, showSuccess } from '@/utils/message'
 import { DataLine, Grid, Lock, User, UserFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -143,11 +143,11 @@ const handleRegister = async () => {
       password: form.password
     }))
     if (err) {
-      ElMessage.error(err?.response?.data?.message || '服务器繁忙，注册失败请重试')
+      showError(err, '服务器繁忙，注册失败请重试')
       loading.value = false
       return
     }
-    ElMessage.success('账号创建成功，请使用新账号登入系统')
+    showSuccess('账号创建成功，请使用新账号登入系统')
     router.push('/login')
     loading.value = false
   })

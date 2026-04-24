@@ -123,7 +123,7 @@ import { ElMessageBox } from 'element-plus'
 import { Plus, Delete } from '@element-plus/icons-vue'
 import { beamApi } from '../api/beam'
 import { to } from '@/utils/async'
-import { showError, showSuccess } from '@/utils/message'
+import { showError, showSuccess, showWarning } from '@/utils/message'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { usePagination } from '@/composables/usePagination'
 import { createDebounce } from '@/utils/debounce'
@@ -241,7 +241,7 @@ const addRow = () => editingItems.value.push({ name: '', length: '', spec: '', m
 // 需求 3：不能把数据删完
 const removeRow = (index) => {
   if (editingItems.value.length <= 1) {
-    return ElMessage.warning('至少需要保留一行数据，无法继续删除！')
+    return showWarning('至少需要保留一行数据，无法继续删除！')
   }
   editingItems.value.splice(index, 1)
 }
@@ -253,7 +253,7 @@ const handleUpdate = async () => {
   const currentName = formModel.recordName
   const currentDataStr = JSON.stringify({ name: currentName, items: editingItems.value })
   if (currentDataStr === originalDataStr.value) {
-    return ElMessage.warning('您没有修改任何数据，无需提交修改。')
+    return showWarning('您没有修改任何数据，无需提交修改。')
   }
 
   replaceById(editingId.value, { name: currentName, items: JSON.parse(JSON.stringify(editingItems.value)) })
@@ -282,7 +282,7 @@ const handleDelete = async (row) => {
     showError(err, '删除失败')
     return
   }
-  ElMessage.success('删除成功')
+  showSuccess('删除成功')
   await loadList(page.value)
 }
 

@@ -82,9 +82,10 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
 import { to } from '@/utils/async'
+import { showError } from '@/utils/message'
 import { DataLine, Grid, Lock, User } from '@element-plus/icons-vue'
 
 const router = useRouter()
@@ -127,7 +128,7 @@ const handleLogin = async () => {
     }))
 
     if (err) {
-      ElMessage.error(err?.response?.data?.message || '登录异常失败，请检查网络')
+      showError(err, '登录异常失败，请检查网络')
       loading.value = false
       return
     }

@@ -194,10 +194,11 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { Edit, Plus, Refresh } from '@element-plus/icons-vue'
 import { mediumShelfWeightApi } from '@/api/mediumShelfWeight'
 import { to } from '@/utils/async'
+import { showError, showSuccess, showWarning, showInfo } from '@/utils/message'
 import { usePermissions } from '@/composables/usePermissions'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 
@@ -315,7 +316,7 @@ const loadData = async () => {
   const [err, res] = await to(mediumShelfWeightApi.getConfig())
   if (err) {
     errorMsg.value = err?.response?.data?.message ?? '由于网络或服务端异常，加载中型货架重量表失败'
-    ElMessage.error(errorMsg.value)
+    showError(errorMsg.value)
     loading.value = false
     return
   }
@@ -333,7 +334,7 @@ const cancelEdit = () => {
   editMode.value = false
   draftSummaryRows.value = []
   draftDetailRows.value = []
-  ElMessage.info('已取消修改')
+  showInfo('已取消修改')
 }
 
 const addSummaryRow = () => {
@@ -427,12 +428,12 @@ const validateRows = () => {
   const detail = getCurrentDetailRows()
 
   if (!summary.length) {
-    ElMessage.warning('汇总表至少要有一行')
+    showWarning('汇总表至少要有一行')
     return false
   }
 
   if (!detail.length) {
-    ElMessage.warning('明细表至少要有一行')
+    showWarning('明细表至少要有一行')
     return false
   }
 
@@ -453,7 +454,7 @@ const saveData = async () => {
   }))
   if (err) {
     const msg = err?.response?.data?.message || '保存失败'
-    ElMessage.error(msg)
+    showError(msg)
     saving.value = false
     return
   }
@@ -461,7 +462,7 @@ const saveData = async () => {
   editMode.value = false
   draftSummaryRows.value = []
   draftDetailRows.value = []
-  ElMessage.success('保存成功')
+  showSuccess('保存成功')
   saving.value = false
 }
 

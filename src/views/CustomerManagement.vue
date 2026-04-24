@@ -9,48 +9,78 @@
         </CardHeader>
       </template>
 
-      <!-- 搜索栏 -->
-      <SearchBar v-model="searchKeyword" placeholder="搜索公司名称、客户姓名、联系方式" @search="handleSearch" />
+      <!-- 搜索和筛选区域（同一行） -->
+      <div class="search-filter-row">
+        <SearchBar v-model="searchKeyword" placeholder="搜索公司名称、客户姓名、联系方式" @search="handleSearch" />
 
-      <!-- 客户列表表格 -->
-      <PageTable :data="customerList" :loading="loading" :total="total" v-model:current-page="page"
-        v-model:page-size="pageSize" empty-description="暂无客户数据" :empty-image-size="120"
+        <div class="filter-group">
+          <el-select v-model="filterCooperationStatus" placeholder="合作状态" clearable style="width: 130px">
+            <el-option label="已合作" value="已合作" />
+            <el-option label="未合作" value="未合作" />
+          </el-select>
+
+          <el-select v-model="filterCustomerType" placeholder="客户类型" clearable style="width: 130px">
+            <el-option label="终端" value="终端" />
+            <el-option label="经销商" value="经销商" />
+            <el-option label="待确认" value="待确认" />
+          </el-select>
+
+          <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
+          <el-button @click="handleResetFilter">清空</el-button>
+        </div>
+      </div>
+
+      <!-- 客户卡片列表 -->
+      <CardList :data="customerList" :loading="loading" :total="total" v-model:current-page="page"
+        v-model:page-size="pageSize" :columns="2" empty-description="暂无客户数据" :empty-image-size="120"
         @page-change="(p) => loadList(p)">
-        <el-table-column prop="companyName" label="公司名称" min-width="150" show-overflow-tooltip align="center" />
-        <el-table-column prop="customerName" label="客户姓名" min-width="100" align="center" />
-        <el-table-column prop="contactInfo" label="联系方式" min-width="130" align="center" />
-        <el-table-column prop="ownerName" label="负责人" min-width="90" align="center" />
-        <el-table-column label="合作状态" width="110" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.cooperationStatus === '已合作' ? 'success' : 'warning'" size="small">
-              {{ row.cooperationStatus || '未合作' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="客户类型" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag :type="getCustomerTypeTagType(row.customerType)" size="small">
-              {{ row.customerType || '终端' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" fixed="right" :width="isGuest ? 100 : 220" align="center">
-          <template #default="{ row }">
-            <div class="action-btns">
-              <el-button type="primary" size="small" round @click="handleViewDetail(row)">详情</el-button>
-              <template v-if="!isGuest">
-                <el-button v-if="canEdit" type="warning" size="small" plain @click="handleEdit(row)">编辑</el-button>
-                <el-button v-if="canDelete" type="danger" size="small" plain @click="handleDelete(row)">删除</el-button>
-              </template>
+        <template #card="{ item }">
+          <div class="customer-card">
+            <div class="card-header">
+              <h3 class="company-name">{{ item.companyName }}</h3>
+              <div class="tags">
+                <el-tag :type="item.cooperationStatus === '已合作' ? 'success' : 'warning'" size="small">
+                  {{ item.cooperationStatus || '未合作' }}
+                </el-tag>
+                <el-tag :type="getCustomerTypeTagType(item.customerType)" size="small">
+                  {{ item.customerType || '终端' }}
+                </el-tag>
+              </div>
             </div>
-          </template>
-        </el-table-column>
 
-        <!-- 空状态操作按钮 -->
+            <div class="card-body">
+              <div class="info-row">
+                <span class="label">👤 客户姓名：</span>
+                <span class="value">{{ item.customerName || '-' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">📞 联系方式：</span>
+                <span class="value">{{ item.contactInfo || '-' }}</span>
+              </div>
+              <div class="info-row" v-if="item.remark">
+                <span class="label">📝 备注：</span>
+                <span class="value remark-text">{{ item.remark }}</span>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <div class="action-buttons">
+                <el-button type="primary" size="small" round @click.stop="handleViewDetail(item)">详情</el-button>
+                <template v-if="!isGuest">
+                  <el-button v-if="canEdit" type="warning" size="small" plain
+                    @click.stop="handleEdit(item)">编辑</el-button>
+                  <el-button v-if="canDelete" type="danger" size="small" plain
+                    @click.stop="handleDelete(item)">删除</el-button>
+                </template>
+              </div>
+            </div>
+          </div>
+        </template>
+
         <template #empty-action>
           <el-button v-if="canCreate" type="primary" @click="handleAdd">立即添加客户</el-button>
         </template>
-      </PageTable>
+      </CardList>
     </el-card>
 
     <!-- 新增/编辑客户对话框 -->
@@ -167,9 +197,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, shallowRef } from 'vue'
 import { ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Search } from '@element-plus/icons-vue'
 import { customerApi } from '@/api/customer'
 import { to } from '@/utils/async'
 import { formatDate, formatDateTime } from '@/utils/date'
@@ -177,17 +207,18 @@ import { showError, showSuccess } from '@/utils/message'
 import { usePagination } from '@/composables/usePagination'
 import { usePermissions } from '@/composables/usePermissions'
 import { useFormSubmit } from '@/composables/useFormSubmit'
-import { TABLE_HEADER_STYLE } from '@/constants/table'
 import SearchBar from '@/components/common/SearchBar.vue'
 import CardHeader from '@/components/common/CardHeader.vue'
-import PageTable from '@/components/common/PageTable.vue'
+import CardList from '@/components/common/CardList.vue'
 
 const { isGuest, canCreate, canEdit, canDelete } = usePermissions()
 const { submitLoading, withSubmitLock } = useFormSubmit()
 
 const loading = ref(false)
-const customerList = ref([])
+const customerList = shallowRef([])
 const searchKeyword = ref('')
+const filterCooperationStatus = ref('')
+const filterCustomerType = ref('')
 
 const {
   page,
@@ -198,7 +229,7 @@ const {
   resetToFirstPage
 } = usePagination({
   defaultPage: 1,
-  defaultPageSize: 20,
+  defaultPageSize: 10,
   onLoad: (newPage) => loadList(newPage)
 })
 
@@ -248,11 +279,21 @@ const followUpFormRules = {
 
 const loadList = async () => {
   loading.value = true
-  const [err, res] = await to(customerApi.list({
-    keyword: searchKeyword.value,
+
+  const params = {
+    keyword: searchKeyword.value || undefined,
     page: page.value,
     pageSize: pageSize.value
-  }))
+  }
+
+  if (filterCooperationStatus.value && filterCooperationStatus.value.trim()) {
+    params.cooperationStatus = filterCooperationStatus.value.trim()
+  }
+  if (filterCustomerType.value && filterCustomerType.value.trim()) {
+    params.customerType = filterCustomerType.value.trim()
+  }
+
+  const [err, res] = await to(customerApi.list(params))
   if (err) {
     showError(err, '加载客户列表失败')
     loading.value = false
@@ -265,6 +306,14 @@ const loadList = async () => {
 }
 
 const handleSearch = () => {
+  resetToFirstPage()
+  loadList()
+}
+
+const handleResetFilter = () => {
+  searchKeyword.value = ''
+  filterCooperationStatus.value = ''
+  filterCustomerType.value = ''
   resetToFirstPage()
   loadList()
 }
@@ -437,7 +486,30 @@ onMounted(() => {
   display: flex;
   gap: 12px;
   align-items: center;
+  margin-bottom: 0;
+}
+
+.search-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   margin-bottom: 20px;
+  padding: 16px 20px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.search-filter-row .search-bar {
+  flex: 1;
+  min-width: 300px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .detail-content {
@@ -456,6 +528,13 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+}
+
+/* 客户卡片特有样式（通用样式已移至global.css） */
+.customer-card .info-row .remark-text {
+  color: #909399;
+  font-size: 13px;
+  font-style: italic;
 }
 
 .section-title {

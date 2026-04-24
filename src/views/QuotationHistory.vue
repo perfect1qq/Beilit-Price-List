@@ -223,6 +223,7 @@ import { useQuotationEditor } from '@/composables/useQuotationEditor'
 import { readCurrentUser } from '@/utils/navigation'
 import { usePermissions } from '@/composables/usePermissions'
 import { formatMoney } from '@/utils/number'
+import { showError } from '@/utils/message'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 
 const role = ref(readCurrentUser().role || 'user')
@@ -400,7 +401,7 @@ onMounted(async () => {
   try {
     await loadHistoryList()
   } catch (error) {
-    ElMessage.error(error?.response?.data?.message || error?.message || '历史记录加载失败')
+    showError(error, '历史记录加载失败')
   }
 })
 </script>

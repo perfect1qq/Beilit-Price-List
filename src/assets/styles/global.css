@@ -316,3 +316,178 @@ body.el-popup-parent--hidden .el-main {
   color: #fff;
   border-color: var(--el-color-success);
 }
+
+/* ==================== 通用卡片组件样式（全局复用） ==================== */
+
+/* 基础卡片容器 */
+[data-card-item],
+.customer-card,
+.user-card-item,
+.message-card-item,
+.history-card-item {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 卡片头部 */
+[data-card-item] .card-header,
+.customer-card .card-header,
+.user-card-item .card-header,
+.message-card-item .card-header,
+.history-card-item .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+/* 卡片标题（通用） */
+[data-card-item] .card-header h3,
+.customer-card .company-name,
+.user-card-item .username,
+.message-card-item .contact-info,
+.history-card-item .quotation-name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+  line-height: 1.4;
+  flex: 1;
+  margin-right: 12px;
+  word-break: break-all;
+}
+
+/* 标签组 */
+[data-card-item] .tags,
+.customer-card .tags {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* 卡片主体 */
+[data-card-item] .card-body,
+.customer-card .card-body,
+.user-card-item .card-body,
+.message-card-item .card-body,
+.history-card-item .card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+/* 信息行 */
+[data-card-item] .info-row,
+.customer-card .info-row,
+.user-card-item .info-row,
+.message-card-item .info-row,
+.history-card-item .info-row {
+  display: flex;
+  align-items: flex-start;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* 信息标签 */
+[data-card-item] .info-row .label,
+.customer-card .info-row .label,
+.user-card-item .info-row .label,
+.message-card-item .info-row .label,
+.history-card-item .info-row .label {
+  color: #909399;
+  white-space: nowrap;
+  min-width: 100px;
+  font-weight: 500;
+}
+
+/* 信息值 */
+[data-card-item] .info-row .value,
+.customer-card .info-row .value,
+.user-card-item .info-row .value,
+.message-card-item .info-row .value,
+.history-card-item .info-row .value {
+  color: #606266;
+  flex: 1;
+  word-break: break-all;
+}
+
+/* 特殊文本样式 */
+.customer-card .info-row .remark-text {
+  color: #909399;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.message-card-item .info-row .content-text {
+  color: #303133;
+  font-size: 13px;
+  line-height: 1.8;
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+/* 卡片底部 */
+[data-card-item] .card-footer,
+.customer-card .card-footer,
+.user-card-item .card-footer,
+.message-card-item .card-footer,
+.history-card-item .card-footer {
+  padding-top: 12px;
+  border-top: 1px solid #f0f2f5;
+}
+
+/* 操作按钮组 */
+[data-card-item] .action-buttons,
+.customer-card .action-buttons,
+.user-card-item .card-footer,
+.message-card-item .card-footer,
+.history-card-item .card-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ==================== 表格内表单样式优化（全局） ==================== */
+
+/*
+ * 解决问题：表格中使用 el-form-item 包裹输入框时，
+ * 验证提示文字导致输入框无法垂直居中
+ *
+ * 解决方案：
+ * 1. 移除表单项底部边距
+ * 2. 为错误提示预留空间（padding-bottom）
+ * 3. 错误提示绝对定位到输入框下方居中
+ * 4. 输入框使用flexbox垂直水平居中
+ */
+
+.el-table .el-form-item {
+  margin-bottom: 0 !important;
+  padding-bottom: 18px !important;
+}
+
+.el-table .el-form-item__content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 32px;
+  position: relative;
+}
+
+.el-table .el-form-item__error {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding-top: 2px;
+  font-size: 11px;
+  line-height: 1.4;
+  width: max-content;
+  max-width: 200px;
+  z-index: 10;
+}

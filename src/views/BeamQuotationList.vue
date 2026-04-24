@@ -72,10 +72,10 @@
 
 <script setup>
 import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
 import { Plus, Delete, DocumentAdd } from '@element-plus/icons-vue'
 import { beamApi } from '../api/beam'
 import { to } from '@/utils/async'
+import { showWarning, showError, showSuccess } from '@/utils/message'
 import { beamNameRule, beamNameRule2, positiveIntegerRule, positiveDecimalRule } from '@/utils/formRules'
 import { usePermissions } from '@/composables/usePermissions'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
@@ -91,7 +91,7 @@ const addRow = () => items.value.push({ name: '', length: '', spec: '', maxLoad:
 
 const deleteRow = (index) => {
   if (items.value.length <= 1) {
-    return ElMessage.warning('至少需要保留一行数据！')
+    return showWarning('至少需要保留一行数据！')
   }
   items.value.splice(index, 1)
 }
@@ -104,17 +104,17 @@ const handleSave = async () => {
 
   const [, checkRes] = await to(beamApi.checkName(recordName.value.trim()))
   if (checkRes?.exists) {
-    return ElMessage.warning('历史记录中已存在同名的横梁名称，请更换横梁名称！')
+    return showWarning('历史记录中已存在同名的横梁名称，请更换横梁名称！')
   }
 
   saving.value = true
   const [err] = await to(beamApi.create({ name: recordName.value, items: items.value }))
   if (err) {
-    ElMessage.error('保存失败，请检查网络或后端接口')
+    showError('保存失败，请检查网络或后端接口')
     saving.value = false
     return
   }
-  ElMessage.success('新增成功')
+  showSuccess('新增成功')
   formRef.value?.resetFields()
   recordName.value = ''
   items.value = [{ name: '', length: '', spec: '', maxLoad: '' }]
@@ -171,6 +171,9 @@ const handleSave = async () => {
 :deep(.el-form-item) {
   margin-bottom: 22px;
 }
+
+/* 表格内表单验证提示文字已通过 global.css 全局优化 */
+/* 输入框居中 + 错误提示显示在下方 */
 
 :deep(.el-form-item__error) {
   font-size: 11px;

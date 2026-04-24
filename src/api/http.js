@@ -4,6 +4,19 @@
  * 
  * 提供全局统一的 axios 实例，
  * 用于创建其他 API 模块的请求实例。
+ * 
+ * ⚠️ 重要提示：
+ * - 此文件仅提供基础 axios 配置
+ * - 实际开发请使用 `@/utils/request` （具备完整的拦截器功能）
+ * - request.js 在此基础上增加了：Token注入、错误处理、401跳转、请求去重等
+ * 
+ * 功能特性（通过 request.js 继承）：
+ * ✅ 自动 Token 注入
+ * ✅ GET 请求缓存防穿透
+ * ✅ 响应数据标准化
+ * ✅ 错误统一处理与自动重试
+ * ✅ 401 自动跳转登录
+ * ✅ AbortController 请求取消机制
  */
 
 import axios from 'axios'

@@ -252,12 +252,13 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, shallowRef } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { Plus, Search, MoreFilled, Delete } from '@element-plus/icons-vue'
 import { memoApi } from '@/api/memo'
 import { createDebounce } from '@/utils/debounce'
 import { to } from '@/utils/async'
 import { formatDateTime } from '@/utils/navigation'
+import { showError, showSuccess, showWarning } from '@/utils/message'
 import { useCancelableLoader } from '@/composables/useCancelableLoader'
 import { useListQueryState } from '@/composables/useListQueryState'
 import { memoTitleRule, memoLabelRule, memoContentRule } from '@/utils/formRules'
@@ -434,7 +435,7 @@ const saveMemo = async () => {
   if (editorMode.value === 'edit') {
     const isChanged = JSON.stringify(form) !== JSON.stringify(originalForm)
     if (!isChanged) {
-      ElMessage.warning('没有做任何修改')
+      showWarning('没有做任何修改')
       return
     }
   }
@@ -446,14 +447,14 @@ const saveMemo = async () => {
       saving.value = false
       return
     }
-    ElMessage.success('新增成功')
+    showSuccess('新增成功')
   } else {
     const [err] = await to(memoApi.update(editingId.value, form))
     if (err) {
       saving.value = false
       return
     }
-    ElMessage.success('修改完成')
+    showSuccess('修改完成')
   }
   editorVisible.value = false
   page.value = 1
@@ -464,7 +465,7 @@ const saveMemo = async () => {
 const toggleCompleted = async item => {
   const [err] = await to(memoApi.update(item.id, { ...item, completed: !item.completed }))
   if (err) {
-    ElMessage.error('网络繁忙，请重试')
+    showError('网络繁忙，请重试')
     return
   }
   page.value = 1
@@ -474,7 +475,7 @@ const toggleCompleted = async item => {
 const togglePinned = async item => {
   const [err] = await to(memoApi.update(item.id, { ...item, pinned: !item.pinned }))
   if (err) {
-    ElMessage.error('操作失败')
+    showError('操作失败')
     return
   }
   page.value = 1

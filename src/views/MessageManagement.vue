@@ -20,51 +20,50 @@
         </div>
       </template>
 
-      <PageTable v-if="!useVirtualTable" :data="messages" :loading="loading" :total="total" v-model:current-page="page"
-        v-model:page-size="pageSize" empty-description="暂无留言线索" @page-change="(p) => loadMessages(p)">
-        <el-table-column label="提交时间" width="150" align="center">
-          <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
-        </el-table-column>
-
-        <el-table-column prop="contactInfo" label="联系方式" min-width="160" align="center" show-overflow-tooltip />
-        <el-table-column prop="content" label="留言内容" min-width="220" align="center" show-overflow-tooltip />
-        <el-table-column label="状态" width="100" align="center">
-          <template #default="{ row }">
-            <div class="status-cell">
-              <el-tag :type="row.status === 'assigned' ? 'success' : 'warning'" size="small">
-                {{ row.status === 'assigned' ? '已指派' : '待处理' }}
+      <CardList v-if="!useVirtualTable" :data="messages" :loading="loading" :total="total" v-model:current-page="page"
+        v-model:page-size="pageSize" :columns="2" empty-description="暂无留言线索" @page-change="(p) => loadMessages(p)">
+        <template #card="{ item }">
+          <div class="message-card-item">
+            <div class="card-header">
+              <h3 class="contact-info">{{ item.contactInfo || '未提供联系方式' }}</h3>
+              <el-tag :type="item.status === 'assigned' ? 'success' : 'warning'" size="small">
+                {{ item.status === 'assigned' ? '已指派' : '待处理' }}
               </el-tag>
-
             </div>
-          </template>
-        </el-table-column>
 
-        <el-table-column label="跟进人" min-width="90" align="center">
-          <template #default="{ row }">
-            {{ (row.assignee?.name || '').trim() || row.assignee?.username || '—' }}
-          </template>
-        </el-table-column>
+            <div class="card-body">
+              <div class="info-row">
+                <span class="label">📅 提交时间：</span>
+                <span class="value">{{ formatTime(item.createdAt) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">💬 留言内容：</span>
+                <span class="value content-text">{{ item.content || '-' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">👤 跟进人：</span>
+                <span class="value">{{ (item.assignee?.name || '').trim() || item.assignee?.username || '—' }}</span>
+              </div>
+            </div>
 
-        <el-table-column label="操作" fixed="right" :width="isAdmin ? 200 : (isGuest ? 80 : 140)" align="center">
-          <template #default="{ row }">
-            <div class="action-btns">
-              <el-button type="primary" size="small" round @click="openView(row)">查看</el-button>
+            <div class="card-footer">
+              <el-button type="primary" size="small" round @click.stop="openView(item)">查看</el-button>
               <template v-if="!isGuest">
                 <template v-if="isAdmin">
-                  <el-button type="warning" size="small" plain :loading="isActionLoading(row.id)"
-                    @click="openAssign(row)">指派</el-button>
-                  <el-button type="danger" size="small" plain :loading="isActionLoading(row.id)"
-                    @click="doDelete(row)">删除</el-button>
+                  <el-button type="warning" size="small" plain :loading="isActionLoading(item.id)"
+                    @click.stop="openAssign(item)">指派</el-button>
+                  <el-button type="danger" size="small" plain :loading="isActionLoading(item.id)"
+                    @click.stop="doDelete(item)">删除</el-button>
                 </template>
-                <el-button v-else type="danger" size="small" plain :loading="isActionLoading(row.id)"
-                  @click="doHideFromList(row)">
+                <el-button v-else type="danger" size="small" plain :loading="isActionLoading(item.id)"
+                  @click.stop="doHideFromList(item)">
                   删除
                 </el-button>
               </template>
             </div>
-          </template>
-        </el-table-column>
-      </PageTable>
+          </div>
+        </template>
+      </CardList>
       <div v-else class="virtual-table-wrap">
         <el-auto-resizer>
           <template #default="{ height, width }">
@@ -84,7 +83,7 @@
 </template>
 
 <script setup>
-import { computed, h, onMounted, onUnmounted, reactive, ref, shallowRef } from 'vue'
+import { computed, h, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { ElButton, ElMessageBox, ElTag } from 'element-plus'
 import { messageApi } from '@/api/message'
 import { userApi } from '@/api/user'
@@ -96,10 +95,9 @@ import { useCancelableLoader } from '@/composables/useCancelableLoader'
 import { usePagination } from '@/composables/usePagination'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { usePermissions } from '@/composables/usePermissions'
-import { TABLE_HEADER_STYLE } from '@/constants/table'
 import MessageDialogs from '@/components/message/MessageDialogs.vue'
 import SearchBar from '@/components/common/SearchBar.vue'
-import PageTable from '@/components/common/PageTable.vue'
+import CardList from '@/components/common/CardList.vue'
 
 /**
  * 留言管理页面：
@@ -128,7 +126,7 @@ const pageSubtitle = computed(() => {
   return '当前账号只会看到被分配给自己的线索。'
 })
 
-const messages = shallowRef([])
+const messages = ref([])
 const { loading, loadError, run: runListLoad, isLatest } = useCancelableLoader()
 const VIRTUAL_TABLE_THRESHOLD = 80
 const useVirtualTable = computed(() => messages.value.length >= VIRTUAL_TABLE_THRESHOLD)
@@ -592,5 +590,14 @@ onUnmounted(() => {
 
 .action-btns .el-button {
   padding: 5px 12px;
+}
+
+/* 留言卡片特有样式（通用样式已移至global.css） */
+.message-card-item .info-row .content-text {
+  color: #303133;
+  font-size: 13px;
+  line-height: 1.8;
+  max-height: 80px;
+  overflow-y: auto;
 }
 </style>

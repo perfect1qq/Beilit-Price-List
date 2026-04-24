@@ -23,6 +23,45 @@ const CONFIG = {
 }
 
 /**
+ * 错误码映射表（用户友好提示）
+ * 
+ * 将HTTP状态码和技术错误码转换为用户可理解的提示信息
+ */
+const ERROR_MESSAGES = {
+  400: '请求参数错误，请检查输入',
+  401: '登录已过期，请重新登录',
+  403: '没有权限执行此操作',
+  404: '请求的资源不存在',
+  408: '请求超时，请稍后重试',
+  409: '数据冲突，请刷新后重试',
+  422: '数据验证失败，请检查输入格式',
+  429: '请求过于频繁，请稍后再试',
+  500: '服务器内部错误，请联系管理员',
+  502: '网关错误，服务暂时不可用',
+  503: '服务维护中，请稍后重试',
+  504: '网关超时，请稍后重试'
+}
+
+/**
+ * 获取用户友好的错误信息
+ * 
+ * @param {Error} error - 错误对象
+ * @returns {string} 用户可读的错误提示
+ */
+const getErrorMessage = (error) => {
+  if (error?.code === 'ERR_CANCELED') return ''
+  
+  const status = Number(error?.response?.status || 0)
+  const serverMessage = error?.response?.data?.message
+  
+  if (serverMessage && typeof serverMessage === 'string' && serverMessage.length < 100) {
+    return serverMessage
+  }
+  
+  return ERROR_MESSAGES[status] || `请求失败 (${status || '网络异常'})`
+}
+
+/**
  * 待处理的请求控制器映射表
  * 
  * 用于实现请求去重和自动取消：
@@ -185,6 +224,17 @@ service.interceptors.response.use(
     if (shouldRetry(error) && config.__retryCount < CONFIG.retryCount) {
       config.__retryCount += 1
       return service(config)
+    }
+
+    const errorMessage = getErrorMessage(error)
+    
+    if (errorMessage && !config.silent) {
+      try {
+        const { ElMessage } = await import('element-plus')
+        ElMessage.error(errorMessage)
+      } catch {
+        console.error('[Request Error]', errorMessage, error)
+      }
     }
 
     return Promise.reject(error)

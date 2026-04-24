@@ -115,8 +115,9 @@
 <script setup>
 import { computed, watch, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { to } from '@/utils/async'
+import { showError, showSuccess, showWarning, showInfo } from '@/utils/message'
 import { approvalApi } from '@/api/approval'
 import { quotationApi } from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
@@ -200,7 +201,7 @@ const goBackToList = () => {
 async function loadDetail () {
   const [err, res] = await to(approvalApi.get(route.params.id))
   if (err) {
-    ElMessage.error(err?.response?.data?.message || '加载详情失败')
+    showError(err, '加载详情失败')
     return
   }
   const q = res.approval || {}
@@ -218,16 +219,16 @@ async function loadDetail () {
 
 async function save () {
   if (actionLoading.value) return
-  if (!companyName.value.trim()) return ElMessage.warning('公司名称不能为空')
+  if (!companyName.value.trim()) return showWarning('公司名称不能为空')
   const payload = getPayload()
   actionLoading.value = true
   const [err] = await to(quotationApi.update(meta.id, payload))
   if (err) {
-    ElMessage.error(err?.response?.data?.message || err.message || '保存失败')
+    showError(err, '保存失败')
     actionLoading.value = false
     return
   }
-  ElMessage.success('报价单修改成功')
+  showSuccess('报价单修改成功')
   editMode.value = false
   await loadDetail()
   actionLoading.value = false
@@ -236,7 +237,7 @@ async function save () {
 async function approve () {
   if (actionLoading.value) return
   if (!canApprove.value) {
-    ElMessage.warning('请先保存当前修改，再进行准予通过')
+    showWarning('请先保存当前修改，再进行准予通过')
     return
   }
   const prevStatus = meta.status
@@ -245,11 +246,11 @@ async function approve () {
   const [err] = await to(quotationApi.approve(meta.id, '审批通过 (已完成保存后同意)'))
   if (err) {
     meta.status = prevStatus
-    ElMessage.error(err?.response?.data?.message || err?.message || '操作失败')
+    showError(err, '操作失败')
     actionLoading.value = false
     return
   }
-  ElMessage.success('审批已通过')
+  showSuccess('审批已通过')
   goBackToList()
 }
 
@@ -270,7 +271,7 @@ async function reject () {
     actionLoading.value = false
     return
   }
-  ElMessage.success('已驳回')
+  showSuccess('已驳回')
   goBackToList()
 }
 

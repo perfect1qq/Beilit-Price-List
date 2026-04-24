@@ -72,7 +72,7 @@
 import { computed, ref } from 'vue'
 import { quotationStatisticsApi } from '../api/quotation'
 import { to } from '@/utils/async'
-import { ElMessage } from 'element-plus'
+import { showWarning, showError, showSuccess } from '@/utils/message'
 
 const rawText = ref('')
 const parts = ref([])
@@ -85,13 +85,13 @@ const loading = ref(false)
  */
 async function parseNow () {
   if (!rawText.value.trim()) {
-    return ElMessage.warning('请先提供完整的货架报价文本用于解析。')
+    return showWarning('请先提供完整的货架报价文本用于解析。')
   }
 
   loading.value = true
   const [err, result] = await to(quotationStatisticsApi.parse(rawText.value))
   if (err) {
-    ElMessage.error(err?.response?.data?.message || '智能引擎解析失败，请检查文本格式或服务端运行状态。')
+    showError(err, '智能引擎解析失败，请检查文本格式或服务端运行状态。')
     loading.value = false
     return
   }
@@ -100,9 +100,9 @@ async function parseNow () {
   warnings.value = result.warnings || []
 
   if (errors.value.length) {
-    ElMessage.warning('文本存在无法精准识别的内容区块，请检查页面"错误"反馈。')
+    showWarning('文本存在无法精准识别的内容区块，请检查页面"错误"反馈。')
   } else {
-    ElMessage.success('文本解析及计算转换成功')
+    showSuccess('文本解析及计算转换成功')
   }
   loading.value = false
 }
