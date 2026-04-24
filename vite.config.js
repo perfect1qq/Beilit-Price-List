@@ -24,6 +24,20 @@ export default defineConfig({
     chunkFileWarningLimit: 500,
     rollupOptions: {
       output: {
+        chunkFileNames(chunkInfo) {
+          const sanitizedName = chunkInfo.name.replace(/^_+/, 'chunk-')
+          return `assets/js/${sanitizedName}-[hash].js`
+        },
+        entryFileNames(chunkInfo) {
+          const sanitizedName = chunkInfo.name.replace(/^_+/, 'entry-')
+          return `assets/js/${sanitizedName}-[hash].js`
+        },
+        assetFileNames(assetInfo) {
+          const extension = assetInfo.name?.split('.').pop() ?? 'asset'
+          const rawName = assetInfo.name?.slice(0, -(extension.length + 1)) ?? 'asset'
+          const sanitizedName = rawName.replace(/^_+/, 'asset-')
+          return `assets/${extension}/${sanitizedName}-[hash].[ext]`
+        },
         manualChunks(id) {
           if (id.includes('node_modules')) {
             if (id.includes('element-plus') || id.includes('@element-plus')) return 'vendor-element-plus'
@@ -32,10 +46,7 @@ export default defineConfig({
             return 'vendor-misc'
           }
           return undefined
-        },
-        chunkFileNames: 'assets/js/[name]-[hash].js',
-        entryFileNames: 'assets/js/[name]-[hash].js',
-        assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
+        }
       }
     },
     target: 'es2020',
