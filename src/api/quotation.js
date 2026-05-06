@@ -134,6 +134,15 @@ const reject = (id, comment) =>
   request.post(`/api/quotations/${id}/reject`, { comment })
 
 /**
+ * 复制报价单
+ *
+ * @param {number|string} id - 要复制的报价单 ID
+ * @returns {Promise<Object>} 新创建的复制记录
+ */
+const copy = (id) =>
+  request.post(`/api/quotations/${id}/copy`)
+
+/**
  * 解析统计文本
  *
  * 用于统计页面，将原始文本解析为结构化统计结果
@@ -160,6 +169,7 @@ const quotationApi = {
   parseText: unwrap(parseText),
   approve: unwrap(approve),
   reject: unwrap(reject),
+  copy: unwrap(copy),
   parse: unwrap(parseStatistics),
 }
 

@@ -132,11 +132,15 @@
 
         <el-dropdown class="avatar-container right-menu-item hover-effect" trigger="click">
           <div class="avatar-wrapper">
-            <el-avatar :size="32" class="user-avatar">{{ userInitial }}</el-avatar>
-            <span class="user-name">{{ userName }}</span>
-            <el-icon class="el-icon-caret-bottom">
-              <CaretBottom />
-            </el-icon>
+            <el-avatar :size="32" class="user-avatar clickable-avatar" :src="avatarUrl" @click.stop="showAvatarDialog">
+              {{ userInitial }}
+            </el-avatar>
+            <div class="user-info">
+              <span class="user-name">{{ userName }}</span>
+              <el-icon class="el-icon-caret-bottom">
+                <CaretBottom />
+              </el-icon>
+            </div>
           </div>
           <template #dropdown>
             <el-dropdown-menu>
@@ -177,14 +181,80 @@
         <el-button type="primary" :loading="loading" @click="confirmChangePass">提交</el-button>
       </template>
     </AsyncDialog>
+
+    <el-dialog v-model="avatarDialogVisible" title="更换头像" width="480px" :append-to-body="true" :close-on-click-modal="false">
+      <div class="avatar-dialog-content">
+        <div v-if="!selectedFile" class="avatar-upload-area">
+          <div class="avatar-preview-large">
+            <el-avatar :size="120" :src="avatarUrl">
+              {{ userInitial }}
+            </el-avatar>
+          </div>
+          <el-upload
+            ref="uploadRef"
+            class="avatar-uploader"
+            action=""
+            :auto-upload="false"
+            :show-file-list="false"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            :on-change="handleFileChange"
+          >
+            <template #trigger>
+              <el-button type="primary" size="large">选择图片</el-button>
+            </template>
+          </el-upload>
+          <p class="avatar-tip">支持 jpg、png、gif、webp 格式，大小不超过 5MB</p>
+        </div>
+
+        <div v-else class="avatar-crop-area">
+          <div class="crop-container">
+            <VueCropper
+              ref="cropperRef"
+              :img="previewUrl"
+              :output-size="1"
+              :output-type="'png'"
+              :info="true"
+              :full="false"
+              :can-move="true"
+              :can-move-box="true"
+              :can-scale="true"
+              :original="false"
+              :auto-crop="true"
+              :auto-crop-width="150"
+              :auto-crop-height="150"
+              :fixed="true"
+              :fixed-number="[1, 1]"
+              :center-box="true"
+              mode="contain"
+              @real-time="onRealTime"
+            />
+          </div>
+          <div class="crop-preview-wrapper">
+            <span class="preview-label">预览</span>
+            <div :style="previewStyle" class="crop-preview-round">
+              <img :src="previewCroppedUrl" alt="" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="cancelAvatarUpload">取消</el-button>
+        <el-button v-if="selectedFile" @click="resetCrop">重新选择</el-button>
+        <el-button type="primary" :loading="avatarUploading" @click="handleUploadAvatar" :disabled="!selectedFile">确认上传</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import 'vue-cropper/next/dist/index.css'
+import { VueCropper } from 'vue-cropper/next'
 import request from '@/utils/request'
 import { useUserStore } from '@/stores/user'
+import authApi from '@/api/auth'
 import TagsView from './TagsView.vue'
 import { logoutByUser } from '@/utils/authSession'
 import { Bell, InfoFilled, CircleCheckFilled, CaretBottom, ArrowRight, Menu } from '@element-plus/icons-vue'
@@ -220,6 +290,123 @@ const { changePassDialog, confirmChangePass } = useNavbarPasswordDialog({
 const goHome = () => router.push(homeRoute)
 const logout = async () => {
   await logoutByUser()
+}
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001'
+
+const avatarUrl = computed(() => {
+  const avatar = userStore.user?.avatar
+  if (avatar) {
+    if (avatar.startsWith('http') || avatar.startsWith('data:')) {
+      return avatar
+    }
+    return `${API_BASE_URL}${avatar}`
+  }
+  return ''
+})
+
+const avatarDialogVisible = ref(false)
+const uploadRef = ref(null)
+const cropperRef = ref(null)
+const selectedFile = ref(null)
+const previewUrl = ref('')
+const previewCroppedUrl = ref('')
+const avatarUploading = ref(false)
+const previewStyle = computed(() => ({
+  width: '100px',
+  height: '100px',
+  borderRadius: '50%',
+  overflow: 'hidden',
+  border: '2px solid #e5e7eb'
+}))
+
+const showAvatarDialog = () => {
+  selectedFile.value = null
+  previewUrl.value = ''
+  previewCroppedUrl.value = ''
+  avatarDialogVisible.value = true
+}
+
+const cancelAvatarUpload = () => {
+  avatarDialogVisible.value = false
+  selectedFile.value = null
+  previewUrl.value = ''
+  previewCroppedUrl.value = ''
+}
+
+const resetCrop = () => {
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value)
+  }
+  selectedFile.value = null
+  previewUrl.value = ''
+  previewCroppedUrl.value = ''
+}
+
+const handleFileChange = (file) => {
+  const isImage = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.raw.type)
+  const isLt5M = file.raw.size / 1024 / 1024 < 5
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件!')
+    return false
+  }
+  if (!isLt5M) {
+    ElMessage.error('图片大小不能超过 5MB!')
+    return false
+  }
+  selectedFile.value = file.raw
+  previewUrl.value = URL.createObjectURL(file.raw)
+  previewCroppedUrl.value = ''
+}
+
+watch(previewUrl, (newVal) => {
+  if (newVal) {
+    previewCroppedUrl.value = ''
+  }
+})
+
+const onRealTime = () => {
+  if (!cropperRef.value) return
+  cropperRef.value.getCropData((data) => {
+    previewCroppedUrl.value = data
+  })
+}
+
+const handleUploadAvatar = async () => {
+  if (!selectedFile.value || !cropperRef.value) return
+  avatarUploading.value = true
+  try {
+    const blob = await new Promise((resolve) => {
+      cropperRef.value.getCropBlob((blob) => {
+        resolve(blob)
+      })
+    })
+
+    if (!blob || blob.size === 0) {
+      throw new Error('裁剪失败，请重新选择图片')
+    }
+
+    const formData = new FormData()
+    const fileName = `avatar_${Date.now()}.png`
+    formData.append('avatar', blob, fileName)
+
+    const res = await authApi.uploadAvatar(formData)
+    const avatarUrlFromServer = res?.data?.avatar || res?.avatar
+
+    if (userStore.user && avatarUrlFromServer) {
+      userStore.user.avatar = avatarUrlFromServer
+    }
+
+    ElMessage.success('头像上传成功')
+    avatarDialogVisible.value = false
+    selectedFile.value = null
+    previewUrl.value = ''
+    previewCroppedUrl.value = ''
+  } catch (err) {
+    ElMessage.error(err?.response?.data?.message || err?.message || '上传失败')
+  } finally {
+    avatarUploading.value = false
+  }
 }
 
 let notificationTimer = null
@@ -604,5 +791,92 @@ onUnmounted(() => {
   .notice-dropdown {
     width: min(92vw, 360px);
   }
+}
+
+.avatar-dialog-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.avatar-upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.avatar-preview-large {
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+}
+
+.avatar-uploader {
+  width: 100%;
+}
+
+.avatar-uploader :deep(.el-upload) {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.avatar-tip {
+  color: #94a3b8;
+  font-size: 12px;
+  margin: 0;
+}
+
+.avatar-crop-area {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  padding: 10px 0;
+}
+
+.crop-container {
+  width: 280px;
+  height: 280px;
+}
+
+.crop-preview-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.preview-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.crop-preview-round img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-avatar {
+  cursor: default;
+  transition: transform 0.2s ease;
+}
+
+.clickable-avatar {
+  cursor: pointer;
+}
+
+.clickable-avatar:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 </style>

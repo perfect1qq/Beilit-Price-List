@@ -401,7 +401,8 @@ export function useQuotationDraft() {
    * @param {string} [newMode='edit'] - 加载模式
    */
   const loadRecord = (record, newMode = 'edit') => {
-    quotationNo.value = record.quotationNo || ''
+    const rawNo = String(record.quotationNo || '').trim()
+    quotationNo.value = (rawNo && !rawNo.startsWith('QT')) ? rawNo : (record.name || record.companyName || rawNo)
     companyName.value = record.companyName || record.name || ''
     remark.value = record.remark || ''
     discount.value = Number(record.discount || 0)

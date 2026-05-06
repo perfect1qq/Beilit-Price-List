@@ -112,9 +112,35 @@ const logout = (config = {}) =>
     ...config,
   })
 
+/**
+ * 上传用户头像
+ *
+ * @param {FormData} formData - 包含 avatar 文件的 FormData
+ * @returns {Promise<Object>} 上传结果 { avatar: url }
+ */
+const uploadAvatar = (formData) =>
+  request.post('/api/avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    authRedirect: false,
+    skipCancel: true,
+  })
+
+/**
+ * 删除用户头像
+ *
+ * @returns {Promise<void>}
+ */
+const deleteAvatar = () =>
+  request.delete('/api/avatar', {
+    authRedirect: false,
+    skipCancel: true,
+  })
+
 export default {
   login,
   register,
   getProfile,
   logout,
+  uploadAvatar,
+  deleteAvatar,
 }

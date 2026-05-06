@@ -365,6 +365,12 @@ const confirmNameChange = async (row) => {
   }
   row.name = newName
   row._editingName = false
+  if (currentUser.value.id === row.id) {
+    if (userStore.user) {
+      userStore.user.name = newName
+    }
+    userStore.refreshProfile()
+  }
   showSuccess('姓名已更新')
 }
 

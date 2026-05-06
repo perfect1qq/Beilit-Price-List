@@ -214,10 +214,12 @@ export const useUserStore = defineStore('user', {
     /**
      * 刷新用户资料
      *
-     * 强制从后端重新获取最新用户信息
+     * 强制从后端重新获取最新用户信息（绕过浏览器缓存）
      */
     async refreshProfile() {
-      return this.restoreSession(true)
+      const response = await authApi.getProfile({ disableCacheBust: false })
+      this.setSession(response.data)
+      return this.user
     },
 
     /**

@@ -24,7 +24,7 @@ import axios from 'axios'
 /** API 基础 URL 配置 */
 const normalizeBaseURL = () => {
   const envBase = String(import.meta.env.VITE_API_BASE_URL || '').trim()
-  return envBase || 'http://localhost:3000'
+  return envBase || 'http://localhost:3001'
 }
 
 const http = axios.create({

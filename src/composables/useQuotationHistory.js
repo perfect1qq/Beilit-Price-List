@@ -333,6 +333,31 @@ export function useQuotationHistory({ api, loadToEditor }) {
   /** 编辑模式：加载到编辑器（可编辑） */
   const editHistory = (record) => loadToEditor(record, 'edit')
 
+  /**
+   * 复制报价单（基于原记录创建新报价单，显示在原记录下方）
+   * 
+   * @param {Object} record - 要复制的原始记录
+   * @returns {Promise<Object|null>} 新创建的记录
+   */
+  const copyQuotation = async (record) => {
+    const [confirmErr] = await to(ElMessageBox.confirm(
+      `确定要复制「${record.quotationNo || record.name || '-'}」这条报价单吗？`,
+      '提示',
+      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'info' }
+    ))
+    if (confirmErr) return null
+
+    const result = await api.copy(record.id)
+    const newRecord = normalizeRecord(result?.quotation || result?.record || result)
+
+    if (newRecord) {
+      await loadHistoryList()
+      ElMessage.success('复制成功')
+    }
+
+    return newRecord
+  }
+
   return {
     historyList,
     groupedHistoryList,
@@ -349,6 +374,7 @@ export function useQuotationHistory({ api, loadToEditor }) {
     handleSizeChange,
     saveQuotation,
     deleteHistory,
+    copyQuotation,
     viewHistory,
     editHistory
   }
