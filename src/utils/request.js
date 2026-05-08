@@ -41,6 +41,31 @@ import axios from 'axios'
 import http from '../api/http'
 import { triggerAuthExpired } from './authRuntime'
 
+let isRefreshing = false
+let refreshSubscribers = []
+
+const onRefreshed = () => {
+  refreshSubscribers.forEach((cb) => cb())
+  refreshSubscribers = []
+}
+
+const addRefreshSubscriber = (cb) => {
+  refreshSubscribers.push(cb)
+}
+
+const refreshAccessToken = async () => {
+  try {
+    await axios.post(
+      `${http.defaults.baseURL}/api/refresh`,
+      null,
+      { withCredentials: true }
+    )
+    return true
+  } catch {
+    return false
+  }
+}
+
 /** 请求配置常量 */
 const CONFIG = {
   /** 请求超时时间（毫秒）：15 秒 */
@@ -101,6 +126,23 @@ const getErrorMessage = (error) => {
   }
 
   return ERROR_MESSAGES[status] || `请求失败 (${status || '网络异常'})`
+}
+
+/**
+ * 判断错误是否可重试
+ *
+ * 条件：
+ * 1. 请求方法为 GET
+ * 2. HTTP 状态码在可重试集合中
+ *
+ * @param {Error} error - Axios 错误对象
+ * @returns {boolean} 是否可重试
+ */
+const shouldRetry = (error) => {
+  const method = String(error?.config?.method || '').toLowerCase()
+  if (method !== 'get') return false
+  const status = Number(error?.response?.status || 0)
+  return CONFIG.retryableStatuses.has(status)
 }
 
 // ==================== 请求去重机制 ====================
@@ -223,8 +265,12 @@ service.interceptors.request.use((config) => {
     cancelPendingRequest(requestKey)
 
     const controller = new AbortController()
-    config.signal = controller.signal
     pendingControllers.set(requestKey, controller)
+
+    if (config.signal) {
+      config.signal.addEventListener('abort', () => controller.abort(), { once: true })
+    }
+    config.signal = controller.signal
   }
 
   return config
@@ -271,12 +317,37 @@ service.interceptors.response.use(
     const status = Number(error?.response?.status || 0)
     const reasonCode = error?.response?.data?.code
 
-    // 401 未授权 → 触发认证过期流程
+    // 401 未授权 → 尝试无感刷新
     if (status === 401) {
-      if (config.authRedirect !== false) {
-        triggerAuthExpired(reasonCode)
+      if (config._isRefreshRequest) {
+        if (config.authRedirect !== false) {
+          triggerAuthExpired(reasonCode)
+        }
+        return Promise.reject(error)
       }
-      return Promise.reject(error)
+
+      if (!isRefreshing) {
+        isRefreshing = true
+        const success = await refreshAccessToken()
+        isRefreshing = false
+
+        if (success) {
+          onRefreshed()
+          return service(config)
+        }
+
+        onRefreshed()
+        if (config.authRedirect !== false) {
+          triggerAuthExpired(reasonCode)
+        }
+        return Promise.reject(error)
+      }
+
+      return new Promise((resolve) => {
+        addRefreshSubscriber(() => {
+          resolve(service(config))
+        })
+      })
     }
 
     // 可重试错误 → 自动重试 GET 请求

@@ -24,11 +24,17 @@
  */
 
 import { createApp } from 'vue'
-import ElementPlus from 'element-plus'
-import zhCn from 'element-plus/es/locale/lang/zh-cn'
-import 'element-plus/dist/index.css'
 import './assets/styles/global.css'
-import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import 'element-plus/es/components/message/style/css'
+import 'element-plus/es/components/notification/style/css'
+import 'element-plus/es/components/message-box/style/css'
+import {
+  ArrowRight, Bell, CaretBottom, ChatLineSquare, CircleCheckFilled,
+  CircleCloseFilled, Clock, Close, CopyDocument, DataAnalysis, DataLine,
+  Delete, Document, DocumentAdd, Edit, Grid, Histogram, House, InfoFilled,
+  Key, List, Loading, Lock, Menu, Money, Monitor, MoreFilled, Operation, Plus,
+  Refresh, Search, User, UserFilled, WarningFilled
+} from '@element-plus/icons-vue'
 import App from './App.vue'
 import router from './router'
 import { pinia } from './stores'
@@ -41,13 +47,20 @@ const app = createApp(App)
 
 // ==================== 全局注册 Element Plus 图标 ====================
 
-for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+const icons = {
+  ArrowRight, Bell, CaretBottom, ChatLineSquare, CircleCheckFilled,
+  CircleCloseFilled, Clock, Close, CopyDocument, DataAnalysis, DataLine,
+  Delete, Document, DocumentAdd, Edit, Grid, Histogram, House, InfoFilled,
+  Key, List, Loading, Lock, Menu, Money, Monitor, MoreFilled, Operation, Plus,
+  Refresh, Search, User, UserFilled, WarningFilled
+}
+
+for (const [key, component] of Object.entries(icons)) {
   app.component(key, component)
 }
 
 // ==================== 插件注册 ====================
 
-app.use(ElementPlus, { locale: zhCn })
 app.use(pinia)
 app.use(router)
 app.use(DialogComponents)

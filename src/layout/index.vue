@@ -57,22 +57,20 @@
   - 通过 Vue Router 的嵌套路由实现
 -->
 <template>
-  <div class="app-wrapper" :class="{ hideSidebar: !sidebar.opened, mobile: isMobile, mobileSidebarOpen: mobileSidebarOpen }">
+  <div class="app-wrapper"
+    :class="{ hideSidebar: !sidebar.opened, mobile: isMobile, mobileSidebarOpen: mobileSidebarOpen }">
     <div v-if="isMobile && mobileSidebarOpen" class="sidebar-mask" @click="closeMobileSidebar"></div>
     <Sidebar class="sidebar-container" />
     <div class="main-container">
       <div class="fixed-header">
         <Navbar @toggle-mobile-sidebar="toggleMobileSidebar" />
       </div>
-      <AppMain />
+      <ErrorBoundary>
+        <AppMain />
+      </ErrorBoundary>
     </div>
-    <button
-      v-if="isMobile && !mobileSidebarOpen"
-      class="mobile-menu-btn"
-      type="button"
-      aria-label="打开菜单"
-      @click="toggleMobileSidebar"
-    >
+    <button v-if="isMobile && !mobileSidebarOpen" class="mobile-menu-btn" type="button" aria-label="打开菜单"
+      @click="toggleMobileSidebar">
       ☰
     </button>
   </div>
@@ -83,6 +81,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import Sidebar from './components/Sidebar.vue'
 import Navbar from './components/Navbar.vue'
 import AppMain from './components/AppMain.vue'
+import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
 
 const sidebar = computed(() => ({
   opened: true,
@@ -131,7 +130,7 @@ onUnmounted(() => {
 .sidebar-container {
   transition: width 0.28s;
   width: 240px !important;
-  background-color: #0f172a;
+  background-color: var(--bg-sidebar);
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
   height: 100%;
   position: fixed;
@@ -149,7 +148,7 @@ onUnmounted(() => {
   transition: margin-left .28s;
   margin-left: 240px;
   position: relative;
-  background-color: #f5f7fb;
+  background-color: var(--bg-page);
   overflow-x: hidden;
   overflow-y: visible;
 }

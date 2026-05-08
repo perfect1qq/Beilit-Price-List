@@ -137,7 +137,7 @@
       <el-alert v-if="errorMsg" class="mb-16" type="error" :title="errorMsg" :closable="false" show-icon />
 
       <!-- 当存在可显示的数据时，渲染两个数据表格区块；否则显示空状态 -->
-      <template v-if="summaryRows.length || detailRows.length">
+      <template v-if="summaryRows?.length || detailRows?.length">
         <!-- ================= 区块 1: 全局汇总表 ================= -->
         <el-card shadow="never" class="section-card">
           <template #header>
@@ -283,187 +283,41 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { computed, onMounted } from 'vue'
 import { Edit, Plus, Refresh } from '@element-plus/icons-vue'
-import mediumShelfWeightApi from '@/api/mediumShelfWeight'
-import { to } from '@/utils/async'
-import { showError, showSuccess, showWarning, showInfo } from '@/utils/message'
 import { usePermissions } from '@/composables/usePermissions'
+import { useMediumShelfWeight } from '@/composables/useMediumShelfWeight'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 
 const { isGuest } = usePermissions()
 
-// ================= 全局状态声明 =================
-const loading = ref(false) // 整体网络加载锁，防止被连点
-const saving = ref(false) // 点击保存时的局部锁
-const errorMsg = ref('') // 网络或解析的报错记录
-const editMode = ref(false) // Boolean 控制是否开启所有 input 编辑框
-
-const configTitle = ref('中型货架重量表') // 大标题
-
-// ================= 数据源 (持久态) =================
-const summaryRows = ref([]) // 表 1: 汇总数据列
-const detailRows = ref([]) // 表 2: 层级明细列
-
-// ================= 数据源 (编辑态/草稿) =================
-const draftSummaryRows = ref([]) // 编辑时对复本进行操作，不污染原数据
-const draftDetailRows = ref([])
-
-// ================= 工具与格式化函数 =================
-const normalizeList = (list = []) => (Array.isArray(list) ? list : [])
-
-const cloneRows = (rows = []) => {
-  return JSON.parse(JSON.stringify(rows || [])) // 深拷贝，断开响应式引用
-}
-
-/** 生成空的骨架行用于向 表 1 压入最新数据 */
-const createEmptySummaryRow = (index) => ({
-  index,
-  name: '',
-  spec: '',
-  layers: '',
-  load: '',
-  totalWeight: '',
-  uprightWeight: '',
-  beamWeight: '',
-  shelfWeight: ''
-})
-
-const createEmptyDetailRow = (index) => ({
-  index,
-  layerGroup: '',
-  spec: '',
-  loadPerLayer: '',
-  quote: '',
-  actual: ''
-})
-
-const reindexRows = (rows = []) => {
-  rows.forEach((row, index) => {
-    row.index = index + 1
-  })
-  return rows
-}
-const formatConfigText = (text) => {
-  if (!text) return ''
-
-  return String(text)
-    .split('；')           // 按分号拆
-    .map(item => item.trim())
-    .filter(Boolean)
-    .join('\n')           // 用换行拼接
-}
-
-const getCurrentSummaryRows = () => (editMode.value ? draftSummaryRows.value : summaryRows.value)
-const getCurrentDetailRows = () => (editMode.value ? draftDetailRows.value : detailRows.value)
-
-const displaySummaryRows = computed(() => getCurrentSummaryRows())
-const displayDetailRows = computed(() => getCurrentDetailRows())
-
-const applyConfig = (config) => {
-  const payload = config?.payload || {}
-
-  configTitle.value = config?.title || '中型货架重量表'
-
-  summaryRows.value = reindexRows(
-    cloneRows(normalizeList(payload.summaryRows)).map((item, index) => ({
-      index: item.index || index + 1,
-      name: item.name || '',
-      spec: item.spec || '',
-      layers: item.layers || '',
-      load: item.load || '',
-      totalWeight: item.totalWeight || '',
-      uprightWeight: item.uprightWeight || '',
-      beamWeight: item.beamWeight || '',
-      shelfWeight: item.shelfWeight || ''
-    }))
-  )
-
-  detailRows.value = reindexRows(
-    cloneRows(normalizeList(payload.detailRows)).map((item, index) => ({
-      index: item.index || index + 1,
-      layerGroup: item.layerGroup || '',
-      spec: item.spec || '',
-      loadPerLayer: item.loadPerLayer || '',
-      quote: item.quote || '',
-      actual: item.actual || ''
-    }))
-  )
-
-  if (editMode.value) {
-    draftSummaryRows.value = cloneRows(summaryRows.value)
-    draftDetailRows.value = cloneRows(detailRows.value)
-  }
-}
-
-/**
- * 核心网络请求：从远端拉取 JSON 映射的配置结构
- */
-const loadData = async () => {
-  loading.value = true
-  errorMsg.value = ''
-  const [err, res] = await to(mediumShelfWeightApi.getConfig())
-  if (err) {
-    errorMsg.value = err?.response?.data?.message ?? '由于网络或服务端异常，加载中型货架重量表失败'
-    showError(errorMsg.value)
-    loading.value = false
-    return
-  }
-  applyConfig(res?.config)
-  loading.value = false
-}
-
-const startEdit = () => {
-  draftSummaryRows.value = cloneRows(summaryRows.value)
-  draftDetailRows.value = cloneRows(detailRows.value)
-  editMode.value = true
-}
-
-const cancelEdit = () => {
-  editMode.value = false
-  draftSummaryRows.value = []
-  draftDetailRows.value = []
-  showInfo('已取消修改')
-}
-
-const addSummaryRow = () => {
-  draftSummaryRows.value.push(createEmptySummaryRow(draftSummaryRows.value.length + 1))
-  reindexRows(draftSummaryRows.value)
-}
-
-const addDetailRow = () => {
-  draftDetailRows.value.push(createEmptyDetailRow(draftDetailRows.value.length + 1))
-  reindexRows(draftDetailRows.value)
-}
-
-const removeSummaryRow = async (index) => {
-  const [confirmErr] = await to(ElMessageBox.confirm('确定删除这一行汇总数据吗？', '提示', {
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }))
-  if (confirmErr) return
-  draftSummaryRows.value.splice(index, 1)
-  reindexRows(draftSummaryRows.value)
-}
-
-const removeDetailRow = async (index) => {
-  const [confirmErr] = await to(ElMessageBox.confirm('确定删除这一行明细数据吗？', '提示', {
-    confirmButtonText: '删除',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }))
-  if (confirmErr) return
-  draftDetailRows.value.splice(index, 1)
-  reindexRows(draftDetailRows.value)
-}
+const {
+  loading,
+  saving,
+  errorMsg,
+  editMode,
+  configTitle,
+  summaryRows,
+  detailRows,
+  displaySummaryRows,
+  displayDetailRows,
+  formatConfigText,
+  loadData,
+  startEdit,
+  cancelEdit,
+  addSummaryRow,
+  addDetailRow,
+  removeSummaryRow,
+  removeDetailRow,
+  saveData
+} = useMediumShelfWeight()
 
 /**
  * 只对连续相同值的单元格进行合并。
  * 这样“报价 / 实际”相同且连续的行会自动合并。
  */
 const buildSpanMap = (rows, field) => {
+  if (!Array.isArray(rows) || !rows.length) return {}
   const map = {}
   let i = 0
 
@@ -488,6 +342,7 @@ const buildSpanMap = (rows, field) => {
 
 const detailSpanMaps = computed(() => {
   const rows = displayDetailRows.value
+  if (!rows || !rows.length) return { layerGroup: {}, loadPerLayer: {}, quote: {}, actual: {} }
   return {
     layerGroup: buildSpanMap(rows, 'layerGroup'),
     loadPerLayer: buildSpanMap(rows, 'loadPerLayer'),
@@ -511,49 +366,6 @@ const detailSpanMethod = ({ rowIndex, columnIndex }) => {
   if (span === 0) return [0, 0]
   if (span > 1) return [span, 1]
   return [1, 1]
-}
-
-const validateRows = () => {
-  const summary = getCurrentSummaryRows()
-  const detail = getCurrentDetailRows()
-
-  if (!summary.length) {
-    showWarning('汇总表至少要有一行')
-    return false
-  }
-
-  if (!detail.length) {
-    showWarning('明细表至少要有一行')
-    return false
-  }
-
-  return true
-}
-
-const saveData = async () => {
-  if (!validateRows()) return
-
-  saving.value = true
-  const payload = {
-    summaryRows: reindexRows(cloneRows(draftSummaryRows.value)),
-    detailRows: reindexRows(cloneRows(draftDetailRows.value))
-  }
-  const [err, res] = await to(mediumShelfWeightApi.saveConfig({
-    title: configTitle.value,
-    payload
-  }))
-  if (err) {
-    const msg = err?.response?.data?.message || '保存失败'
-    showError(msg)
-    saving.value = false
-    return
-  }
-  applyConfig(res.config)
-  editMode.value = false
-  draftSummaryRows.value = []
-  draftDetailRows.value = []
-  showSuccess('保存成功')
-  saving.value = false
 }
 
 onMounted(() => {

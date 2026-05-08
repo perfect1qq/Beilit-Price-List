@@ -53,66 +53,15 @@
   <div class="message-management">
     <el-card shadow="never" class="card">
       <template #header>
-        <div class="page-header">
-          <div>
-            <div class="page-title">{{ pageTitle }}</div>
-            <div class="page-subtitle">{{ pageSubtitle }}</div>
-          </div>
-
-          <div class="header-tools">
-            <SearchBar v-model="keyword" placeholder="搜索联系方式或留言内容" @search="handleSearch">
-              <template #extra>
-                <el-tag :type="isAdmin ? 'success' : 'info'" effect="plain">
-                  {{ isAdmin ? '管理员视图' : '测试账号视图' }}
-                </el-tag>
-              </template>
-            </SearchBar>
-          </div>
-        </div>
+        <MessageFilter v-model:keyword="keyword" :page-title="pageTitle" :page-subtitle="pageSubtitle"
+          :is-admin="isAdmin" @search="handleSearch" />
       </template>
 
       <CardList v-if="!useVirtualTable" :data="messages" :loading="loading" :total="total" v-model:current-page="page"
         v-model:page-size="pageSize" :columns="2" empty-description="暂无留言线索" @page-change="(p) => loadMessages(p)">
         <template #card="{ item }">
-          <div class="message-card-item">
-            <div class="card-header">
-              <h3 class="contact-info">{{ item.contactInfo || '未提供联系方式' }}</h3>
-              <el-tag :type="item.status === 'assigned' ? 'success' : 'warning'" size="small">
-                {{ item.status === 'assigned' ? '已指派' : '待处理' }}
-              </el-tag>
-            </div>
-
-            <div class="card-body">
-              <div class="info-row">
-                <span class="label">📅 提交时间：</span>
-                <span class="value">{{ formatTime(item.createdAt) }}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">💬 留言内容：</span>
-                <span class="value content-text">{{ item.content || '-' }}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">👤 跟进人：</span>
-                <span class="value">{{ (item.assignee?.name || '').trim() || item.assignee?.username || '—' }}</span>
-              </div>
-            </div>
-
-            <div class="card-footer">
-              <el-button type="primary" size="small" round @click.stop="openView(item)">查看</el-button>
-              <template v-if="!isGuest">
-                <template v-if="isAdmin">
-                  <el-button type="warning" size="small" plain :loading="isActionLoading(item.id)"
-                    @click.stop="openAssign(item)">指派</el-button>
-                  <el-button type="danger" size="small" plain :loading="isActionLoading(item.id)"
-                    @click.stop="doDelete(item)">删除</el-button>
-                </template>
-                <el-button v-else type="danger" size="small" plain :loading="isActionLoading(item.id)"
-                  @click.stop="doHideFromList(item)">
-                  删除
-                </el-button>
-              </template>
-            </div>
-          </div>
+          <MessageCard :item="item" :is-admin="isAdmin" :is-guest="isGuest" :action-loading="isActionLoading(item.id)"
+            @view="openView" @assign="openAssign" @delete="doDelete" @hide="doHideFromList" />
         </template>
       </CardList>
       <div v-else class="virtual-table-wrap">
@@ -147,7 +96,8 @@ import { usePagination } from '@/composables/usePagination'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { usePermissions } from '@/composables/usePermissions'
 import MessageDialogs from '@/components/message/MessageDialogs.vue'
-import SearchBar from '@/components/common/SearchBar.vue'
+import MessageCard from '@/components/message/MessageCard.vue'
+import MessageFilter from '@/components/message/MessageFilter.vue'
 import CardList from '@/components/common/CardList.vue'
 
 /**
@@ -172,7 +122,7 @@ const pageTitle = computed(() => {
   return getMessagePageTitle(currentUser.value.role)
 })
 const pageSubtitle = computed(() => {
-  if (isGuest.value) '游客仅可查看留言内容，无法进行任何操作。'
+  if (isGuest.value) return '游客仅可查看留言内容，无法进行任何操作。'
   if (isAdmin.value) return '管理员可查看全部线索、统一指派业务员，并按需删除无效线索。'
   return '当前账号只会看到被分配给自己的线索。'
 })
@@ -498,43 +448,6 @@ onUnmounted(() => {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
 }
 
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.page-title {
-  font-size: 18px;
-  font-weight: 800;
-  color: #0f172a;
-}
-
-.page-subtitle {
-  margin-top: 4px;
-  color: #64748b;
-  font-size: 13px;
-}
-
-.header-tools {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.search-input {
-  width: 280px;
-}
-
-.pager-wrap {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
-
 .virtual-table-wrap {
   height: 460px;
   border: 1px solid var(--el-border-color);
@@ -605,50 +518,8 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-  .page-title {
-    font-size: 16px;
-  }
-
-  .page-subtitle {
-    font-size: 12px;
-    line-height: 1.6;
-  }
-
-  .header-tools {
-    width: 100%;
-  }
-
-  .search-input {
-    width: 100%;
-  }
-
-  .pager-wrap {
-    justify-content: flex-start;
-    overflow-x: auto;
-  }
-
   .virtual-table-wrap {
     height: 380px;
   }
-}
-
-.action-btns {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  align-items: center;
-}
-
-.action-btns .el-button {
-  padding: 5px 12px;
-}
-
-/* 留言卡片特有样式（通用样式已移至global.css） */
-.message-card-item .info-row .content-text {
-  color: #303133;
-  font-size: 13px;
-  line-height: 1.8;
-  max-height: 80px;
-  overflow-y: auto;
 }
 </style>

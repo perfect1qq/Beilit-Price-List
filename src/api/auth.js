@@ -136,6 +136,13 @@ const deleteAvatar = () =>
     skipCancel: true,
   })
 
+const refreshToken = () =>
+  request.post('/api/refresh', null, {
+    authRedirect: false,
+    skipCancel: true,
+    silent: true,
+  })
+
 export default {
   login,
   register,
@@ -143,4 +150,5 @@ export default {
   logout,
   uploadAvatar,
   deleteAvatar,
+  refreshToken,
 }

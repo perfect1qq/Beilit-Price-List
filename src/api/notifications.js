@@ -1,0 +1,23 @@
+import request from '../utils/request'
+import { unwrap } from '../utils/unwrap'
+
+const getUnreadCount = () => request.get('/api/notifications/unread-count')
+
+const list = () => request.get('/api/notifications')
+
+const markAsRead = (id) => request.put(`/api/notifications/${id}/read`)
+
+const markAllAsRead = () => request.post('/api/notifications/read-all')
+
+const remove = (id) => request.delete(`/api/notifications/${id}`)
+
+const notificationApi = {
+  getUnreadCount: unwrap(getUnreadCount),
+  list: unwrap(list),
+  markAsRead: unwrap(markAsRead),
+  markAllAsRead: unwrap(markAllAsRead),
+  remove: unwrap(remove)
+}
+
+export { notificationApi }
+export default notificationApi

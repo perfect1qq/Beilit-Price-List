@@ -1,62 +1,3 @@
-<!--
-  @file layout/components/Navbar.vue
-  @description 顶部导航栏组件
-
-  功能说明：
-  - 显示系统品牌标识（Logo + 名称）
-  - 通知中心入口（铃铛图标 + 未读数量角标）
-  - 用户信息展示（头像 + 姓名）
-  - 用户操作下拉菜单（首页、修改密码、退出登录）
-  - 标签页视图（TagsView）显示已打开的页面
-  - 移动端侧边栏切换按钮
-  - 密码修改对话框
-
-  组件结构：
-  ┌──────────────────────────────────────────────────────────────┐
-  │  Navbar (顶部导航栏)                                         │
-  │  ┌────────────────────────────────────────────────────────┐  │
-  │  │ [☰] [BT] 倍力特管理平台    [🔔(3)] [👤 张三 ▾]      │  │
-  │  └────────────────────────────────────────────────────────┘  │
-  │  ┌────────────────────────────────────────────────────────┐  │
-  │  │ TagsView (标签页栏)                                   │  │
-  │  │ [首页] [报价单] [用户管理] ×                          │  │
-  │  └────────────────────────────────────────────────────────┘  │
-  └──────────────────────────────────────────────────────────────┘
-
-  功能模块：
-
-  1️⃣ 通知中心 (Notice Dropdown)
-  ┌─────────────────────────────────────────────┐
-  │  🔔 系统消息                    [全部已读]  │
-  │  最近 10 条通知                              │
-  │                                             │
-  │  📝 新报价单待审批...        [未读]  →      │
-  │  ⏰ 备忘录提醒: 完成任务X      [未读]  →      │
-  │  ✓ 已读的通知...                      →      │
-  │                                             │
-  │              [查看全部流程通知]              │
-  └─────────────────────────────────────────────┘
-
-  2️⃣ 用户菜单 (User Dropdown)
-  - 首页 → /home
-  - 修改密码 → 弹出密码修改对话框
-  - 退出登录 → 清除会话并跳转登录页
-
-  3️⃣ 标签页 (TagsView)
-  - 显示最近访问的页面标签
-  - 支持关闭单个/关闭其他/关闭左侧/右侧
-  - 点击标签快速切换页面
-
-  响应式适配：
-  - Desktop (>768px): 显示完整导航栏
-  - Mobile (≤768px): 显示汉堡菜单按钮，隐藏部分元素
-
-  交互特性：
-  - 新消息到达时铃铛动画 + 角标数字更新
-  - 点击通知项自动标记已读并跳转
-  - 未读消息红色角标提示（最多显示 99+）
--->
-
 <template>
   <div class="navbar-shell">
     <div class="navbar-top">
@@ -117,6 +58,12 @@
                         <el-tag v-if="!item.isRead" size="small" type="danger" effect="plain" round>未读</el-tag>
                         <el-icon class="notice-arrow">
                           <ArrowRight />
+                        </el-icon>
+                        <el-icon class="notice-delete-btn" title="删除通知" @click.stop="deleteNotification(item, $event)">
+                          <Delete v-if="!deletingIds.has(item.id)" />
+                          <el-icon v-else class="is-loading">
+                            <Loading />
+                          </el-icon>
                         </el-icon>
                       </div>
                     </div>
@@ -182,83 +129,24 @@
       </template>
     </AsyncDialog>
 
-    <el-dialog v-model="avatarDialogVisible" title="更换头像" width="480px" :append-to-body="true" :close-on-click-modal="false">
-      <div class="avatar-dialog-content">
-        <div v-if="!selectedFile" class="avatar-upload-area">
-          <div class="avatar-preview-large">
-            <el-avatar :size="120" :src="avatarUrl">
-              {{ userInitial }}
-            </el-avatar>
-          </div>
-          <el-upload
-            class="avatar-uploader"
-            action=""
-            :auto-upload="false"
-            :show-file-list="false"
-            accept="image/jpeg,image/png,image/gif,image/webp"
-            :on-change="handleFileChange"
-          >
-            <template #trigger>
-              <el-button type="primary" size="large">选择图片</el-button>
-            </template>
-          </el-upload>
-          <p class="avatar-tip">支持 jpg、png、gif、webp 格式，大小不超过 5MB</p>
-        </div>
-
-        <div v-else class="avatar-crop-area">
-          <div class="crop-container">
-            <VueCropper
-              ref="cropperRef"
-              :img="previewUrl"
-              :output-size="1"
-              :output-type="'png'"
-              :info="true"
-              :full="false"
-              :can-move="true"
-              :can-move-box="true"
-              :can-scale="true"
-              :original="false"
-              :auto-crop="true"
-              :auto-crop-width="150"
-              :auto-crop-height="150"
-              :fixed="true"
-              :fixed-number="[1, 1]"
-              :center-box="true"
-              mode="contain"
-              @real-time="onRealTime"
-            />
-          </div>
-          <div class="crop-preview-wrapper">
-            <span class="preview-label">预览</span>
-            <div :style="previewStyle" class="crop-preview-round">
-              <img :src="previewCroppedUrl" alt="" />
-            </div>
-          </div>
-        </div>
-      </div>
-      <template #footer>
-        <el-button @click="cancelAvatarUpload">取消</el-button>
-        <el-button v-if="selectedFile" @click="resetCrop">重新选择</el-button>
-        <el-button type="primary" :loading="avatarUploading" @click="handleUploadAvatar" :disabled="!selectedFile">确认上传</el-button>
-      </template>
-    </el-dialog>
+    <AvatarCropDialog v-model="avatarDialogVisible" :avatar-url="avatarUrl" :user-initial="userInitial"
+      @uploaded="onAvatarUploaded" />
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import 'vue-cropper/next/dist/index.css'
-import { VueCropper } from 'vue-cropper/next'
 import request from '@/utils/request'
 import { useUserStore } from '@/stores/user'
 import TagsView from './TagsView.vue'
 import { logoutByUser } from '@/utils/authSession'
-import { Bell, InfoFilled, CircleCheckFilled, CaretBottom, ArrowRight, Menu } from '@element-plus/icons-vue'
+import { Bell, InfoFilled, CircleCheckFilled, CaretBottom, ArrowRight, Menu, Delete, Loading } from '@element-plus/icons-vue'
 import { useNavbarPasswordDialog } from '@/composables/useNavbarPasswordDialog'
 import { useNavbarNotifications } from '@/composables/useNavbarNotifications'
-import { useAvatarUpload } from '@/composables/useAvatarUpload'
 import AsyncDialog from '@/components/common/AsyncDialog.vue'
+
+const AvatarCropDialog = defineAsyncComponent(() => import('@/components/common/AvatarCropDialog.vue'))
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -272,10 +160,12 @@ const homeRoute = '/home'
 const {
   unreadApprovalCount,
   noticeList,
+  deletingIds,
   isBellRinging,
   fetchUnreadCount,
   handleNoticeClick,
   markAllAsRead,
+  deleteNotification,
   goNoticePage
 } = useNavbarNotifications({ request, router, userRole })
 
@@ -285,33 +175,41 @@ const { changePassDialog, confirmChangePass } = useNavbarPasswordDialog({
   dialogRef: changePassDialogRef
 })
 
-const {
-  avatarUrl,
-  dialogVisible: avatarDialogVisible,
-  cropperRef,
-  selectedFile,
-  previewUrl,
-  previewCroppedUrl,
-  uploading: avatarUploading,
-  previewStyle,
-  showDialog: showAvatarDialog,
-  cancel: cancelAvatarUpload,
-  resetCrop,
-  handleFileChange,
-  onRealTime,
-  upload: handleUploadAvatar
-} = useAvatarUpload()
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+
+const avatarUrl = computed(() => {
+  const avatar = userStore.user?.avatar
+  if (avatar) {
+    if (avatar.startsWith('http') || avatar.startsWith('data:')) {
+      return avatar
+    }
+    return `${API_BASE_URL}${avatar}`
+  }
+  return ''
+})
+
+const avatarDialogVisible = ref(false)
+
+const showAvatarDialog = () => {
+  avatarDialogVisible.value = true
+}
+
+const onAvatarUploaded = () => {
+  avatarDialogVisible.value = false
+}
 
 const goHome = () => router.push(homeRoute)
 const logout = async () => {
   await logoutByUser()
 }
 
+const NOTIFICATION_POLL_INTERVAL = 30000
+
 let notificationTimer = null
 
 onMounted(() => {
   fetchUnreadCount()
-  notificationTimer = setInterval(fetchUnreadCount, 30000)
+  notificationTimer = setInterval(fetchUnreadCount, NOTIFICATION_POLL_INTERVAL)
 })
 
 onUnmounted(() => {
@@ -639,6 +537,25 @@ onUnmounted(() => {
   transform: translateX(2px);
 }
 
+.notice-delete-btn {
+  color: #cbd5e1;
+  font-size: 14px;
+  opacity: 0;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.notice-item:hover .notice-delete-btn {
+  opacity: 1;
+}
+
+.notice-delete-btn:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
 .notice-footer {
   padding: 10px 14px;
   border-top: 1px solid rgba(226, 232, 240, 0.8);
@@ -689,73 +606,6 @@ onUnmounted(() => {
   .notice-dropdown {
     width: min(92vw, 360px);
   }
-}
-
-.avatar-dialog-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.avatar-upload-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 20px;
-  padding: 20px 0;
-}
-
-.avatar-preview-large {
-  display: flex;
-  justify-content: center;
-  padding: 16px 0;
-}
-
-.avatar-uploader {
-  width: 100%;
-}
-
-.avatar-uploader :deep(.el-upload) {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-.avatar-tip {
-  color: #94a3b8;
-  font-size: 12px;
-  margin: 0;
-}
-
-.avatar-crop-area {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
-  padding: 10px 0;
-}
-
-.crop-container {
-  width: 280px;
-  height: 280px;
-}
-
-.crop-preview-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-}
-
-.preview-label {
-  font-size: 13px;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.crop-preview-round img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
 }
 
 .user-avatar {

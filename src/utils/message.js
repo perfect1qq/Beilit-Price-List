@@ -69,7 +69,7 @@ const showSuccess = (msg = '操作成功') => {
   try {
     ElMessage.success(msg)
   } catch (e) {
-    console.log('[showSuccess]', msg)
+    console.warn('[showSuccess]', msg)
   }
 }
 
@@ -95,7 +95,7 @@ const showInfo = (msg) => {
   try {
     ElMessage.info(msg)
   } catch (e) {
-    console.info('[showInfo]', msg)
+    console.warn('[showInfo]', msg)
   }
 }
 

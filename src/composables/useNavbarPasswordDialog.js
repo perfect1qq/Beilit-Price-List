@@ -1,5 +1,6 @@
 import { reactive } from 'vue'
 import { ElMessage } from 'element-plus'
+import { userApi } from '@/api/user'
 
 /**
  * 顶栏修改密码弹窗逻辑，和视图层解耦。
@@ -18,7 +19,7 @@ export const useNavbarPasswordDialog = ({ request, onSuccess, dialogRef }) => {
 
     try {
       await dialogRef?.value?.load(() =>
-        request.post('/api/user/change-password', { oldPassword, newPassword })
+        userApi.changePassword({ oldPassword, newPassword })
       )
       ElMessage.success('密码修改成功，请重新登录')
       changePassDialog.visible = false

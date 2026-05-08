@@ -44,6 +44,7 @@
 import { ref } from 'vue'
 import { ElMessage, ElNotification } from 'element-plus'
 import { to } from '@/utils/async'
+import { notificationApi } from '@/api/notifications'
 
 /**
  * 创建通知中心管理实例
@@ -67,6 +68,9 @@ export const useNavbarNotifications = ({ request, router, userRole }) => {
 
   /** 通知列表（最多保留 10 条） */
   const noticeList = ref([])
+
+  /** 正在删除的通知 ID 集合 */
+  const deletingIds = ref(new Set())
 
   /** 铃铛动画状态标识 */
   const isBellRinging = ref(false)
@@ -103,15 +107,15 @@ export const useNavbarNotifications = ({ request, router, userRole }) => {
    * - 用户手动刷新时
    */
   const fetchUnreadCount = async () => {
-    const [countErr, resCount] = await to(request.get('/api/notifications/unread-count'))
+    const [countErr, resCount] = await to(notificationApi.getUnreadCount())
     if (countErr) return
 
-    const newCount = resCount.data?.count ?? 0
+    const newCount = resCount.count ?? 0
     const oldCount = unreadApprovalCount.value
 
-    const [listErr, resList] = await to(request.get('/api/notifications'))
+    const [listErr, resList] = await to(notificationApi.list())
     if (listErr) return
-    noticeList.value = (resList.data.list || []).slice(0, 10)
+    noticeList.value = (resList.list || []).slice(0, 10)
 
     if (newCount > oldCount) {
       triggerBellRing()
@@ -147,7 +151,7 @@ export const useNavbarNotifications = ({ request, router, userRole }) => {
    */
   const handleNoticeClick = async (notice) => {
     if (!notice?.id) return
-    const [err] = await to(request.put(`/api/notifications/${notice.id}/read`))
+    const [err] = await to(notificationApi.markAsRead(notice.id))
     if (err) return
     await fetchUnreadCount()
     const targetPath = notice.type === 'quotation_submitted'
@@ -168,7 +172,7 @@ export const useNavbarNotifications = ({ request, router, userRole }) => {
    */
   const markAllAsRead = async (e) => {
     if (e) e.stopPropagation()
-    const [err] = await to(request.post('/api/notifications/read-all'))
+    const [err] = await to(notificationApi.markAllAsRead())
     if (err) {
       ElMessage.error('操作失败')
       return
@@ -189,13 +193,43 @@ export const useNavbarNotifications = ({ request, router, userRole }) => {
     else router.push('/quotation')
   }
 
+  /**
+   * 删除单条通知
+   *
+   * 调用 DELETE /api/notifications/:id 接口
+   * 成功后从本地列表移除该通知并刷新未读计数
+   *
+   * @param {Object} notice - 通知对象
+   * @param {number} notice.id - 通知 ID
+   * @param {Event} [e] - 点击事件（用于阻止冒泡）
+   */
+  const deleteNotification = async (notice, e) => {
+    if (e) {
+      e.stopPropagation()
+      e.preventDefault()
+    }
+    if (!notice?.id) return
+    const idSet = new Set(deletingIds.value)
+    idSet.add(notice.id)
+    deletingIds.value = idSet
+    const [err] = await to(notificationApi.remove(notice.id))
+    const idSetAfter = new Set(deletingIds.value)
+    idSetAfter.delete(notice.id)
+    deletingIds.value = idSetAfter
+    if (err) return
+    noticeList.value = noticeList.value.filter(item => item.id !== notice.id)
+    await fetchUnreadCount()
+  }
+
   return {
     unreadApprovalCount,
     noticeList,
+    deletingIds,
     isBellRinging,
     fetchUnreadCount,
     handleNoticeClick,
     markAllAsRead,
+    deleteNotification,
     goNoticePage
   }
 }

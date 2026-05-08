@@ -1,6 +1,7 @@
 <template>
   <el-dialog
-    v-model="visible"
+    :model-value="visible"
+    @update:model-value="$emit('update:visible', $event)"
     :title="title"
     :width="width"
     :destroy-on-close="true"
@@ -51,7 +52,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:modelValue', 'open', 'loaded', 'error'])
+const emit = defineEmits(['update:modelValue', 'update:visible', 'open', 'loaded', 'error'])
 
 const visible = ref(false)
 const loading = ref(false)

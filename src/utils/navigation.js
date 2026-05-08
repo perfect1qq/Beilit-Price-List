@@ -31,6 +31,7 @@
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { pinia } from '@/stores'
+import { formatDateTime as formatDateDateTime } from '@/utils/date'
 
 /** 缓存的 Router 实例（避免在非组件上下文中重复创建） */
 let routerInstance = null
@@ -77,21 +78,7 @@ export const readCurrentUser = () => {
  * @returns {string} 格式化后的日期字符串，无效输入返回原值
  */
 export const formatDateTime = (dateStr, locale = 'zh-CN') => {
-  if (!dateStr) return ''
-  try {
-    const date = new Date(dateStr)
-    if (Number.isNaN(date.getTime())) return String(dateStr)
-
-    return date.toLocaleString(locale, {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  } catch {
-    return String(dateStr)
-  }
+  return formatDateDateTime(dateStr)
 }
 
 /**

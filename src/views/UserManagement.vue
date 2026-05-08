@@ -70,28 +70,8 @@
 <template>
   <div class="user-management">
     <!-- 邀请码展示区域 -->
-    <el-card shadow="never" class="card invite-code-card">
-      <div class="invite-section">
-        <div class="invite-left">
-          <div class="invite-label">
-            <el-icon class="invite-icon">
-              <Key />
-            </el-icon>
-            <span>注册邀请码</span>
-          </div>
-          <p class="invite-desc">新用户注册时需要输入此邀请码，分享给需要注册的同事</p>
-        </div>
-        <div class="invite-right">
-          <div class="invite-code-display">
-            <span class="code-text">{{ inviteCode || '加载中...' }}</span>
-            <el-button type="primary" text :icon="CopyDocument" @click="copyInviteCode"
-              :disabled="!inviteCode">复制</el-button>
-            <el-button type="warning" text :icon="Refresh" @click="handleRefreshCode"
-              :loading="refreshingCode">刷新</el-button>
-          </div>
-        </div>
-      </div>
-    </el-card>
+    <InviteCodeCard :code="inviteCode" :refreshing="refreshingCode" @copy="copyInviteCode"
+      @refresh="handleRefreshCode" />
 
     <!-- 最外层承载卡片 -->
     <el-card shadow="never" class="card">
@@ -117,55 +97,9 @@
       <CardList :data="filteredUsers" :loading="loading" :show-pagination="false" :columns="3"
         empty-description="暂无用户数据" :empty-image-size="100">
         <template #card="{ item }">
-          <div class="user-card-item">
-            <div class="card-header">
-              <h3 class="username">{{ item.username }}</h3>
-              <el-tag :type="item.role === 'admin' ? 'danger' : item.role === 'user' ? 'primary' : 'info'" size="small">
-                {{ item.role === 'admin' ? '管理员' : item.role === 'user' ? '业务员' : '游客(只读)' }}
-              </el-tag>
-            </div>
-
-            <div class="card-body">
-              <div class="info-row">
-                <span class="label">👤 姓名：</span>
-                <span class="value">
-                  <el-input v-if="item._editingName" v-model="item._editNameValue" size="small" placeholder="输入姓名"
-                    @blur="handleNameBlur(item)" @keyup.enter="confirmNameChange(item)" />
-                  <span v-else class="editable-name" @click="startEditName(item)">
-                    {{ item.name || '—' }}
-                    <el-icon class="edit-icon">
-                      <Edit />
-                    </el-icon>
-                  </span>
-                </span>
-              </div>
-              <div class="info-row">
-                <span class="label">🔐 角色：</span>
-                <span class="value">
-                  <el-select :model-value="item.role" size="small" placeholder="选择角色"
-                    @change="(val) => handleRoleChange(item, val)" :disabled="item.id === currentUser.id">
-                    <el-option label="管理员" value="admin" />
-                    <el-option label="业务员" value="user" />
-                    <el-option label="游客(只读)" value="guest" />
-                  </el-select>
-                </span>
-              </div>
-              <div class="info-row">
-                <span class="label">📅 注册时间：</span>
-                <span class="value">{{ formatDate(item.createdAt) }}</span>
-              </div>
-            </div>
-
-            <div class="card-footer">
-              <el-button type="warning" size="small" plain :icon="Lock" @click.stop="handleResetClick(item)">
-                重置密码
-              </el-button>
-              <el-button type="danger" size="small" plain :icon="Delete" @click.stop="handleDelete(item)"
-                :disabled="item.id === currentUser.id">
-                删除
-              </el-button>
-            </div>
-          </div>
+          <UserCard :user="item" :current-user-id="currentUser.id" @name-edit="startEditName"
+            @name-blur="handleNameBlur" @name-confirm="confirmNameChange" @role-change="handleRoleChange"
+            @reset-password="handleResetClick" @delete="handleDelete" />
         </template>
       </CardList>
     </el-card>
@@ -191,16 +125,17 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessageBox } from 'element-plus'
-import { Lock, Refresh, Delete, Edit, Key, CopyDocument } from '@element-plus/icons-vue'
+import { Refresh } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import userApi from '@/api/user'
 import { to } from '@/utils/async'
-import { formatDate } from '@/utils/date'
 import { showError, showSuccess, showWarning } from '@/utils/message'
 import { useClipboard } from '@/composables/useClipboard'
 import SearchBar from '@/components/common/SearchBar.vue'
 import CardList from '@/components/common/CardList.vue'
 import AsyncDialog from '@/components/common/AsyncDialog.vue'
+import InviteCodeCard from '@/components/user/InviteCodeCard.vue'
+import UserCard from '@/components/user/UserCard.vue'
 
 const loading = ref(false)
 const users = ref([])
@@ -388,68 +323,6 @@ onMounted(() => {
   gap: 16px;
 }
 
-.invite-code-card {
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-  border: none;
-}
-
-.invite-section {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.invite-left {
-  flex: 1;
-  min-width: 200px;
-}
-
-.invite-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 700;
-  color: #1e293b;
-}
-
-.invite-icon {
-  color: #6366f1;
-  font-size: 20px;
-}
-
-.invite-desc {
-  margin: 6px 0 0;
-  font-size: 13px;
-  color: #64748b;
-}
-
-.invite-right {
-  flex-shrink: 0;
-}
-
-.invite-code-display {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
-  border-radius: 12px;
-  border: 1px solid #c7d2fe;
-}
-
-.code-text {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: 3px;
-  color: #4338ca;
-  user-select: all;
-}
-
 .card {
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
@@ -526,42 +399,4 @@ onMounted(() => {
     width: 100% !important;
   }
 }
-
-.editable-name {
-  cursor: pointer;
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: all 0.2s;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.editable-name:hover {
-  background-color: #e8f0fe;
-  color: #6366f1;
-}
-
-.edit-icon {
-  font-size: 12px;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.editable-name:hover .edit-icon {
-  opacity: 1;
-}
-
-.action-btns {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  align-items: center;
-}
-
-.action-btns .el-button {
-  padding: 5px 12px;
-}
-
-/* 用户卡片特有样式（通用样式已移至global.css） */
 </style>
