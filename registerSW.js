@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/Beilit-Price-List/sw.js', { scope: '/Beilit-Price-List/' })})}
