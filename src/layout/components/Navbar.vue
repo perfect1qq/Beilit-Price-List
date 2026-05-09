@@ -176,14 +176,17 @@ const { changePassDialog, confirmChangePass } = useNavbarPasswordDialog({
 })
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+const avatarRefreshKey = ref(0)
 
 const avatarUrl = computed(() => {
   const avatar = userStore.user?.avatar
   if (avatar) {
     if (avatar.startsWith('http') || avatar.startsWith('data:')) {
-      return avatar
+      return avatar.startsWith('http')
+        ? `${avatar}${avatar.includes('?') ? '&' : '?'}t=${avatarRefreshKey.value}`
+        : avatar
     }
-    return `${API_BASE_URL}${avatar}`
+    return `${API_BASE_URL}${avatar}${avatar.includes('?') ? '&' : '?'}t=${avatarRefreshKey.value}`
   }
   return ''
 })
@@ -195,6 +198,7 @@ const showAvatarDialog = () => {
 }
 
 const onAvatarUploaded = () => {
+  avatarRefreshKey.value = Date.now()
   avatarDialogVisible.value = false
 }
 

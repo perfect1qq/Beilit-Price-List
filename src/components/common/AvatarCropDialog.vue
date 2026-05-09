@@ -134,6 +134,8 @@ const onRealTime = () => {
 const handleUpload = async () => {
   if (!cropperRef.value) return
   uploading.value = true
+  let avatarUrl = ''
+
   try {
     const blob = await new Promise((resolve) => {
       cropperRef.value.getCropBlob((b) => resolve(b))
@@ -146,23 +148,26 @@ const handleUpload = async () => {
     const formData = new FormData()
     formData.append('avatar', blob, 'avatar.png')
     const res = await authApi.uploadAvatar(formData)
-    const avatarUrl = getAvatarFromResponse(res)
-    if (updateUserAvatar(avatarUrl)) {
-      ElMessage.success('头像更新成功')
-      emit('uploaded')
-      cancel()
-    } else {
-      ElMessage.error('上传失败：未收到头像地址')
-    }
+    avatarUrl = getAvatarFromResponse(res)
   } catch (err) {
     const fallbackAvatar = err?.response?.data?.data?.avatar || err?.response?.data?.avatar
-    if (updateUserAvatar(fallbackAvatar)) {
-      ElMessage.success('头像更新成功')
-      emit('uploaded')
-      cancel()
-    } else {
-      ElMessage.error(err?.response?.data?.message || '上传失败，请稍后重试')
+    if (!fallbackAvatar) {
+      ElMessage.error(err?.response?.data?.message || err?.message || '上传失败，请稍后重试')
+      uploading.value = false
+      return
     }
+    avatarUrl = fallbackAvatar
+  }
+
+  try {
+    if (!updateUserAvatar(avatarUrl)) {
+      await userStore.refreshProfile()
+    }
+    ElMessage.success('头像更新成功')
+    emit('uploaded')
+    cancel()
+  } catch (err) {
+    ElMessage.warning(err?.message || '头像已上传成功，刷新页面后可查看最新头像')
   } finally {
     uploading.value = false
   }
