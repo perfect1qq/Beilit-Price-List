@@ -62,6 +62,24 @@ const previewUrl = ref('')
 const previewCroppedUrl = ref('')
 const uploading = ref(false)
 
+const getAvatarFromResponse = (res) =>
+  res?.data?.avatar || res?.avatar || res?.data?.data?.avatar
+
+const updateUserAvatar = (avatar) => {
+  if (!avatar || !userStore.user) return false
+  userStore.user.avatar = avatar
+  return true
+}
+
+const clearSelection = () => {
+  if (previewUrl.value) {
+    URL.revokeObjectURL(previewUrl.value)
+  }
+  selectedFile.value = null
+  previewUrl.value = ''
+  previewCroppedUrl.value = ''
+}
+
 const visible = computed({
   get: () => props.modelValue,
   set: (val) => emit('update:modelValue', val)
@@ -77,18 +95,11 @@ const previewStyle = computed(() => ({
 
 const cancel = () => {
   visible.value = false
-  selectedFile.value = null
-  previewUrl.value = ''
-  previewCroppedUrl.value = ''
+  clearSelection()
 }
 
 const resetCrop = () => {
-  if (previewUrl.value) {
-    URL.revokeObjectURL(previewUrl.value)
-  }
-  selectedFile.value = null
-  previewUrl.value = ''
-  previewCroppedUrl.value = ''
+  clearSelection()
 }
 
 const handleFileChange = (file) => {
@@ -127,12 +138,16 @@ const handleUpload = async () => {
     const blob = await new Promise((resolve) => {
       cropperRef.value.getCropBlob((b) => resolve(b))
     })
+
+    if (!blob || blob.size === 0) {
+      throw new Error('裁剪失败，请重新选择图片')
+    }
+
     const formData = new FormData()
     formData.append('avatar', blob, 'avatar.png')
     const res = await authApi.uploadAvatar(formData)
-    const avatarUrl = res?.data?.avatar || res?.avatar
-    if (avatarUrl) {
-      userStore.setUser({ ...userStore.user, avatar: avatarUrl })
+    const avatarUrl = getAvatarFromResponse(res)
+    if (updateUserAvatar(avatarUrl)) {
       ElMessage.success('头像更新成功')
       emit('uploaded')
       cancel()
@@ -141,8 +156,7 @@ const handleUpload = async () => {
     }
   } catch (err) {
     const fallbackAvatar = err?.response?.data?.data?.avatar || err?.response?.data?.avatar
-    if (fallbackAvatar) {
-      userStore.setUser({ ...userStore.user, avatar: fallbackAvatar })
+    if (updateUserAvatar(fallbackAvatar)) {
       ElMessage.success('头像更新成功')
       emit('uploaded')
       cancel()
