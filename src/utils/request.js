@@ -44,6 +44,12 @@ import { triggerAuthExpired } from './authRuntime'
 let isRefreshing = false
 let refreshSubscribers = []
 
+const buildApiUrl = (path) => {
+  const baseURL = String(http.defaults.baseURL || '').replace(/\/+$/, '')
+  const apiPath = String(path || '').startsWith('/') ? path : `/${path}`
+  return `${baseURL}${apiPath}`
+}
+
 const onRefreshed = () => {
   refreshSubscribers.forEach((cb) => cb())
   refreshSubscribers = []
@@ -56,7 +62,7 @@ const addRefreshSubscriber = (cb) => {
 const refreshAccessToken = async () => {
   try {
     await axios.post(
-      `${http.defaults.baseURL}/api/refresh`,
+      buildApiUrl('/api/refresh'),
       null,
       { withCredentials: true }
     )
