@@ -1,9 +1,16 @@
 import request from '../utils/request'
 import { unwrap } from '../utils/unwrap'
 
-const getUnreadCount = () => request.get('/api/notifications/unread-count')
+const quietPollingConfig = {
+  silent: true,
+  authRedirect: false,
+  skipCancel: true
+}
 
-const list = () => request.get('/api/notifications')
+const getUnreadCount = () =>
+  request.get('/api/notifications/unread-count', quietPollingConfig)
+
+const list = () => request.get('/api/notifications', quietPollingConfig)
 
 const markAsRead = (id) => request.put(`/api/notifications/${id}/read`)
 

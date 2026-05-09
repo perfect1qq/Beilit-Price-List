@@ -77,6 +77,7 @@ export const useNavbarNotifications = ({ request, router, userRole }) => {
 
   /** 是否为首次加载（首次不弹窗提示） */
   const isInitialLoad = ref(true)
+  let isFetching = false
 
   /**
    * 触发铃铛晃动动画
@@ -107,33 +108,40 @@ export const useNavbarNotifications = ({ request, router, userRole }) => {
    * - 用户手动刷新时
    */
   const fetchUnreadCount = async () => {
-    const [countErr, resCount] = await to(notificationApi.getUnreadCount())
-    if (countErr) return
+    if (isFetching) return
+    isFetching = true
 
-    const newCount = resCount.count ?? 0
-    const oldCount = unreadApprovalCount.value
+    try {
+      const [countErr, resCount] = await to(notificationApi.getUnreadCount())
+      if (countErr) return
 
-    const [listErr, resList] = await to(notificationApi.list())
-    if (listErr) return
-    noticeList.value = (resList.list || []).slice(0, 10)
+      const newCount = resCount.count ?? 0
+      const oldCount = unreadApprovalCount.value
 
-    if (newCount > oldCount) {
-      triggerBellRing()
-      const latest = noticeList.value?.[0]
-      if (latest && !isInitialLoad.value) {
-        ElNotification({
-          title: '系统消息待处理',
-          message: latest.content,
-          type: 'warning',
-          position: 'top-right',
-          duration: 4500,
-          offset: 60,
-          onClick: () => handleNoticeClick(latest)
-        })
+      const [listErr, resList] = await to(notificationApi.list())
+      if (listErr) return
+      noticeList.value = (resList.list || []).slice(0, 10)
+
+      if (newCount > oldCount) {
+        triggerBellRing()
+        const latest = noticeList.value?.[0]
+        if (latest && !isInitialLoad.value) {
+          ElNotification({
+            title: '系统消息待处理',
+            message: latest.content,
+            type: 'warning',
+            position: 'top-right',
+            duration: 4500,
+            offset: 60,
+            onClick: () => handleNoticeClick(latest)
+          })
+        }
       }
+      unreadApprovalCount.value = newCount
+      isInitialLoad.value = false
+    } finally {
+      isFetching = false
     }
-    unreadApprovalCount.value = newCount
-    isInitialLoad.value = false
   }
 
   /**
