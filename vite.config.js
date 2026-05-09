@@ -32,6 +32,22 @@ export default defineConfig({
               cacheName: 'api-cache',
               expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 }
             }
+          },
+          {
+            urlPattern: /\/assets\/js\/.+\.js$/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'js-chunks-cache',
+              expiration: { maxEntries: 50, maxAgeSeconds: 24 * 60 * 60 }
+            }
+          },
+          {
+            urlPattern: /\/assets\/css\/.+\.css$/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'css-cache',
+              expiration: { maxEntries: 20, maxAgeSeconds: 24 * 60 * 60 }
+            }
           }
         ]
       },
