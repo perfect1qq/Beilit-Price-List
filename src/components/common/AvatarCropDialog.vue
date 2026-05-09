@@ -130,11 +130,13 @@ const handleUpload = async () => {
     const formData = new FormData()
     formData.append('avatar', blob, 'avatar.png')
     const res = await authApi.uploadAvatar(formData)
-    if (res?.data?.avatar) {
-      userStore.setUser({ ...userStore.user, avatar: res.data.avatar })
+    if (res?.avatar) {
+      userStore.setUser({ ...userStore.user, avatar: res.avatar })
       ElMessage.success('头像更新成功')
       emit('uploaded')
       cancel()
+    } else {
+      ElMessage.error('上传失败：未收到头像地址')
     }
   } catch (err) {
     ElMessage.error(err?.response?.data?.message || '上传失败，请稍后重试')
