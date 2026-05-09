@@ -130,8 +130,9 @@ const handleUpload = async () => {
     const formData = new FormData()
     formData.append('avatar', blob, 'avatar.png')
     const res = await authApi.uploadAvatar(formData)
-    if (res?.avatar) {
-      userStore.setUser({ ...userStore.user, avatar: res.avatar })
+    const avatarUrl = res?.data?.avatar || res?.avatar
+    if (avatarUrl) {
+      userStore.setUser({ ...userStore.user, avatar: avatarUrl })
       ElMessage.success('头像更新成功')
       emit('uploaded')
       cancel()
@@ -139,7 +140,15 @@ const handleUpload = async () => {
       ElMessage.error('上传失败：未收到头像地址')
     }
   } catch (err) {
-    ElMessage.error(err?.response?.data?.message || '上传失败，请稍后重试')
+    const fallbackAvatar = err?.response?.data?.data?.avatar || err?.response?.data?.avatar
+    if (fallbackAvatar) {
+      userStore.setUser({ ...userStore.user, avatar: fallbackAvatar })
+      ElMessage.success('头像更新成功')
+      emit('uploaded')
+      cancel()
+    } else {
+      ElMessage.error(err?.response?.data?.message || '上传失败，请稍后重试')
+    }
   } finally {
     uploading.value = false
   }
