@@ -1,16 +1,6 @@
 <template>
-  <el-dialog
-    :model-value="visible"
-    @update:model-value="$emit('update:visible', $event)"
-    :title="title"
-    :width="width"
-    :destroy-on-close="true"
-    :append-to-body="appendToBody"
-    :close-on-click-modal="!loading"
-    :close-on-press-escape="!loading"
-    v-bind="$attrs"
-    @open="handleOpen"
-  >
+  <el-dialog v-model="visible" :title="title" :width="width" :destroy-on-close="true" :append-to-body="appendToBody"
+    :close-on-click-modal="!loading" :close-on-press-escape="!loading" v-bind="$attrs" @open="handleOpen">
     <div v-loading="loading" class="async-dialog-content">
       <slot v-if="!loading || showContentWhenLoading" />
       <div v-if="loading && !showContentWhenLoading" class="async-dialog-loading">
@@ -52,7 +42,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:modelValue', 'update:visible', 'open', 'loaded', 'error'])
+const emit = defineEmits(['update:modelValue', 'open', 'loaded', 'error'])
 
 const visible = ref(false)
 const loading = ref(false)

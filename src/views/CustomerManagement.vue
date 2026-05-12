@@ -125,13 +125,14 @@
     </el-card>
 
     <CustomerFormDialog v-model="dialogVisible" :form-data="formData" :is-edit="editingId !== null"
-      @submit="handleFormSubmit" />
+      @submit="handleFormSubmit" append-to-body />
 
     <CustomerDetailDialog v-model="detailVisible" :customer="currentCustomer" :can-create="canCreate"
-      :is-guest="isGuest" @open="handleDetailOpen" @add-follow-up="showAddFollowUpDialog"
+      :is-guest="isGuest" append-to-body @open="handleDetailOpen" @add-follow-up="showAddFollowUpDialog"
       @delete-follow-up="handleDeleteFollowUp" />
 
-    <FollowUpFormDialog v-model="followUpDialogVisible" :form-data="followUpFormData" @submit="handleFollowUpSubmit" />
+    <FollowUpFormDialog v-model="followUpDialogVisible" :form-data="followUpFormData" @submit="handleFollowUpSubmit"
+      append-to-body />
   </div>
 </template>
 
