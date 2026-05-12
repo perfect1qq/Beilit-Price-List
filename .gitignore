@@ -39,7 +39,8 @@ __screenshots__/
 *.timestamp-*-*.mjs
 
 .env
-.env.production
+.env.local
+!.env.production
 
 stats.html
 eslint_output.txt
