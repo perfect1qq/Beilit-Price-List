@@ -178,6 +178,12 @@ const { changePassDialog, confirmChangePass } = useNavbarPasswordDialog({
 
 const avatarRefreshKey = ref(0)
 
+const getServerBase = (): string => {
+  const baseURL = String(request.defaults.baseURL || '').replace(/\/+$/, '')
+  if (baseURL) return baseURL
+  return ''
+}
+
 const avatarUrl = computed(() => {
   const avatar = userStore.user?.avatar
   if (!avatar) return ''
@@ -186,7 +192,8 @@ const avatarUrl = computed(() => {
     return `${avatar}${avatar.includes('?') ? '&' : '?'}t=${avatarRefreshKey.value}`
   }
   const path = avatar.startsWith('/') ? avatar : `/${avatar}`
-  return `${path}?t=${avatarRefreshKey.value}`
+  const base = getServerBase()
+  return `${base}${path}?t=${avatarRefreshKey.value}`
 })
 
 const avatarDialogVisible = ref(false)
