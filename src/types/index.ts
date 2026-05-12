@@ -151,6 +151,31 @@ export interface MediumShelfWeightData {
   [key: string]: unknown
 }
 
+export interface NotepadData {
+  id?: number
+  title?: string
+  content?: string
+  folder?: string
+  pinned?: boolean
+  ownerId?: number
+  ownerName?: string
+  createdAt?: string
+  updatedAt?: string
+  [key: string]: unknown
+}
+
+export interface NotepadHistoryData {
+  id?: number
+  notepadId?: number
+  action?: string
+  title?: string
+  content?: string
+  operatorId?: number
+  operatorName?: string
+  createdAt?: string
+  [key: string]: unknown
+}
+
 export type AsyncResult<T = unknown> = [Error | null, T | null]
 
 export interface MemoStatsData {

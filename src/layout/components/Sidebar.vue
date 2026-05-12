@@ -141,7 +141,8 @@ import {
   User,
   Menu as IconMenu,
   ChatLineSquare,
-  Clock
+  Clock,
+  Notebook
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -167,6 +168,7 @@ const iconMap: Record<string, Component> = {
   '/usd-conversion': Money,
   '/message': ChatLineSquare,
   '/memo-management': ChatLineSquare,
+  '/notepad': Notebook,
   '/customer-management': User,
   '/home': House,
   '/quotation/history': Clock,

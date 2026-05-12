@@ -66,7 +66,7 @@
 -->
 
 <template>
-  <div class="card-list" v-bind="$attrs">
+  <div class="card-list" v-bind="$attrs" @copy="handleCopy">
     <!-- 加载状态 -->
     <div v-if="loading" class="loading-wrapper">
       <slot name="loading">
@@ -366,6 +366,15 @@ const handleSelectChange = (item: Record<string, unknown>, selected: boolean, _e
 const handlePageChange = (page: number): void => {
   emit('page-change', page)
 }
+
+const handleCopy = (e: ClipboardEvent): void => {
+  const selection = window.getSelection()
+  if (!selection || selection.isCollapsed || !e.clipboardData) return
+  const text = selection.toString().trim()
+  if (!text) return
+  e.preventDefault()
+  e.clipboardData.setData('text/plain', text)
+}
 </script>
 
 <style scoped>
@@ -420,7 +429,8 @@ const handlePageChange = (page: number): void => {
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  user-select: none;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .card-item:hover {

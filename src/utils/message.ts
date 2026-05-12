@@ -11,7 +11,9 @@ const extractMessage = (err: AxiosLikeError | null | undefined, fallback: string
 }
 
 const showError = (err: unknown, fallback: string = '操作失败'): void => {
+  if (err && typeof err === 'object' && (err as Record<string, unknown>).code === 'ERR_CANCELED') return
   const msg = extractMessage(err as AxiosLikeError, fallback)
+  if (msg === 'canceled') return
   try {
     ElMessage.error(msg)
   } catch (_e) {

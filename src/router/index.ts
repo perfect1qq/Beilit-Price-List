@@ -26,6 +26,7 @@ const MemoManagement = () => import('../views/MemoManagement.vue')
 const MessageManagement = () => import('../views/MessageManagement.vue')
 const UsdConversion = () => import('../views/UsdConversion.vue')
 const CustomerManagement = () => import('../views/CustomerManagement.vue')
+const NotepadView = () => import('../views/NotepadView.vue')
 
 const routes: RouteRecordRaw[] = [
   {
@@ -158,6 +159,12 @@ const routes: RouteRecordRaw[] = [
         name: 'CustomerManagement',
         component: CustomerManagement,
         meta: { title: '客户管理' },
+      },
+      {
+        path: 'notepad',
+        name: 'Notepad',
+        component: NotepadView,
+        meta: { title: '记事本' },
       },
     ],
   },
