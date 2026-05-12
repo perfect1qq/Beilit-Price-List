@@ -122,6 +122,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
+defineOptions({ name: 'QuotationList' })
 import {
   DocumentAdd,
   Plus,

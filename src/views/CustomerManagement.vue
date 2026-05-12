@@ -205,8 +205,7 @@ const getDeliveryDate = (days: number): string => {
   if (!days || days <= 0) return ''
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
-  const endDate = addDays(days - 1, tomorrow)
-  return formatDate(endDate)
+  return formatDate(addDays(days - 1, tomorrow))
 }
 
 const loadList = async () => {
@@ -323,7 +322,7 @@ const handleFollowUpSubmit = async (data: FollowUpData) => {
 
     const [, res] = await to(customerApi.getDetail(currentCustomer.value!.id!))
     if (res?.customer) currentCustomer.value = res.customer
-    await loadList()
+    loadList()
   })
 }
 
@@ -338,9 +337,10 @@ const handleDeleteFollowUp = async (item: FollowUpData) => {
   if (err) { showError(err, '删除跟进记录失败'); return }
   showSuccess('跟进记录删除成功')
 
-  const [, res] = await to(customerApi.getDetail(currentCustomer.value!.id!))
+  const customerId = currentCustomer.value!.id!
+  const [, res] = await to(customerApi.getDetail(customerId))
   if (res?.customer) currentCustomer.value = res.customer
-  await loadList()
+  loadList()
 }
 
 const getCustomerTypeTagType = (type?: string | null) => {

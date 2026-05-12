@@ -49,7 +49,8 @@ const cachedViews = ref([
   'BeamQuotationList',
   'QuotationHistory',
   'BeamQuotationHistory',
-  'MessageManagement'
+  'MessageManagement',
+  'NotepadView'
 ])
 </script>
 

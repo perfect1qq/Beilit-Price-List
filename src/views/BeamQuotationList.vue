@@ -123,6 +123,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+defineOptions({ name: 'BeamQuotationList' })
 import { Plus, Delete, DocumentAdd } from '@element-plus/icons-vue'
 import beamApi from '../api/beam'
 import { to } from '@/utils/async'

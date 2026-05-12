@@ -85,6 +85,7 @@
 
 <script setup lang="ts">
 import { computed, h, onMounted, onUnmounted, reactive, ref } from 'vue'
+defineOptions({ name: 'MessageManagement' })
 import { ElButton, ElMessageBox, ElTag } from 'element-plus'
 import messageApi from '@/api/message'
 import userApi from '@/api/user'
@@ -434,8 +435,7 @@ const formatTime = (dateStr?: string) => formatDateTime(dateStr || '')
 
 onMounted(() => {
   refreshCurrentUser()
-  loadMessages(1)
-  loadStaff()
+  Promise.all([loadMessages(1), loadStaff()])
   window.addEventListener('storage', refreshCurrentUser)
 })
 

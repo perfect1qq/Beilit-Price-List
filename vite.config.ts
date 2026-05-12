@@ -133,6 +133,14 @@ export default defineConfig({
     target: 'es2020',
     cssMinify: 'esbuild',
     minify: 'esbuild',
+    modulePreload: {
+      resolveDependencies(filename: string, deps: string[]): string[] {
+        if (filename.endsWith('entry-') || filename.includes('entry-')) {
+          return deps.filter(d => d.includes('vendor-vue'))
+        }
+        return deps
+      }
+    },
     esbuild: {
       drop: ['debugger'],
       pure: ['console.log', 'console.warn', 'console.debug']

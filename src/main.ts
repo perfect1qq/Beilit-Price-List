@@ -3,13 +3,6 @@ import './assets/styles/global.css'
 import 'element-plus/es/components/message/style/css'
 import 'element-plus/es/components/notification/style/css'
 import 'element-plus/es/components/message-box/style/css'
-import {
-  ArrowRight, Bell, CaretBottom, ChatLineSquare, CircleCheckFilled,
-  CircleCloseFilled, Clock, Close, CopyDocument, DataAnalysis, DataLine,
-  Delete, Document, DocumentAdd, Edit, Grid, Histogram, House, InfoFilled,
-  Key, List, Loading, Lock, Menu, Money, Monitor, MoreFilled, Operation, Plus,
-  Refresh, Search, User, UserFilled, WarningFilled
-} from '@element-plus/icons-vue'
 import App from './App.vue'
 import router from './router'
 import { pinia } from './stores'
@@ -31,18 +24,6 @@ if (storedVersion !== APP_VERSION) {
 }
 
 const app: VueApp = createApp(App)
-
-const icons: Record<string, unknown> = {
-  ArrowRight, Bell, CaretBottom, ChatLineSquare, CircleCheckFilled,
-  CircleCloseFilled, Clock, Close, CopyDocument, DataAnalysis, DataLine,
-  Delete, Document, DocumentAdd, Edit, Grid, Histogram, House, InfoFilled,
-  Key, List, Loading, Lock, Menu, Money, Monitor, MoreFilled, Operation, Plus,
-  Refresh, Search, User, UserFilled, WarningFilled
-}
-
-for (const [key, component] of Object.entries(icons)) {
-  app.component(key, component as import('vue').Component)
-}
 
 app.use(pinia)
 app.use(router)

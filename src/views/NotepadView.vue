@@ -10,7 +10,7 @@
           </template>
         </el-input>
         <el-button v-if="!batchMode" type="primary" :icon="Plus" circle class="add-btn" @click="createNote" />
-        <el-button v-else type="danger" :icon="Delete" circle class="add-btn" :disabled="!checkedIds.length"
+        <el-button v-else type="danger" :icon="Delete" circle class="add-btn" :disabled="!checkedIds.size"
           @click="batchDeleteNotes" />
         <el-tooltip :content="batchMode ? '取消多选' : '多选删除'" placement="top">
           <el-button :type="batchMode ? 'warning' : 'default'" :icon="batchMode ? Close : Operation" circle
@@ -44,13 +44,13 @@
         <div v-if="batchMode && noteList.length" class="batch-select-all" @click="toggleSelectAll">
           <el-checkbox :model-value="isAllChecked" :indeterminate="isIndeterminate" />
           <span>{{ isAllChecked ? '取消全选' : '全选' }}</span>
-          <span class="checked-count">已选 {{ checkedIds.length }} 项</span>
+          <span class="checked-count">已选 {{ checkedIds.size }} 项</span>
         </div>
         <div v-for="note in noteList" :key="note.id" class="note-item"
-          :class="{ active: selectedId === note.id, pinned: note.pinned, checked: checkedIds.includes(note.id!) }"
+          :class="{ active: selectedId === note.id, pinned: note.pinned, checked: checkedIds.has(note.id!) }"
           @click="onNoteItemClick(note)">
           <div class="note-item-header">
-            <el-checkbox v-if="batchMode" :model-value="checkedIds.includes(note.id!)"
+            <el-checkbox v-if="batchMode" :model-value="checkedIds.has(note.id!)"
               @change="(val: boolean) => toggleCheck(note.id!, val)" @click.stop />
             <el-icon v-if="note.pinned" class="pin-icon">
               <Star />
@@ -67,7 +67,7 @@
       </div>
 
       <div class="sidebar-footer">
-        <span v-if="batchMode">已选 {{ checkedIds.length }}/{{ total }} 篇</span>
+        <span v-if="batchMode">已选 {{ checkedIds.size }}/{{ total }} 篇</span>
         <span v-else>共 {{ total }} 篇笔记</span>
       </div>
     </div>
@@ -148,6 +148,8 @@ import { showError, showSuccess } from '@/utils/message'
 import NotepadHistoryDrawer from '@/components/notepad/NotepadHistoryDrawer.vue'
 import type { NotepadData, NotepadHistoryData } from '@/types'
 
+defineOptions({ name: 'NotepadView' })
+
 const keyword = ref('')
 const activeFolder = ref('')
 const folderExpanded = ref(true)
@@ -169,10 +171,10 @@ const historyList = ref<NotepadHistoryData[]>([])
 const folderCountMap = ref<Record<string, number>>({})
 
 const batchMode = ref(false)
-const checkedIds = ref<number[]>([])
+const checkedIds = ref<Set<number>>(new Set())
 
-const isAllChecked = computed(() => noteList.value.length > 0 && checkedIds.value.length === noteList.value.length)
-const isIndeterminate = computed(() => checkedIds.value.length > 0 && checkedIds.value.length < noteList.value.length)
+const isAllChecked = computed(() => noteList.value.length > 0 && checkedIds.value.size === noteList.value.length)
+const isIndeterminate = computed(() => checkedIds.value.size > 0 && checkedIds.value.size < noteList.value.length)
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 let saveTimer: ReturnType<typeof setTimeout> | null = null
@@ -241,7 +243,7 @@ const selectNote = (note: NotepadData) => {
 
 const onNoteItemClick = (note: NotepadData) => {
   if (batchMode.value) {
-    toggleCheck(note.id!, !checkedIds.value.includes(note.id!))
+    toggleCheck(note.id!, !checkedIds.value.has(note.id!))
   } else {
     selectNote(note)
   }
@@ -249,34 +251,32 @@ const onNoteItemClick = (note: NotepadData) => {
 
 const toggleBatchMode = () => {
   batchMode.value = !batchMode.value
-  checkedIds.value = []
+  checkedIds.value = new Set()
 }
 
 const toggleCheck = (id: number, checked: boolean) => {
-  if (checked) {
-    if (!checkedIds.value.includes(id)) checkedIds.value.push(id)
-  } else {
-    checkedIds.value = checkedIds.value.filter((i) => i !== id)
-  }
+  const s = new Set(checkedIds.value)
+  if (checked) s.add(id); else s.delete(id)
+  checkedIds.value = s
 }
 
 const toggleSelectAll = () => {
   if (isAllChecked.value) {
-    checkedIds.value = []
+    checkedIds.value = new Set()
   } else {
-    checkedIds.value = noteList.value.map((n) => n.id!).filter((id): id is number => id != null)
+    checkedIds.value = new Set(noteList.value.map((n) => n.id!).filter((id): id is number => id != null))
   }
 }
 
 const batchDeleteNotes = async () => {
-  if (!checkedIds.value.length) return
+  if (!checkedIds.value.size) return
   try {
-    await ElMessageBox.confirm(`确定删除选中的 ${checkedIds.value.length} 篇笔记？`, '批量删除', { type: 'warning' })
+    await ElMessageBox.confirm(`确定删除选中的 ${checkedIds.value.size} 篇笔记？`, '批量删除', { type: 'warning' })
   } catch { return }
-  const [err, res] = await to(notepadApi.batchDelete(checkedIds.value))
+  const [err, res] = await to(notepadApi.batchDelete([...checkedIds.value]))
   if (err) { showError(err, '批量删除失败'); return }
   showSuccess(`成功删除${res?.deletedCount || 0}篇笔记`)
-  checkedIds.value = []
+  checkedIds.value = new Set()
   batchMode.value = false
   if (selectedId.value && !noteList.value.find((n) => n.id === selectedId.value)) {
     selectedId.value = null
@@ -320,9 +320,10 @@ const doSave = async () => {
   if (err) { savingStatus.value = '保存失败'; return }
   const updated: NotepadData = res?.note || {}
   currentNote.value = { ...updated }
+  const idx = noteList.value.findIndex((n) => n.id === selectedId.value)
+  if (idx !== -1) noteList.value[idx] = { ...updated }
   savingStatus.value = '已保存'
   setTimeout(() => { savingStatus.value = '' }, 1500)
-  await loadNotes()
 }
 
 const doAutoSave = () => {
@@ -381,8 +382,7 @@ const openHistory = async () => {
 }
 
 onMounted(() => {
-  loadFolders()
-  loadNotes()
+  Promise.all([loadFolders(), loadNotes()])
 })
 </script>
 

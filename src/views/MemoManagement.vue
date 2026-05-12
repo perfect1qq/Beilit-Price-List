@@ -323,46 +323,72 @@ const saveMemo = async () => {
 
   saving.value = true
   if (editorMode.value === 'create') {
-    const [err] = await to(memoApi.create(form))
+    const [err, res] = await to(memoApi.create(form))
     if (err) {
       saving.value = false
       return
     }
     showSuccess('新增成功')
+    editorVisible.value = false
+    page.value = 1
+    await loadList(1)
   } else {
-    const [err] = await to(memoApi.update(editingId.value as number, form))
+    const [err, res] = await to(memoApi.update(editingId.value as number, form))
     if (err) {
       saving.value = false
       return
     }
     showSuccess('修改完成')
+    editorVisible.value = false
+    const idx = list.value.findIndex((m: MemoData) => m.id === editingId.value)
+    if (idx !== -1 && res) {
+      const updated = { ...list.value[idx], ...res }
+      list.value = [...list.value.slice(0, idx), updated, ...list.value.slice(idx + 1)]
+    }
   }
-  editorVisible.value = false
-  page.value = 1
-  await loadList(1)
   saving.value = false
 }
 
 const toggleCompleted = async (item: MemoData) => {
-  const [err] = await to(memoApi.update(item.id as number, { ...item, completed: !item.completed }))
+  const nextCompleted = !item.completed
+  const [err] = await to(memoApi.update(item.id as number, { ...item, completed: nextCompleted }))
   if (err) {
     showError('网络繁忙，请重试')
     return
   }
-  showSuccess(item.completed ? '已取消完成标记' : '任务已完成')
-  page.value = 1
-  await loadList(1)
+  showSuccess(nextCompleted ? '任务已完成' : '已取消完成标记')
+  const idx = list.value.findIndex((m: MemoData) => m.id === item.id)
+  if (idx !== -1) {
+    const updated = { ...list.value[idx], completed: nextCompleted, completedAt: nextCompleted ? new Date().toISOString() : null }
+    list.value = [...list.value.slice(0, idx), updated, ...list.value.slice(idx + 1)]
+  }
+  if (nextCompleted) {
+    stats.doneTotal += 1
+    stats.todoTotal -= 1
+  } else {
+    stats.doneTotal -= 1
+    stats.todoTotal += 1
+  }
 }
 
 const togglePinned = async (item: MemoData) => {
-  const [err] = await to(memoApi.update(item.id as number, { ...item, pinned: !item.pinned }))
+  const nextPinned = !item.pinned
+  const [err] = await to(memoApi.update(item.id as number, { ...item, pinned: nextPinned }))
   if (err) {
     showError('操作失败')
     return
   }
-  showSuccess(item.pinned ? '已取消置顶' : '已置顶')
-  page.value = 1
-  await loadList(1)
+  showSuccess(nextPinned ? '已置顶' : '已取消置顶')
+  const idx = list.value.findIndex((m: MemoData) => m.id === item.id)
+  if (idx !== -1) {
+    const updated = { ...list.value[idx], pinned: nextPinned }
+    list.value = [...list.value.slice(0, idx), updated, ...list.value.slice(idx + 1)]
+  }
+  if (nextPinned) {
+    stats.pinnedTotal += 1
+  } else {
+    stats.pinnedTotal -= 1
+  }
 }
 
 const removeMemo = async (item: MemoData) => {

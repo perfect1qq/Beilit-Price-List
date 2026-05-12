@@ -311,8 +311,7 @@ const confirmNameChange = async (row: UserInfo) => {
 }
 
 onMounted(() => {
-  fetchUsers()
-  fetchInviteCode()
+  Promise.all([fetchUsers(), fetchInviteCode()])
 })
 </script>
 

@@ -156,6 +156,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch, reactive } from 'vue'
+defineOptions({ name: 'QuotationHistory' })
 import { useRoute } from 'vue-router'
 import { DocumentAdd, Plus, Refresh } from '@element-plus/icons-vue'
 import quotationApi from '@/api/quotation'

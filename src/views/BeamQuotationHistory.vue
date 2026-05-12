@@ -51,6 +51,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted } from 'vue'
+defineOptions({ name: 'BeamQuotationHistory' })
 import { to } from '@/utils/async'
 import { showError, showSuccess, showWarning } from '@/utils/message'
 import { usePermissions } from '@/composables/usePermissions'
