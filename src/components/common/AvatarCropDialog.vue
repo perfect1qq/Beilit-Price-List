@@ -39,7 +39,7 @@
   </el-dialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { VueCropper } from 'vue-cropper/next'
@@ -55,17 +55,49 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue', 'uploaded'])
 
+interface CropperComponent {
+  getCropData: (cb: (data: string) => void) => void
+  getCropBlob: (cb: (blob: Blob) => void) => void
+}
+
+interface UploadFile {
+  raw: File
+}
+
+interface UploadResponse {
+  data?: {
+    avatar?: string
+    data?: {
+      avatar?: string
+    }
+  }
+  avatar?: string
+}
+
+interface ErrorResponse {
+  response?: {
+    data?: {
+      data?: {
+        avatar?: string
+      }
+      avatar?: string
+      message?: string
+    }
+  }
+  message?: string
+}
+
 const userStore = useUserStore()
-const cropperRef = ref(null)
-const selectedFile = ref(null)
+const cropperRef = ref<CropperComponent | null>(null)
+const selectedFile = ref<File | null>(null)
 const previewUrl = ref('')
 const previewCroppedUrl = ref('')
 const uploading = ref(false)
 
-const getAvatarFromResponse = (res) =>
+const getAvatarFromResponse = (res: UploadResponse): string | undefined =>
   res?.data?.avatar || res?.avatar || res?.data?.data?.avatar
 
-const updateUserAvatar = (avatar) => {
+const updateUserAvatar = (avatar: string): boolean => {
   if (!avatar || !userStore.user) return false
   userStore.user.avatar = avatar
   return true
@@ -102,7 +134,7 @@ const resetCrop = () => {
   clearSelection()
 }
 
-const handleFileChange = (file) => {
+const handleFileChange = (file: UploadFile) => {
   const isImage = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.raw.type)
   const isLt5M = file.raw.size / 1024 / 1024 < 5
   if (!isImage) {
@@ -126,7 +158,7 @@ watch(previewUrl, (newVal) => {
 
 const onRealTime = () => {
   if (!cropperRef.value) return
-  cropperRef.value.getCropData((data) => {
+  cropperRef.value.getCropData((data: string) => {
     previewCroppedUrl.value = data
   })
 }
@@ -134,40 +166,33 @@ const onRealTime = () => {
 const handleUpload = async () => {
   if (!cropperRef.value) return
   uploading.value = true
-  let avatarUrl = ''
-
   try {
-    const blob = await new Promise((resolve) => {
-      cropperRef.value.getCropBlob((b) => resolve(b))
+    const blob = await new Promise<Blob>((resolve) => {
+      cropperRef.value!.getCropBlob((b: Blob) => resolve(b))
     })
-
-    if (!blob || blob.size === 0) {
-      throw new Error('裁剪失败，请重新选择图片')
-    }
-
     const formData = new FormData()
     formData.append('avatar', blob, 'avatar.png')
     const res = await authApi.uploadAvatar(formData)
-    avatarUrl = getAvatarFromResponse(res)
-  } catch (err) {
-    const fallbackAvatar = err?.response?.data?.data?.avatar || err?.response?.data?.avatar
-    if (!fallbackAvatar) {
-      ElMessage.error(err?.response?.data?.message || err?.message || '上传失败，请稍后重试')
-      uploading.value = false
-      return
+    const avatarUrl = getAvatarFromResponse(res)
+    if (avatarUrl) {
+      updateUserAvatar(avatarUrl)
+      ElMessage.success('头像更新成功')
+      emit('uploaded')
+      cancel()
+    } else {
+      ElMessage.error('上传失败：未收到头像地址')
     }
-    avatarUrl = fallbackAvatar
-  }
-
-  try {
-    if (!updateUserAvatar(avatarUrl)) {
-      await userStore.refreshProfile()
-    }
-    ElMessage.success('头像更新成功')
-    emit('uploaded')
-    cancel()
   } catch (err) {
-    ElMessage.warning(err?.message || '头像已上传成功，刷新页面后可查看最新头像')
+    const error = err as ErrorResponse
+    const fallbackAvatar = error?.response?.data?.data?.avatar || error?.response?.data?.avatar
+    if (fallbackAvatar) {
+      updateUserAvatar(fallbackAvatar)
+      ElMessage.success('头像更新成功')
+      emit('uploaded')
+      cancel()
+    } else {
+      ElMessage.error(error?.response?.data?.message || error?.message || '上传失败，请稍后重试')
+    }
   } finally {
     uploading.value = false
   }

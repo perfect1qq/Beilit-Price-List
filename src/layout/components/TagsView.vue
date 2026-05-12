@@ -42,7 +42,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Close, House, MoreFilled } from '@element-plus/icons-vue'
 import { useBreadcrumbTabs } from '@/composables/useBreadcrumbTabs'
 
@@ -57,7 +57,7 @@ const {
   closeAll
 } = useBreadcrumbTabs()
 
-const handleCommand = async (command) => {
+const handleCommand = async (command: string) => {
   const current = visitedViews.value?.find(item => item.fullPath === activeFullPath.value) || visitedViews.value?.[visitedViews.value.length - 1]
   if (command === 'closeOthers') await closeOthers(current)
   if (command === 'closeLeft') closeLeft(current)

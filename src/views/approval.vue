@@ -100,9 +100,9 @@
 
           <div class="card-footer">
             <el-button type="primary" size="small" round @click.stop="editDetail(item.id)">详情</el-button>
-            <el-button type="success" size="small" plain :loading="isActionLoading(item.id)"
+            <el-button type="success" size="small" plain :loading="isActionLoading(item.id as string | number)"
               @click.stop="approveRow(item)">通过</el-button>
-            <el-button type="danger" size="small" plain :loading="isActionLoading(item.id)"
+            <el-button type="danger" size="small" plain :loading="isActionLoading(item.id as string | number)"
               @click.stop="rejectRow(item)">驳回</el-button>
           </div>
         </div>
@@ -111,14 +111,14 @@
   </el-card>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { to } from '@/utils/async'
 import approvalApi from '@/api/approval'
 import quotationApi from '@/api/quotation'
-import messageApi from '@/api/message'
+import { notificationApi } from '@/api/notifications'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { useListQueryState } from '@/composables/useListQueryState'
 import CardList from '@/components/common/CardList.vue'
@@ -127,13 +127,18 @@ import { showError, showSuccess } from '@/utils/message'
 
 const router = useRouter()
 const loading = ref(false)
-const list = ref([])
+interface ApprovalItem {
+  id: number | string
+  [key: string]: unknown
+}
+
+const list = ref<ApprovalItem[]>([])
 const total = ref(0)
-const { keyword: searchKeyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
+const { keyword: searchKeyword, page, pageSize } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
 const { isActionLoading, withActionLock, replaceById, removeById } = useInstantListActions(list)
 
-const tagType = (status) => ({ draft: 'info', pending: 'warning', approved: 'success', rejected: 'danger', deleted: 'info' }[status] || 'info')
-const statusLabel = (status) => ({ draft: '草稿', pending: '待审批', approved: '已通过', rejected: '已驳回', deleted: '已删除' }[status] || status)
+const tagType = (status: string) => ({ draft: 'info', pending: 'warning', approved: 'success', rejected: 'danger', deleted: 'info' }[status] || 'info')
+const statusLabel = (status: string) => ({ draft: '草稿', pending: '待审批', approved: '已通过', rejected: '已驳回', deleted: '已删除' }[status] || status)
 
 const loadList = async (targetPage = page.value) => {
   loading.value = true
@@ -152,15 +157,15 @@ const loadList = async (targetPage = page.value) => {
   total.value = Number(res.total || 0)
   page.value = Number(res.page || targetPage)
   pageSize.value = Number(res.pageSize || pageSize.value)
-  void messageApi.markAllAsRead()
+  void notificationApi.markAllAsRead()
   loading.value = false
 }
 
-const editDetail = (id) => {
+const editDetail = (id: number | string) => {
   router.push({ path: `/approval/${id}`, query: { mode: 'edit' } })
 }
 
-const approveRow = async (row) => {
+const approveRow = async (row: ApprovalItem) => {
   const [confirmErr] = await to(ElMessageBox.confirm(`确认通过报价单「${row.companyName || row.name}」吗？`, '审批通过', { type: 'warning' }))
   if (confirmErr) return
 
@@ -178,7 +183,7 @@ const approveRow = async (row) => {
   await loadList(page.value)
 }
 
-const rejectRow = async (row) => {
+const rejectRow = async (row: ApprovalItem) => {
   const [promptErr, promptRes] = await to(ElMessageBox.prompt('请输入驳回原因', '驳回报价单', {
     confirmButtonText: '确定',
     cancelButtonText: '取消'
@@ -188,7 +193,7 @@ const rejectRow = async (row) => {
   replaceById(row.id, { status: 'rejected' })
   removeById(row.id)
   const [apiErr] = await to(withActionLock(row.id, async () => {
-    await quotationApi.reject(row.id, promptRes.value || '拒绝')
+    await quotationApi.reject(row.id, promptRes?.value || '拒绝')
   }))
   if (apiErr) {
     showError(apiErr, '驳回失败')

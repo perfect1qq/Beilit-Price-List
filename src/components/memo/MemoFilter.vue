@@ -39,14 +39,14 @@
   </header>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 import { Plus, Search } from '@element-plus/icons-vue'
 
 const props = defineProps({
   activeListScope: { type: String, default: 'today' },
   keyword: { type: String, default: '' },
-  historyCreatedOn: { default: null },
+  historyCreatedOn: { type: String, default: null },
   activeFilter: { type: String, default: 'all' },
   isGuest: { type: Boolean, default: false }
 })

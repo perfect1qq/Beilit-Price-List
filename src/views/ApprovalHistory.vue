@@ -97,7 +97,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { to } from '@/utils/async'
@@ -109,12 +109,12 @@ import SearchBar from '@/components/common/SearchBar.vue'
 
 const router = useRouter()
 const loading = ref(false)
-const list = ref([])
+const list = ref<Record<string, unknown>[]>([])
 const total = ref(0)
-const { keyword: searchKeyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
+const { keyword: searchKeyword, page, pageSize } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
 
-const tagType = (status) => ({ draft: 'info', pending: 'warning', approved: 'success', rejected: 'danger', deleted: 'info' }[status] || 'info')
-const statusLabel = (status) => ({ draft: '草稿', pending: '待审批', approved: '已通过', rejected: '已驳回', deleted: '已删除' }[status] || status)
+const tagType = (status: string) => ({ draft: 'info', pending: 'warning', approved: 'success', rejected: 'danger', deleted: 'info' }[status] || 'info')
+const statusLabel = (status: string) => ({ draft: '草稿', pending: '待审批', approved: '已通过', rejected: '已驳回', deleted: '已删除' }[status] || status)
 
 const loadList = async (targetPage = page.value) => {
   loading.value = true
@@ -135,7 +135,7 @@ const loadList = async (targetPage = page.value) => {
   loading.value = false
 }
 
-const openDetail = (id) => {
+const openDetail = (id: number | string) => {
   router.push({ name: 'ApprovalHistoryDetail', params: { id } })
 }
 

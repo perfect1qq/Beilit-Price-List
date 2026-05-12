@@ -1,28 +1,20 @@
 <template>
   <div class="pager-wrap">
-    <el-pagination
-      v-model:current-page="currentPageProxy"
-      v-model:page-size="pageSizeProxy"
-      :page-sizes="pageSizes"
-      :total="total"
-      :layout="layout"
-      :background="background"
-      :hide-on-single-page="hideOnSinglePage"
-      :pager-count="pagerCount"
-      @current-change="handleCurrentChange"
-      @size-change="handleSizeChange"
-    />
+    <el-pagination v-model:current-page="currentPageProxy" v-model:page-size="pageSizeProxy" :page-sizes="pageSizes"
+      :total="total" :layout="layout" :background="background" :hide-on-single-page="hideOnSinglePage"
+      :pager-count="pagerCount" @current-change="handleCurrentChange" @size-change="handleSizeChange" />
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
+import type { PropType } from 'vue'
 
 const props = defineProps({
   page: { type: Number, default: 1 },
   pageSize: { type: Number, default: 10 },
   total: { type: Number, default: 0 },
-  pageSizes: { type: Array, default: () => [10, 20, 50] },
+  pageSizes: { type: Array as PropType<number[]>, default: () => [10, 20, 50] },
   layout: { type: String, default: 'total, sizes, prev, pager, next, jumper' },
   background: { type: Boolean, default: true },
   hideOnSinglePage: { type: Boolean, default: false },
@@ -41,11 +33,11 @@ const pageSizeProxy = computed({
   set: (val) => emit('update:pageSize', Number(val) || 10)
 })
 
-const handleCurrentChange = (val) => {
+const handleCurrentChange = (val: number) => {
   emit('page-change', Number(val) || 1)
 }
 
-const handleSizeChange = (val) => {
+const handleSizeChange = (val: number) => {
   const size = Number(val) || 10
   emit('update:pageSize', size)
   emit('update:page', 1)

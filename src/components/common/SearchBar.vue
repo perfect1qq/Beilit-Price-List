@@ -68,7 +68,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { Search as SearchIcon } from '@element-plus/icons-vue'
 
@@ -92,7 +92,7 @@ const props = defineProps({
   size: {
     type: String,
     default: 'default',
-    validator: (val) => ['large', 'default', 'small'].includes(val)
+    validator: (val: unknown) => ['large', 'default', 'small'].includes(val as string)
   },
   /** 按钮类型 */
   buttonType: {

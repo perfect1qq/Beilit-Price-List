@@ -40,11 +40,13 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { formatDateTime } from '@/utils/date'
+import type { MessageData } from '@/types'
 
 defineProps({
-  item: { type: Object, required: true },
+  item: { type: Object as PropType<MessageData>, required: true },
   isAdmin: { type: Boolean, default: false },
   isGuest: { type: Boolean, default: false },
   actionLoading: { type: Boolean, default: false }
@@ -52,5 +54,5 @@ defineProps({
 
 defineEmits(['view', 'assign', 'delete', 'hide'])
 
-const formatTime = (dateStr) => formatDateTime(dateStr)
+const formatTime = (dateStr: string | undefined) => formatDateTime(dateStr || '')
 </script>

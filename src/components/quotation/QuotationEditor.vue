@@ -93,15 +93,16 @@
           <template #header>
             <div class="section-title">基础信息</div>
           </template>
-          <el-form ref="formRef" :model="formModel" label-width="92px">
+          <el-form ref="formRef" :model="localFormModel" label-width="92px">
             <el-form-item label="名称" prop="quotationNo" :rules="quotationNameRule">
-              <el-input v-model="formModel.quotationNo" placeholder="请输入名称" :disabled="isViewMode" />
+              <el-input v-model="localFormModel.quotationNo" placeholder="请输入名称" :disabled="isViewMode" />
             </el-form-item>
             <el-form-item label="公司名称" prop="companyName" :rules="companyNameRule">
-              <el-input v-model="formModel.companyName" placeholder="请输入公司名称" :disabled="isViewMode" />
+              <el-input v-model="localFormModel.companyName" placeholder="请输入公司名称" :disabled="isViewMode" />
             </el-form-item>
             <el-form-item label="备注">
-              <el-input :model-value="remark" @update:model-value="$emit('update:remark', $event)" type="textarea" :rows="3" placeholder="备注信息，不参与表格" :disabled="isViewMode" />
+              <el-input :model-value="remark" @update:model-value="$emit('update:remark', $event)" type="textarea"
+                :rows="3" placeholder="备注信息，不参与表格" :disabled="isViewMode" />
             </el-form-item>
           </el-form>
         </el-card>
@@ -117,14 +118,14 @@
               <el-form-item label="折扣(%)">
                 <el-input-number :model-value="toNumber(discount)" :min="0" :max="100" :precision="2"
                   controls-position="right" style="width: 100%" :disabled="isViewMode"
-                  @change="(val) => { $emit('update:discount', val); $emit('handleDiscountChange', val) }" />
+                  @change="(val: number | undefined) => { $emit('update:discount', val); $emit('handleDiscountChange', val) }" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="成交价">
                 <el-input-number :model-value="toNumber(finalPrice)" :min="0" :precision="2" controls-position="right"
                   style="width: 100%" :disabled="isViewMode"
-                  @change="(val) => { $emit('update:finalPrice', val); $emit('handleManualFinalPriceChange', val) }" />
+                  @change="(val: number | undefined) => { $emit('update:finalPrice', val); $emit('handleManualFinalPriceChange', val) }" />
               </el-form-item>
             </el-col>
           </el-row>
@@ -150,8 +151,8 @@
       <template #header>
         <div class="section-title">粘贴 Word 内容</div>
       </template>
-      <el-input :model-value="rawText" @update:model-value="$emit('update:rawText', $event)" type="textarea" :rows="8" resize="vertical"
-        placeholder="把 Word 里复制出来的表格直接粘贴到这里，再点击“智能解析粘贴内容”" />
+      <el-input :model-value="rawText" @update:model-value="$emit('update:rawText', $event)" type="textarea" :rows="8"
+        resize="vertical" placeholder="把 Word 里复制出来的表格直接粘贴到这里，再点击“智能解析粘贴内容”" />
       <div class="hint-row">
         支持名称/规格/数量/单价/总价的任意组合，缺少的列会自动隐藏；总价缺失时会用 数量 × 单价 自动计算。
       </div>
@@ -181,13 +182,15 @@
 
         <el-table-column v-if="visibleColumns.includes('quantity')" label="数量" width="110" align="center">
           <template #default="{ row }">
-            <el-input v-model="row.quantity" placeholder="数量" :disabled="isViewMode" @change="$emit('updateRowTotal', row)" />
+            <el-input v-model="row.quantity" placeholder="数量" :disabled="isViewMode"
+              @change="$emit('updateRowTotal', row)" />
           </template>
         </el-table-column>
 
         <el-table-column v-if="visibleColumns.includes('unitPrice')" label="单价" width="120" align="right">
           <template #default="{ row }">
-            <el-input v-model="row.unitPrice" placeholder="单价" :disabled="isViewMode" @change="$emit('updateRowTotal', row)" />
+            <el-input v-model="row.unitPrice" placeholder="单价" :disabled="isViewMode"
+              @change="$emit('updateRowTotal', row)" />
           </template>
         </el-table-column>
 
@@ -208,18 +211,21 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
+import type { PropType } from 'vue'
 import { Delete } from '@element-plus/icons-vue'
 import { formatMoney } from '@/utils/number'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
+import { quotationNameRule as quotationNameBaseRule, companyNameRule as companyNameBaseRule } from '@/utils/formRules'
+import type { QuotationData, QuotationItem } from '@/types'
 
 const props = defineProps({
   isViewMode: Boolean,
   rulesDisabled: Boolean,
   hideActionColumn: Boolean,
   formModel: {
-    type: Object,
+    type: Object as PropType<QuotationData>,
     required: true
   },
   remark: String,
@@ -230,8 +236,8 @@ const props = defineProps({
   autoFinalPrice: Number,
   isManualFinalPrice: Boolean,
   rawText: String,
-  items: Array,
-  visibleColumns: Array
+  items: { type: Array as PropType<QuotationItem[]>, default: () => [] },
+  visibleColumns: { type: Array as PropType<string[]>, default: () => [] }
 })
 
 const emit = defineEmits([
@@ -243,10 +249,16 @@ const emit = defineEmits([
   'handleManualFinalPriceChange',
   'restoreAutoFinalPrice',
   'updateRowTotal',
-  'removeRow'
+  'removeRow',
+  'update:formModel'
 ])
 
-const toNumber = (value) => {
+const localFormModel = computed({
+  get: () => props.formModel,
+  set: (val) => emit('update:formModel', val)
+})
+
+const toNumber = (value: unknown): number | null => {
   if (value === null || value === undefined || value === '') return null
   const num = Number(value)
   return Number.isFinite(num) ? num : null
@@ -255,38 +267,12 @@ const toNumber = (value) => {
 const formRef = ref()
 
 defineExpose({
-  validate: (callback) => formRef.value?.validate(callback)
+  validate: (callback?: (valid: boolean) => void) => formRef.value?.validate(callback)
 })
 
-const quotationNameRule = computed(() => (props.isViewMode || props.rulesDisabled) ? [] : [
-  { required: true, message: '请输入报价单名称', trigger: ['blur', 'change'] },
-  { min: 1, max: 100, message: '报价单名称不能超过100个字符', trigger: ['blur', 'change'] },
-  {
-    validator: (rule, value, callback) => {
-      if (value && value.trim() !== value) {
-        callback(new Error('报价单名称不能有前后空格'))
-      } else {
-        callback()
-      }
-    },
-    trigger: ['blur', 'change']
-  }
-])
+const quotationNameRule = computed(() => (props.isViewMode || props.rulesDisabled) ? [] : quotationNameBaseRule)
 
-const companyNameRule = computed(() => (props.isViewMode || props.rulesDisabled) ? [] : [
-  { required: true, message: '请输入公司名称', trigger: ['blur', 'change'] },
-  { min: 1, max: 100, message: '公司名称不能超过100个字符', trigger: ['blur', 'change'] },
-  {
-    validator: (rule, value, callback) => {
-      if (value && value.trim() !== value) {
-        callback(new Error('公司名称不能有前后空格'))
-      } else {
-        callback()
-      }
-    },
-    trigger: ['blur', 'change']
-  }
-])
+const companyNameRule = computed(() => (props.isViewMode || props.rulesDisabled) ? [] : companyNameBaseRule)
 </script>
 
 <style scoped>

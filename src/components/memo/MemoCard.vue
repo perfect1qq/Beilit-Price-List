@@ -53,12 +53,14 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
 import { MoreFilled } from '@element-plus/icons-vue'
 import { formatDateTime } from '@/utils/date'
+import type { MemoData } from '@/types'
 
 defineProps({
-  item: { type: Object, required: true },
+  item: { type: Object as PropType<MemoData>, required: true },
   boardMode: { type: Boolean, default: true },
   highlightId: { type: Number, default: null },
   isGuest: { type: Boolean, default: false }
@@ -66,7 +68,7 @@ defineProps({
 
 defineEmits(['toggle-completed', 'edit', 'toggle-pinned', 'history', 'remove'])
 
-const formatTime = (v) => formatDateTime(v)
+const formatTime = (v: string | undefined) => formatDateTime(v || '')
 </script>
 
 <style scoped>

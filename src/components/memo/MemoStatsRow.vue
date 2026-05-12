@@ -39,10 +39,12 @@
   </el-row>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
+import type { MemoStatsData, MemoScopeStatData } from '@/types'
 defineProps({
-  stats: { type: Object, required: true },
-  scopeStatCopy: { type: Object, required: true }
+  stats: { type: Object as PropType<MemoStatsData>, required: true },
+  scopeStatCopy: { type: Object as PropType<MemoScopeStatData>, required: true }
 })
 </script>
 

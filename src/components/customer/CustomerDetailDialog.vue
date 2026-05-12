@@ -1,5 +1,6 @@
 <template>
-  <AsyncDialog ref="detailDialogRef" :model-value="visible" @update:model-value="$emit('update:visible', $event)" title="客户详情" width="800px" @open="$emit('open')">
+  <AsyncDialog ref="detailDialogRef" :model-value="visible" @update:model-value="$emit('update:modelValue', $event)"
+    title="客户详情" width="800px" @open="$emit('open')">
     <div v-if="customer" class="detail-content">
       <el-descriptions :column="2" border>
         <el-descriptions-item label="公司名称">{{ customer.companyName }}</el-descriptions-item>
@@ -7,8 +8,8 @@
         <el-descriptions-item label="联系方式">{{ customer.contactInfo || '—' }}</el-descriptions-item>
         <el-descriptions-item label="负责人">{{ customer.ownerName }}</el-descriptions-item>
         <el-descriptions-item label="备注" :span="2">{{ customer.remark || '—' }}</el-descriptions-item>
-        <el-descriptions-item label="创建时间">{{ formatDate(customer.createdAt) }}</el-descriptions-item>
-        <el-descriptions-item label="更新时间">{{ formatDate(customer.updatedAt) }}</el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ formatDate(customer.createdAt || '') }}</el-descriptions-item>
+        <el-descriptions-item label="更新时间">{{ formatDate(customer.updatedAt || '') }}</el-descriptions-item>
       </el-descriptions>
 
       <div class="follow-up-section">
@@ -19,9 +20,9 @@
           </el-button>
         </div>
 
-        <el-timeline v-if="customer.followUps?.length > 0">
+        <el-timeline v-if="(customer.followUps?.length ?? 0) > 0">
           <el-timeline-item v-for="item in customer.followUps" :key="item.id"
-            :timestamp="formatDateTime(item.createdAt)" placement="top">
+            :timestamp="formatDateTime(item.createdAt || '')" placement="top">
             <el-card shadow="hover" class="follow-up-card">
               <div class="follow-up-header">
                 <span class="operator-name">{{ item.operatorName }}</span>
@@ -48,15 +49,17 @@
   </AsyncDialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
+import type { PropType } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import AsyncDialog from '@/components/common/AsyncDialog.vue'
 import { formatDate, formatDateTime } from '@/utils/date'
+import type { CustomerData } from '@/types'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
-  customer: { type: Object, default: null },
+  customer: { type: Object as PropType<CustomerData | null>, default: null },
   canCreate: { type: Boolean, default: false },
   isGuest: { type: Boolean, default: false }
 })

@@ -40,4 +40,6 @@ __screenshots__/
 
 .env
 .env.production
-.env.example
+
+stats.html
+eslint_output.txt

@@ -21,7 +21,7 @@
   </el-card>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { Key, CopyDocument, Refresh } from '@element-plus/icons-vue'
 
 defineProps({

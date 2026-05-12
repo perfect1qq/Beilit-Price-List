@@ -80,32 +80,23 @@
     </div>
 
     <el-scrollbar wrap-class="scrollbar-wrapper">
-      <el-menu
-        :key="menuKey"
-        :default-active="activeMenu"
-        :default-openeds="openMenus"
-        :collapse="isCollapse"
-        :background-color="variables.menuBg"
-        :text-color="variables.menuText"
-        :active-text-color="variables.menuActiveText"
-        :unique-opened="false"
-        :collapse-transition="false"
-        mode="vertical"
-        router
-      >
+      <el-menu :key="menuKey" :default-active="activeMenu" :default-openeds="openMenus" :collapse="isCollapse"
+        :background-color="variables.menuBg" :text-color="variables.menuText"
+        :active-text-color="variables.menuActiveText" :unique-opened="false" :collapse-transition="false"
+        mode="vertical" router>
         <template v-for="item in menuList" :key="item.index || item.path">
           <el-sub-menu v-if="hasChildren(item)" :index="item.index || `${item.path}-group`">
             <template #title>
-              <el-icon><component :is="iconMap[item.path] || iconMap.default" /></el-icon>
+              <el-icon>
+                <component :is="iconMap[item.path || ''] || iconMap.default" />
+              </el-icon>
               <span>{{ item.name }}</span>
             </template>
 
-            <el-menu-item
-              v-for="child in item.children"
-              :key="child.index || child.path"
-              :index="child.path"
-            >
-              <el-icon><component :is="iconMap[child.path] || iconMap[child.icon] || iconMap.default" /></el-icon>
+            <el-menu-item v-for="child in item.children" :key="child.index || child.path" :index="child.path">
+              <el-icon>
+                <component :is="iconMap[child.path || ''] || iconMap[child.icon || ''] || iconMap.default" />
+              </el-icon>
               <template #title>
                 <span>{{ child.name }}</span>
               </template>
@@ -113,7 +104,9 @@
           </el-sub-menu>
 
           <el-menu-item v-else :index="item.path">
-            <el-icon><component :is="iconMap[item.path] || iconMap.default" /></el-icon>
+            <el-icon>
+              <component :is="iconMap[item.path || ''] || iconMap.default" />
+            </el-icon>
             <template #title>
               <span>{{ item.name }}</span>
             </template>
@@ -124,10 +117,19 @@
   </div>
 </template>
 
-<script setup>
-import { computed, ref } from 'vue'
+<script setup lang="ts">
+import { computed, ref, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+
+interface MenuItem {
+  index?: string
+  path?: string
+  name?: string
+  icon?: string
+  children?: MenuItem[]
+}
+
 import {
   House,
   Money,
@@ -145,7 +147,7 @@ import {
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const menuList = computed(() => userStore.menu || [])
+const menuList = computed(() => (userStore.menu || []) as MenuItem[])
 const homeRoute = '/home'
 
 const variables = {
@@ -155,7 +157,7 @@ const variables = {
 }
 
 const isCollapse = ref(false)
-const iconMap = {
+const iconMap: Record<string, Component> = {
   '/approval': Monitor,
   '/quotation': Document,
   '/beam-quotation': List,
@@ -173,7 +175,7 @@ const iconMap = {
   default: IconMenu
 }
 
-const hasChildren = (item) => Array.isArray(item?.children) && item.children.length > 0
+const hasChildren = (item: MenuItem) => Array.isArray(item?.children) && item.children.length > 0
 
 const activeMenu = computed(() => {
   const path = route.path
@@ -200,6 +202,7 @@ const menuKey = computed(() => `${activeMenu.value}-${openMenus.value.join(',')}
 .sidebar-container {
   background-color: #0b1220;
 }
+
 .sidebar-logo-container {
   position: relative;
   width: 100%;
@@ -212,8 +215,9 @@ const menuKey = computed(() => `${activeMenu.value}-${openMenus.value.join(',')}
   align-items: center;
   justify-content: flex-start;
   padding: 0 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
+
 .sidebar-logo-link {
   display: flex;
   align-items: center;
@@ -222,6 +226,7 @@ const menuKey = computed(() => `${activeMenu.value}-${openMenus.value.join(',')}
   height: 100%;
   text-decoration: none;
 }
+
 .logo-icon {
   width: 30px;
   height: 30px;
@@ -236,6 +241,7 @@ const menuKey = computed(() => `${activeMenu.value}-${openMenus.value.join(',')}
   margin-right: 10px;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
 }
+
 .sidebar-title {
   margin: 0;
   color: #f8fafc;
@@ -245,9 +251,11 @@ const menuKey = computed(() => `${activeMenu.value}-${openMenus.value.join(',')}
   font-family: 'Inter', system-ui, sans-serif;
   letter-spacing: 0.5px;
 }
+
 .scrollbar-wrapper {
   overflow-x: hidden !important;
 }
+
 .el-menu {
   border: none;
   height: 100%;
@@ -255,6 +263,7 @@ const menuKey = computed(() => `${activeMenu.value}-${openMenus.value.join(',')}
   background-color: transparent !important;
   padding-top: 8px;
 }
+
 :deep(.el-menu-item),
 :deep(.el-sub-menu__title) {
   margin: 5px 10px;
@@ -264,10 +273,12 @@ const menuKey = computed(() => `${activeMenu.value}-${openMenus.value.join(',')}
   color: #94a3b8 !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 :deep(.el-sub-menu__title) {
   display: flex;
   align-items: center;
 }
+
 :deep(.el-menu-item.is-active) {
   background: rgba(37, 99, 235, 0.14) !important;
   color: #dbeafe !important;
@@ -275,20 +286,25 @@ const menuKey = computed(() => `${activeMenu.value}-${openMenus.value.join(',')}
   border: none;
   box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2) inset;
 }
+
 :deep(.el-menu-item.is-active .el-icon) {
   color: #dbeafe !important;
 }
+
 :deep(.el-menu-item:hover),
 :deep(.el-sub-menu__title:hover) {
   background: rgba(148, 163, 184, 0.08) !important;
   color: #f8fafc !important;
 }
+
 :deep(.el-sub-menu.is-active > .el-sub-menu__title) {
   color: #f8fafc !important;
 }
+
 :deep(.el-menu--inline) {
   background: transparent !important;
 }
+
 :deep(.el-sub-menu .el-menu-item) {
   margin: 4px 12px 4px 24px;
 }

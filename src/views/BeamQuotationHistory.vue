@@ -49,7 +49,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, watch, onMounted } from 'vue'
 import { to } from '@/utils/async'
 import { showError, showSuccess, showWarning } from '@/utils/message'
@@ -63,18 +63,20 @@ import BeamQuotationEditor from '@/components/beam/BeamQuotationEditor.vue'
 
 const { isGuest, isAdmin } = usePermissions()
 
-const editingId = ref(null)
+const editingId = ref<number | string | null>(null)
 const editingName = ref('')
-const editingItems = ref([])
+const editingItems = ref<Array<{ name: string; length: string; spec: string; maxLoad: string }>>([])
 const originalDataStr = ref('')
-const formModel = reactive({ recordName: '', editingItems: editingItems })
+const formModel = reactive<{ recordName: string; editingItems: typeof editingItems.value; items?: typeof editingItems.value }>({ recordName: '', editingItems: editingItems.value })
 
 watch(editingName, (val) => { formModel.recordName = val })
 
+watch(editingItems, (val) => { formModel.editingItems = val }, { deep: true })
+
 const {
   viewState, historyList, loading, page, pageSize, total, searchKeyword,
-  isActionLoading, withActionLock, replaceById, removeById,
-  loadList, handleCurrentChange, handleSizeChange, onKeywordInput, handleSearch, backToList, handleDelete
+  isActionLoading, withActionLock, replaceById,
+  loadList, handleCurrentChange, handleSizeChange, handleSearch, backToList, handleDelete
 } = useHistoryView({
   api: beamApi,
   fetchList: async (targetPage) => {
@@ -86,24 +88,28 @@ const {
   }
 })
 
-const enterDetail = (row, mode) => {
-  editingId.value = row.id
-  editingName.value = row.name
-  let parsedItems = []
+const enterDetail = (row: Record<string, unknown>, mode: string) => {
+  editingId.value = row.id as number | string
+  editingName.value = row.name as string
   try {
-    parsedItems = typeof row.items === 'string' ? JSON.parse(row.items) : JSON.parse(JSON.stringify(row.items || []))
-    if (!Array.isArray(parsedItems)) parsedItems = []
-  } catch { parsedItems = [] }
-  editingItems.value = parsedItems
-  formModel.recordName = row.name
-  formModel.items = parsedItems
-  originalDataStr.value = JSON.stringify({ name: row.name, items: parsedItems })
+    const parsed = typeof row.items === 'string' ? JSON.parse(row.items) : JSON.parse(JSON.stringify(row.items || []))
+    const items = Array.isArray(parsed) ? parsed : []
+    editingItems.value = items
+    formModel.recordName = row.name as string
+    formModel.items = items
+    originalDataStr.value = JSON.stringify({ name: row.name, items })
+  } catch {
+    editingItems.value = []
+    formModel.recordName = row.name as string
+    formModel.items = []
+    originalDataStr.value = JSON.stringify({ name: row.name, items: [] })
+  }
   viewState.value = mode
 }
 
 const addRow = () => editingItems.value.push({ name: '', length: '', spec: '', maxLoad: '' })
 
-const removeRow = (index) => {
+const removeRow = (index: number) => {
   if (editingItems.value.length <= 1) return showWarning('至少需要保留一行数据，无法继续删除！')
   editingItems.value.splice(index, 1)
 }
@@ -113,9 +119,9 @@ const handleUpdate = async () => {
   const currentDataStr = JSON.stringify({ name: currentName, items: editingItems.value })
   if (currentDataStr === originalDataStr.value) return showWarning('您没有修改任何数据，无需提交修改。')
 
-  replaceById(editingId.value, { name: currentName, items: JSON.parse(JSON.stringify(editingItems.value)) })
-  const [err] = await to(withActionLock(editingId.value, async () => {
-    await beamApi.update(editingId.value, { name: currentName, items: editingItems.value })
+  replaceById(editingId.value as number | string, { name: currentName, items: JSON.parse(JSON.stringify(editingItems.value)) })
+  const [err] = await to(withActionLock(editingId.value as number | string, async () => {
+    await beamApi.update(editingId.value as number | string, { name: currentName, items: editingItems.value })
   }))
   if (err) {
     await loadList(page.value)
@@ -126,7 +132,7 @@ const handleUpdate = async () => {
   backToList()
 }
 
-const getFirstItemValue = (row, f) => {
+const getFirstItemValue = (row: Record<string, unknown>, f: string) => {
   try {
     const items = typeof row.items === 'string' ? JSON.parse(row.items) : row.items
     return items?.[0]?.[f] || '-'

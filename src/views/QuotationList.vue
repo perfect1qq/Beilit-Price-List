@@ -120,10 +120,9 @@
   </div>
 </template>
 
-<script setup>
-import { ref, reactive, watch, nextTick, computed } from 'vue'
+<script setup lang="ts">
+import { ref, reactive, watch } from 'vue'
 import {
-  Delete,
   DocumentAdd,
   Plus,
   Refresh,
@@ -205,8 +204,8 @@ watch(companyName, (val) => {
 })
 
 // --- [状态管理] 历史记录逻辑 ---
-const { saveQuotation, deleteHistory } = useQuotationHistory({
-  api: quotationApi,
+const { saveQuotation, loading } = useQuotationHistory({
+  api: quotationApi as unknown as { list?: (params?: unknown) => Promise<unknown>; create?: (data: unknown) => Promise<unknown>; update?: (id: number | string, data: unknown) => Promise<unknown>; remove?: (id: number | string) => Promise<unknown>;[key: string]: unknown },
   loadToEditor: (record, mode) => loadRecord(record, mode),
 })
 
@@ -215,7 +214,6 @@ const {
   handleManualFinalPriceChange,
   handleDiscountChange,
   handleParseText,
-  validateRows,
   handleSubmit,
 } = useQuotationEditor({
   isViewMode,

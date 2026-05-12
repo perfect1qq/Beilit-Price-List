@@ -1,10 +1,5 @@
 <template>
-  <AsyncDialog
-    v-model="viewVisibleProxy"
-    :title="viewTitle"
-    :width="560"
-    class="message-view-dialog"
-  >
+  <AsyncDialog v-model="viewVisibleProxy" :title="viewTitle" :width="560" class="message-view-dialog">
     <div v-if="viewRow" class="message-view-body">
       <div class="view-field">
         <span class="view-label">提交时间</span>
@@ -29,16 +24,12 @@
     </template>
   </AsyncDialog>
 
-  <AsyncDialog
-    ref="assignDialogRef"
-    v-model="assignVisibleProxy"
-    title="指派客户"
-    :width="420"
-  >
-    <el-form :model="assignForm" label-width="90px">
+  <AsyncDialog ref="assignDialogRef" v-model="assignVisibleProxy" title="指派客户" :width="420">
+    <el-form :model="localAssignForm" label-width="90px">
       <el-form-item label="指派对象" required>
-        <el-select v-model="assignForm.userId" placeholder="请选择业务员" filterable style="width: 100%">
-          <el-option v-for="u in staffList" :key="u.id" :label="(u.name || '').trim() || u.username" :value="u.id" />
+        <el-select v-model="localAssignForm.userId" placeholder="请选择业务员" filterable style="width: 100%">
+          <el-option v-for="u in staffList" :key="u.id" :label="((u.name as string) || '').trim() || u.username"
+            :value="u.id" />
         </el-select>
       </el-form-item>
     </el-form>
@@ -50,21 +41,23 @@
   </AsyncDialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 import AsyncDialog from '@/components/common/AsyncDialog.vue'
+import type { PropType } from 'vue'
+import type { MessageData } from '@/types'
 
 const props = defineProps({
   viewVisible: Boolean,
   viewTitle: String,
-  viewRow: Object,
+  viewRow: { type: Object as PropType<MessageData | null>, default: null },
   assignVisible: Boolean,
-  assignForm: Object,
-  staffList: Array,
+  assignForm: { type: Object as PropType<Record<string, unknown>>, default: () => ({}) },
+  staffList: { type: Array as PropType<Array<Record<string, unknown>>>, default: () => [] },
   assignLoading: Boolean,
-  formatTime: Function
+  formatTime: { type: Function as PropType<(dateStr: string | undefined) => string>, default: (d: string | undefined) => d || '' }
 })
-const emit = defineEmits(['update:viewVisible', 'update:assignVisible', 'confirm-assign'])
+const emit = defineEmits(['update:viewVisible', 'update:assignVisible', 'confirm-assign', 'update:assignForm'])
 
 const assignDialogRef = ref(null)
 
@@ -75,6 +68,11 @@ const viewVisibleProxy = computed({
 const assignVisibleProxy = computed({
   get: () => props.assignVisible,
   set: (value) => emit('update:assignVisible', value)
+})
+
+const localAssignForm = computed({
+  get: () => props.assignForm,
+  set: (val) => emit('update:assignForm', val)
 })
 </script>
 

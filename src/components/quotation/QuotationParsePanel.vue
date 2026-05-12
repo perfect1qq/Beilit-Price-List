@@ -17,7 +17,7 @@
   </el-card>
 </template>
 
-<script setup>
+<script setup lang="ts">
 defineProps({
   isViewMode: { type: Boolean, default: false },
   rawText: { type: String, default: '' }

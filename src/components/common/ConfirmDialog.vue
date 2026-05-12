@@ -1,22 +1,22 @@
 <template>
-  <el-dialog
-    :model-value="visible"
-    @update:model-value="$emit('update:visible', $event)"
-    :title="title"
-    :width="width"
-    :append-to-body="appendToBody"
-    :close-on-click-modal="!loading"
-    :show-close="!loading"
-    v-bind="$attrs"
-    @open="handleOpen"
-  >
+  <el-dialog :model-value="visible" @update:model-value="$emit('update:modelValue', $event)" :title="title"
+    :width="width" :append-to-body="appendToBody" :close-on-click-modal="!loading" :show-close="!loading"
+    v-bind="$attrs" @open="handleOpen">
     <div class="confirm-dialog-body">
       <div class="confirm-icon" :class="[`icon-${type}`]">
         <slot name="icon">
-          <el-icon v-if="type === 'warning'" :size="48" color="#E6A23C"><WarningFilled /></el-icon>
-          <el-icon v-else-if="type === 'danger'" :size="48" color="#F56C6C"><CircleCloseFilled /></el-icon>
-          <el-icon v-else-if="type === 'success'" :size="48" color="#67C23A"><CircleCheckFilled /></el-icon>
-          <el-icon v-else :size="48" color="#409EFF"><InfoFilled /></el-icon>
+          <el-icon v-if="type === 'warning'" :size="48" color="#E6A23C">
+            <WarningFilled />
+          </el-icon>
+          <el-icon v-else-if="type === 'danger'" :size="48" color="#F56C6C">
+            <CircleCloseFilled />
+          </el-icon>
+          <el-icon v-else-if="type === 'success'" :size="48" color="#67C23A">
+            <CircleCheckFilled />
+          </el-icon>
+          <el-icon v-else :size="48" color="#409EFF">
+            <InfoFilled />
+          </el-icon>
         </slot>
       </div>
 
@@ -24,13 +24,13 @@
         <h4 v-if="title || $slots.title" class="confirm-title">
           <slot name="title">{{ title }}</slot>
         </h4>
-        
+
         <p class="confirm-message">
           <slot>{{ message }}</slot>
         </p>
 
         <p v-if="subMessage" class="confirm-sub-message">{{ subMessage }}</p>
-        
+
         <div v-if="detail" class="confirm-detail">
           <slot name="detail">
             <el-alert :title="detail" type="warning" :closable="false" show-icon />
@@ -45,11 +45,7 @@
           <el-button :disabled="loading" @click="handleCancel">
             {{ cancelText }}
           </el-button>
-          <el-button
-            :type="confirmButtonType"
-            :loading="loading"
-            @click="handleConfirm"
-          >
+          <el-button :type="confirmButtonType" :loading="loading" @click="handleConfirm">
             {{ confirmText }}
           </el-button>
         </div>
@@ -58,8 +54,9 @@
   </el-dialog>
 </template>
 
-<script setup>
-import { ref, watch, computed } from 'vue'
+<script setup lang="ts">
+import { ref, watch } from 'vue'
+import type { PropType } from 'vue'
 import { WarningFilled, CircleCloseFilled, CircleCheckFilled, InfoFilled } from '@element-plus/icons-vue'
 
 const props = defineProps({
@@ -86,7 +83,7 @@ const props = defineProps({
   type: {
     type: String,
     default: 'warning',
-    validator: (val) => ['info', 'success', 'warning', 'danger'].includes(val)
+    validator: (val: unknown) => ['info', 'success', 'warning', 'danger'].includes(val as string)
   },
   width: {
     type: [String, Number],
@@ -113,7 +110,7 @@ const props = defineProps({
     default: 'primary'
   },
   beforeConfirm: {
-    type: Function,
+    type: Function as PropType<() => Promise<boolean> | boolean>,
     default: null
   }
 })
@@ -145,7 +142,7 @@ const handleConfirm = async () => {
   }
 
   loading.value = true
-  
+
   try {
     await emit('confirm')
     visible.value = false
@@ -184,10 +181,21 @@ defineExpose({
   padding-top: 4px;
 }
 
-.icon-warning { color: #E6A23C; }
-.icon-danger { color: #F56C6C; }
-.icon-success { color: #67C23A; }
-.icon-info { color: #409EFF; }
+.icon-warning {
+  color: #E6A23C;
+}
+
+.icon-danger {
+  color: #F56C6C;
+}
+
+.icon-success {
+  color: #67C23A;
+}
+
+.icon-info {
+  color: #409EFF;
+}
 
 .confirm-content {
   flex: 1;

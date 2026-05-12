@@ -11,10 +11,10 @@
       <div class="info-row">
         <span class="label">姓名：</span>
         <span class="value">
-          <el-input v-if="user._editingName" v-model="user._editNameValue" size="small" placeholder="输入姓名"
-            @blur="$emit('name-blur', user)" @keyup.enter="$emit('name-confirm', user)" />
-          <span v-else class="editable-name" @click="$emit('name-edit', user)">
-            {{ user.name || '—' }}
+          <el-input v-if="localUser._editingName" v-model="localUser._editNameValue" size="small" placeholder="输入姓名"
+            @blur="$emit('name-blur', localUser)" @keyup.enter="$emit('name-confirm', localUser)" />
+          <span v-else class="editable-name" @click="$emit('name-edit', localUser)">
+            {{ localUser.name || '—' }}
             <el-icon class="edit-icon">
               <Edit />
             </el-icon>
@@ -25,7 +25,7 @@
         <span class="label">角色：</span>
         <span class="value">
           <el-select :model-value="user.role" size="small" placeholder="选择角色"
-            @change="(val) => $emit('role-change', user, val)" :disabled="user.id === currentUserId">
+            @change="(val: string) => $emit('role-change', user, val)" :disabled="user.id === currentUserId">
             <el-option label="管理员" value="admin" />
             <el-option label="业务员" value="user" />
             <el-option label="游客(只读)" value="guest" />
@@ -34,7 +34,7 @@
       </div>
       <div class="info-row">
         <span class="label">注册时间：</span>
-        <span class="value">{{ formatDate(user.createdAt) }}</span>
+        <span class="value">{{ formatDate(user.createdAt || '') }}</span>
       </div>
     </div>
 
@@ -50,17 +50,24 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
+import type { PropType } from 'vue'
 import { Lock, Delete, Edit } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/date'
+import type { UserInfo } from '@/types'
 
 const props = defineProps({
-  user: { type: Object, required: true },
+  user: { type: Object as PropType<UserInfo>, required: true },
   currentUserId: { type: Number, default: null }
 })
 
-defineEmits(['name-edit', 'name-blur', 'name-confirm', 'role-change', 'reset-password', 'delete'])
+const emit = defineEmits(['name-edit', 'name-blur', 'name-confirm', 'role-change', 'reset-password', 'delete', 'update:user'])
+
+const localUser = computed({
+  get: () => props.user,
+  set: (val) => emit('update:user', val)
+})
 
 const roleTagType = computed(() => {
   if (props.user.role === 'admin') return 'danger'

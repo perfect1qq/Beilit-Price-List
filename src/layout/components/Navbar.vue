@@ -52,7 +52,8 @@
                       </div>
                       <div class="notice-content">
                         <div class="notice-text">{{ item.content }}</div>
-                        <div class="notice-time">{{ new Date(item.createdAt).toLocaleString() }}</div>
+                        <div class="notice-time">{{ new Date(item.createdAt as string | number | Date).toLocaleString()
+                        }}</div>
                       </div>
                       <div class="notice-meta">
                         <el-tag v-if="!item.isRead" size="small" type="danger" effect="plain" round>未读</el-tag>
@@ -134,7 +135,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import request from '@/utils/request'
@@ -175,20 +176,17 @@ const { changePassDialog, confirmChangePass } = useNavbarPasswordDialog({
   dialogRef: changePassDialogRef
 })
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const avatarRefreshKey = ref(0)
 
 const avatarUrl = computed(() => {
   const avatar = userStore.user?.avatar
-  if (avatar) {
-    if (avatar.startsWith('http') || avatar.startsWith('data:')) {
-      return avatar.startsWith('http')
-        ? `${avatar}${avatar.includes('?') ? '&' : '?'}t=${avatarRefreshKey.value}`
-        : avatar
-    }
-    return `${API_BASE_URL}${avatar}${avatar.includes('?') ? '&' : '?'}t=${avatarRefreshKey.value}`
+  if (!avatar) return ''
+  if (avatar.startsWith('data:')) return avatar
+  if (avatar.startsWith('http')) {
+    return `${avatar}${avatar.includes('?') ? '&' : '?'}t=${avatarRefreshKey.value}`
   }
-  return ''
+  const path = avatar.startsWith('/') ? avatar : `/${avatar}`
+  return `${path}?t=${avatarRefreshKey.value}`
 })
 
 const avatarDialogVisible = ref(false)
@@ -197,9 +195,15 @@ const showAvatarDialog = () => {
   avatarDialogVisible.value = true
 }
 
-const onAvatarUploaded = () => {
+const onAvatarUploaded = async () => {
   avatarRefreshKey.value = Date.now()
   avatarDialogVisible.value = false
+  try {
+    await userStore.refreshProfile()
+    avatarRefreshKey.value = Date.now()
+  } catch {
+    // 本地已更新，刷新失败不阻塞
+  }
 }
 
 const goHome = () => router.push(homeRoute)
@@ -209,7 +213,7 @@ const logout = async () => {
 
 const NOTIFICATION_POLL_INTERVAL = 30000
 
-let notificationTimer = null
+let notificationTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
   fetchUnreadCount()

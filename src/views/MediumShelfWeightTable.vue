@@ -282,7 +282,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted } from 'vue'
 import { Edit, Plus, Refresh } from '@element-plus/icons-vue'
 import { usePermissions } from '@/composables/usePermissions'
@@ -296,7 +296,6 @@ const {
   saving,
   errorMsg,
   editMode,
-  configTitle,
   summaryRows,
   detailRows,
   displaySummaryRows,
@@ -316,9 +315,9 @@ const {
  * 只对连续相同值的单元格进行合并。
  * 这样“报价 / 实际”相同且连续的行会自动合并。
  */
-const buildSpanMap = (rows, field) => {
+const buildSpanMap = (rows: Record<string, unknown>[], field: string) => {
   if (!Array.isArray(rows) || !rows.length) return {}
-  const map = {}
+  const map: Record<number, number> = {}
   let i = 0
 
   while (i < rows.length) {
@@ -351,8 +350,8 @@ const detailSpanMaps = computed(() => {
   }
 })
 
-const detailSpanMethod = ({ rowIndex, columnIndex }) => {
-  const spanMapList = {
+const detailSpanMethod = ({ rowIndex, columnIndex }: { rowIndex: number; columnIndex: number }) => {
+  const spanMapList: Record<number, Record<number, number>> = {
     1: detailSpanMaps.value.layerGroup,
     3: detailSpanMaps.value.loadPerLayer,
     4: detailSpanMaps.value.quote,

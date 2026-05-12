@@ -24,15 +24,7 @@
             max: 最大缓存实例数，超出时淘汰最久未使用的
           -->
           <keep-alive :include="cachedViews" :max="5">
-            <Suspense timeout="0">
-              <component :is="Component" :key="route.fullPath" />
-              <template #fallback>
-                <div class="route-skeleton">
-                  <el-skeleton animated :rows="6" />
-                  <el-skeleton animated :rows="6" />
-                </div>
-              </template>
-            </Suspense>
+            <component :is="Component" :key="route.fullPath" />
           </keep-alive>
         </div>
       </transition>
@@ -40,7 +32,7 @@
   </section>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 
 /**
@@ -76,15 +68,6 @@ const cachedViews = ref([
 .main-transition-wrapper {
   min-width: 0;
   width: 100%;
-}
-
-.route-skeleton {
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px;
-  border: 1px solid #e2e8f0;
-  display: grid;
-  gap: 14px;
 }
 
 .fade-transform-leave-active,

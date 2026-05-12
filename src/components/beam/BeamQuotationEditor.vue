@@ -1,6 +1,6 @@
 <template>
   <el-card shadow="never" class="editor-card">
-    <el-form ref="formRef" :model="formModel">
+    <el-form ref="formRef" :model="localFormModel">
       <div class="detail-toolbar">
         <el-button @click="$emit('back')">返回列表</el-button>
         <el-button v-if="mode === 'edit'" type="success" @click="$emit('update')">提交修改</el-button>
@@ -8,12 +8,13 @@
         <div class="name-display">
           <span class="label">记录名称:</span>
           <el-form-item prop="recordName" :rules="recordNameRule">
-            <el-input v-model="formModel.recordName" :disabled="mode === 'view'" style="width: 250px" placeholder="必填" />
+            <el-input v-model="localFormModel.recordName" :disabled="mode === 'view'" style="width: 250px"
+              placeholder="必填" />
           </el-form-item>
         </div>
       </div>
 
-      <el-table :data="items" border stripe style="width: 100%; margin-top: 20px"
+      <el-table :data="tableItems" border stripe style="width: 100%; margin-top: 20px"
         :header-cell-style="TABLE_HEADER_STYLE" class="smart-table">
         <el-table-column label="横梁名称" min-width="180" align="left">
           <template #default="{ row, $index }">
@@ -25,7 +26,7 @@
         <el-table-column label="长度(mm)" width="130" align="center">
           <template #default="{ row, $index }">
             <el-form-item :prop="'editingItems.' + $index + '.length'"
-              :rules="[{ required: true, message: '请输入长度', trigger: 'blur' }, { validator: (rule, value, callback) => { if (value && !value.trim()) callback(new Error('长度不能只包含空格')); else callback(); }, trigger: 'blur' }]">
+              :rules="[{ required: true, message: '请输入长度', trigger: 'blur' }, { validator: noSpaceRawValidator, trigger: 'blur' }]">
               <el-input v-model="row.length" size="small" :disabled="mode === 'view'" placeholder="必填" />
             </el-form-item>
           </template>
@@ -33,7 +34,7 @@
         <el-table-column label="规格(mm)" width="150" align="center">
           <template #default="{ row, $index }">
             <el-form-item :prop="'editingItems.' + $index + '.spec'"
-              :rules="[{ required: true, message: '请输入规格', trigger: 'blur' }, { validator: (rule, value, callback) => { if (value && !value.trim()) callback(new Error('规格不能只包含空格')); else callback(); }, trigger: 'blur' }]">
+              :rules="[{ required: true, message: '请输入规格', trigger: 'blur' }, { validator: noSpaceRawValidator, trigger: 'blur' }]">
               <el-input v-model="row.spec" size="small" :disabled="mode === 'view'" placeholder="必填" />
             </el-form-item>
           </template>
@@ -57,18 +58,28 @@
   </el-card>
 </template>
 
-<script setup>
+<script setup lang="ts">
+import type { PropType } from 'vue'
+import { computed } from 'vue'
 import { Plus, Delete } from '@element-plus/icons-vue'
-import { beamNameRule, recordNameRule, positiveDecimalRule } from '@/utils/formRules'
+import { beamNameRule, recordNameRule, positiveDecimalRule, noSpaceRawValidator } from '@/utils/formRules'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
+import type { BeamQuotationData, QuotationItem } from '@/types'
 
-defineProps({
+const props = defineProps({
   mode: { type: String, required: true },
-  formModel: { type: Object, required: true },
-  items: { type: Array, required: true }
+  formModel: { type: Object as PropType<BeamQuotationData>, required: true },
+  items: { type: Array as PropType<QuotationItem[]>, required: true }
 })
 
-defineEmits(['back', 'update', 'add-row', 'remove-row'])
+const emit = defineEmits(['back', 'update', 'add-row', 'remove-row', 'update:formModel'])
+
+const localFormModel = computed({
+  get: () => props.formModel,
+  set: (val) => emit('update:formModel', val)
+})
+
+const tableItems = computed(() => localFormModel.value.editingItems || props.items)
 </script>
 
 <style scoped>
@@ -117,14 +128,32 @@ defineEmits(['back', 'update', 'add-row', 'remove-row'])
   left: 0;
 }
 
-:deep(.el-form-item) { margin-bottom: 22px; }
+:deep(.el-form-item) {
+  margin-bottom: 22px;
+}
 
-:deep(.el-form-item__error) { font-size: 11px; line-height: 1.6; padding-top: 2px; }
+:deep(.el-form-item__error) {
+  font-size: 11px;
+  line-height: 1.6;
+  padding-top: 2px;
+}
 
 @media (max-width: 768px) {
-  .detail-toolbar { margin-bottom: 12px; gap: 8px; }
-  .name-display { margin-left: 0; width: 100%; flex-wrap: wrap; gap: 6px; }
+  .detail-toolbar {
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+
+  .name-display {
+    margin-left: 0;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
   .name-display :deep(.el-input),
-  .name-display :deep(.el-input__wrapper) { width: 100% !important; }
+  .name-display :deep(.el-input__wrapper) {
+    width: 100% !important;
+  }
 }
 </style>

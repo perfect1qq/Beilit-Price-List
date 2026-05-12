@@ -1,22 +1,8 @@
 <template>
-  <AsyncDialog
-    ref="dialogRef"
-    :model-value="visible"
-    @update:model-value="$emit('update:visible', $event)"
-    :title="title"
-    :width="width"
-    :append-to-body="appendToBody"
-    @open="handleOpen"
-  >
-    <el-form
-      ref="formRef"
-      :model="formData"
-      :rules="rules"
-      :label-width="labelWidth"
-      :label-position="labelPosition"
-      :disabled="loading"
-      v-bind="$attrs"
-    >
+  <AsyncDialog ref="dialogRef" :model-value="visible" @update:model-value="$emit('update:modelValue', $event)"
+    :title="title" :width="width" :append-to-body="appendToBody" @open="handleOpen">
+    <el-form ref="formRef" :model="formData" :rules="rules" :label-width="labelWidth" :label-position="labelPosition"
+      :disabled="loading" v-bind="$attrs">
       <slot />
     </el-form>
 
@@ -31,9 +17,12 @@
   </AsyncDialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
+import type { PropType } from 'vue'
+import type { FormInstance } from 'element-plus'
 import AsyncDialog from './AsyncDialog.vue'
+import type { FormRules } from '@/types'
 
 const props = defineProps({
   modelValue: {
@@ -55,7 +44,7 @@ const props = defineProps({
   labelPosition: {
     type: String,
     default: 'right',
-    validator: (val) => ['left', 'right', 'top'].includes(val)
+    validator: (val: unknown) => ['left', 'right', 'top'].includes(val as string)
   },
   appendToBody: {
     type: Boolean,
@@ -66,11 +55,11 @@ const props = defineProps({
     default: '确定'
   },
   formData: {
-    type: Object,
+    type: Object as PropType<Record<string, unknown>>,
     required: true
   },
   rules: {
-    type: Object,
+    type: Object as PropType<FormRules>,
     default: () => ({})
   }
 })
@@ -78,8 +67,8 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue', 'open', 'submit', 'validate-success', 'validate-error'])
 
 const visible = ref(false)
-const dialogRef = ref(null)
-const formRef = ref(null)
+const dialogRef = ref<InstanceType<typeof AsyncDialog> | null>(null)
+const formRef = ref<FormInstance | null>(null)
 
 const loading = ref(false)
 
@@ -101,7 +90,7 @@ const handleOpen = async () => {
 
 const handleValidate = async () => {
   if (!formRef.value) return false
-  
+
   try {
     await formRef.value.validate()
     emit('validate-success')
@@ -115,16 +104,12 @@ const handleValidate = async () => {
 const handleSubmit = async () => {
   const isValid = await handleValidate()
   if (!isValid) return false
-  
-  try {
-    const result = await dialogRef.value?.load(async () => {
-      emit('submit', props.formData)
-      return props.formData
-    })
-    return result
-  } catch (error) {
-    throw error
-  }
+
+  const result = await dialogRef.value?.load(async () => {
+    emit('submit', props.formData)
+    return props.formData
+  })
+  return result
 }
 
 defineExpose({

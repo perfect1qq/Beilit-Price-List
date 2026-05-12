@@ -60,8 +60,9 @@
       <CardList v-if="!useVirtualTable" :data="messages" :loading="loading" :total="total" v-model:current-page="page"
         v-model:page-size="pageSize" :columns="2" empty-description="暂无留言线索" @page-change="(p) => loadMessages(p)">
         <template #card="{ item }">
-          <MessageCard :item="item" :is-admin="isAdmin" :is-guest="isGuest" :action-loading="isActionLoading(item.id)"
-            @view="openView" @assign="openAssign" @delete="doDelete" @hide="doHideFromList" />
+          <MessageCard :item="item" :is-admin="isAdmin" :is-guest="isGuest"
+            :action-loading="isActionLoading(item.id as string | number)" @view="openView" @assign="openAssign"
+            @delete="doDelete" @hide="doHideFromList" />
         </template>
       </CardList>
       <div v-else class="virtual-table-wrap">
@@ -76,23 +77,24 @@
     </el-card>
 
     <MessageDialogs v-model:view-visible="viewVisible" v-model:assign-visible="assignVisible" :view-title="viewTitle"
-      :view-row="viewRow" :assign-form="assignForm" :staff-list="staffList" :assign-loading="assignLoading"
-      :format-time="formatTime" @confirm-assign="confirmAssign" />
+      :view-row="viewRow as unknown as MessageData" :assign-form="assignForm" :staff-list="staffList"
+      :assign-loading="assignLoading" :format-time="formatTime" @confirm-assign="confirmAssign" />
 
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, h, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { ElButton, ElMessageBox, ElTag } from 'element-plus'
 import messageApi from '@/api/message'
 import userApi from '@/api/user'
-import { createDebounce } from '@/utils/debounce'
+import type { MessageData } from '@/types'
+import { debounce } from '@/utils/debounce'
 import { to } from '@/utils/async'
-import { getMessagePageTitle, readCurrentUser, formatDateTime } from '@/utils/navigation'
+import { readCurrentUser } from '@/utils/navigation'
+import { formatDateTime } from '@/utils/date'
 import { showError, showSuccess, showWarning } from '@/utils/message'
 import { useCancelableLoader } from '@/composables/useCancelableLoader'
-import { usePagination } from '@/composables/usePagination'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { usePermissions } from '@/composables/usePermissions'
 import MessageDialogs from '@/components/message/MessageDialogs.vue'
@@ -116,10 +118,10 @@ const refreshCurrentUser = () => {
   currentUser.value = readCurrentUser()
 }
 
-const { isAdmin, isGuest, canEdit, canDelete } = usePermissions()
+const { isAdmin, isGuest } = usePermissions()
 const pageTitle = computed(() => {
   if (isGuest.value) return '留言板（只读）'
-  return getMessagePageTitle(currentUser.value.role)
+  return isAdmin.value ? '留言管理' : '我的留言'
 })
 const pageSubtitle = computed(() => {
   if (isGuest.value) return '游客仅可查看留言内容，无法进行任何操作。'
@@ -127,19 +129,39 @@ const pageSubtitle = computed(() => {
   return '当前账号只会看到被分配给自己的线索。'
 })
 
-const messages = ref([])
+interface MessageItem {
+  id: number | string
+  contactInfo?: string
+  content?: string
+  status?: string
+  assignedTo?: number | string | null
+  assignee?: { id?: number | string; username?: string; name?: string } | null
+  createdAt?: string
+  hiddenByAssignee?: boolean
+  [key: string]: unknown
+}
+
+interface StaffUser {
+  id: number | string
+  username: string
+  name: string
+  role: string
+  [key: string]: unknown
+}
+
+const messages = ref<MessageItem[]>([])
 const { loading, loadError, run: runListLoad, isLatest } = useCancelableLoader()
 const VIRTUAL_TABLE_THRESHOLD = 80
 const useVirtualTable = computed(() => messages.value.length >= VIRTUAL_TABLE_THRESHOLD)
 
 const viewVisible = ref(false)
-const viewRow = ref(null)
+const viewRow = ref<MessageItem | null>(null)
 const viewTitle = computed(() => (viewRow.value ? `留言详情 #${viewRow.value.id}` : '留言详情'))
 
-const staffList = ref([])
+const staffList = ref<StaffUser[]>([])
 const assignVisible = ref(false)
 const assignLoading = ref(false)
-const assignForm = reactive({ messageId: null, userId: null })
+const assignForm = reactive({ messageId: null as number | string | null, userId: null as number | string | null })
 const { isActionLoading, withActionLock, replaceById, removeById } = useInstantListActions(messages)
 
 const keyword = ref('')
@@ -151,7 +173,7 @@ const total = ref(0)
  * 拉取留言列表。
  * @param {number} targetPage - 目标页码
  */
-const loadMessages = async (targetPage) => {
+const loadMessages = async (targetPage?: number) => {
   if (!targetPage) targetPage = page.value || 1
   const runResult = await runListLoad(async ({ signal, seq }) => {
     const res = await messageApi.list({
@@ -170,17 +192,6 @@ const loadMessages = async (targetPage) => {
   }
 }
 
-const handleCurrentChange = (val) => {
-  page.value = val
-  loadMessages(page.value)
-}
-
-const handleSizeChange = (val) => {
-  pageSize.value = val
-  page.value = 1
-  loadMessages(1)
-}
-
 const resetToFirstPage = () => {
   page.value = 1
 }
@@ -191,17 +202,13 @@ const resetToFirstPage = () => {
 const loadStaff = async () => {
   if (!isAdmin.value) return
   const [, res] = await to(userApi.list())
-  staffList.value = (res?.users || []).filter((u) => u.role !== 'admin')
+  staffList.value = (res?.users || []).filter((u: StaffUser) => u.role !== 'admin')
 }
 
-const triggerSearch = createDebounce(() => {
+const triggerSearch = debounce(() => {
   resetToFirstPage()
   loadMessages(page.value)
 }, 300)
-
-const onKeywordInput = () => {
-  triggerSearch()
-}
 
 const handleSearch = () => {
   triggerSearch()
@@ -211,7 +218,7 @@ const handleSearch = () => {
  * 查看完整留言（表格列宽有限时便于阅读全文）。
  * @param {object} row
  */
-const openView = (row) => {
+const openView = (row: MessageItem) => {
   viewRow.value = row
   viewVisible.value = true
 }
@@ -220,34 +227,34 @@ const openView = (row) => {
  * 打开指派弹窗。
  * @param {object} row - 当前留言
  */
-const openAssign = (row) => {
+const openAssign = (row: MessageItem) => {
   assignForm.messageId = row.id
   assignForm.userId = row.assignedTo || null
   assignVisible.value = true
 }
 
-const statusText = (row) => (row?.status === 'assigned' ? '已指派' : '待处理')
-const statusType = (row) => (row?.status === 'assigned' ? 'success' : 'warning')
+const statusText = (row: MessageItem) => (row?.status === 'assigned' ? '已指派' : '待处理')
+const statusType = (row: MessageItem) => (row?.status === 'assigned' ? 'success' : 'warning')
 
 /**
  * 确认指派。
  */
 const confirmAssign = async () => {
   if (!assignForm.userId) return showWarning('请选择业务员')
-  const currentId = assignForm.messageId
+  const currentId = assignForm.messageId as number | string
   const before = (messages.value || []).find((m) => m.id === currentId)
   const selectedUser = staffList.value.find((u) => u.id === assignForm.userId) || null
   if (!before) return
 
   replaceById(currentId, {
-    assignedTo: assignForm.userId,
+    assignedTo: assignForm.userId as number | string,
     status: 'assigned',
-    assignee: selectedUser ? { id: selectedUser.id, username: selectedUser.username, name: selectedUser.name } : before.assignee
+    assignee: selectedUser ? { id: selectedUser.id, username: selectedUser.username, name: selectedUser.name } : before?.assignee
   })
 
   assignLoading.value = true
   const [err] = await to(withActionLock(currentId, async () => {
-    await messageApi.assign(currentId, assignForm.userId)
+    await messageApi.assign(currentId, Number(assignForm.userId))
   }))
   if (err) {
     replaceById(currentId, before)
@@ -265,7 +272,7 @@ const confirmAssign = async () => {
  * 业务员从「我的指派」删除：软隐藏，本人不再看到，管理员仍可见。
  * @param {object} row
  */
-const doHideFromList = async (row) => {
+const doHideFromList = async (row: MessageItem) => {
   const [confirmErr] = await to(ElMessageBox.confirm(
     '确定从「我的指派」中删除这条留言吗？删除后您将不再看到它，超级管理员仍可在后台查看完整数据。',
     '提示',
@@ -291,7 +298,7 @@ const doHideFromList = async (row) => {
  * 删除留言。
  * 仅管理员可见该操作。
  */
-const doDelete = async (row) => {
+const doDelete = async (row: MessageItem) => {
   const [confirmErr] = await to(ElMessageBox.confirm('确定删除这条留言吗？', '提示', { type: 'warning' }))
   if (confirmErr) return
 
@@ -317,7 +324,7 @@ const virtualColumns = computed(() => {
       title: '提交时间',
       width: 170,
       align: 'center',
-      cellRenderer: ({ rowData }) => formatTime(rowData?.createdAt)
+      cellRenderer: ({ rowData }: { rowData: MessageItem }) => formatTime(rowData?.createdAt)
     },
     {
       key: 'contactInfo',
@@ -337,7 +344,7 @@ const virtualColumns = computed(() => {
       title: '状态',
       width: 150,
       align: 'center',
-      cellRenderer: ({ rowData }) => {
+      cellRenderer: ({ rowData }: { rowData: MessageItem }) => {
         const tags = [
           h(
             ElTag,
@@ -357,16 +364,17 @@ const virtualColumns = computed(() => {
       title: '跟进人',
       width: 130,
       align: 'center',
-      cellRenderer: ({ rowData }) => ((rowData?.assignee?.name || '').trim() || rowData?.assignee?.username) || '—'
+      cellRenderer: ({ rowData }: { rowData: MessageItem }) => ((rowData?.assignee?.name || '').trim() || rowData?.assignee?.username) || '—'
     }
   ]
 
   baseColumns.push({
     key: 'actions',
+    dataKey: 'actions',
     title: '操作',
     width: isAdmin.value ? 260 : 200,
     align: 'center',
-    cellRenderer: ({ rowData }) =>
+    cellRenderer: ({ rowData }: { rowData: MessageItem }) =>
       h('div', { class: 'virtual-actions' }, [
         h(
           ElButton,
@@ -422,7 +430,7 @@ const virtualColumns = computed(() => {
   return baseColumns
 })
 
-const formatTime = (dateStr) => formatDateTime(dateStr)
+const formatTime = (dateStr?: string) => formatDateTime(dateStr || '')
 
 onMounted(() => {
   refreshCurrentUser()

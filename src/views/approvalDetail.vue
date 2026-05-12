@@ -110,16 +110,16 @@
         </el-col>
         <el-col :span="8">
           <el-form-item label="折扣 (%)">
-            <el-input-number :model-value="toNumber(discount)" :disabled="!editMode || isHistoryRoute" :min="0"
-              :max="100" controls-position="right" style="width: 100%"
-              @change="(val) => { discount = val; handleDiscountChange(val) }" />
+            <el-input-number :model-value="(safeDiscount as unknown as number)" :disabled="!editMode || isHistoryRoute" :min="0" :max="100"
+              controls-position="right" style="width: 100%"
+              @change="(val: unknown) => { discount = val as number | undefined; handleDiscountChange?.() }" />
           </el-form-item>
         </el-col>
         <el-col :span="8">
           <el-form-item label="成交价">
-            <el-input-number :model-value="toNumber(finalPrice)" :disabled="!editMode || isHistoryRoute" :min="0"
+            <el-input-number :model-value="(safeFinalPrice as unknown as number)" :disabled="!editMode || isHistoryRoute" :min="0"
               :precision="2" controls-position="right" style="width: 100%"
-              @input="(val) => { finalPrice = val; handleManualFinalPriceChange(val) }" />
+              @input="(val: unknown) => { finalPrice = val as number | undefined; handleManualFinalPriceChange?.(val) }" />
           </el-form-item>
         </el-col>
       </el-row>
@@ -150,7 +150,7 @@
           <template #default="{ row }">
             <el-input-number :model-value="toNumber(row.unitPrice)" :disabled="!editMode || isHistoryRoute" :min="0"
               :precision="2" controls-position="right" style="width:100%"
-              @change="(val) => { row.unitPrice = val; updateRowTotal(row) }" />
+              @change="(val: unknown) => { row.unitPrice = val as number | null; updateRowTotal(row) }" />
           </template>
         </el-table-column>
         <el-table-column label="总价" width="150" align="right">
@@ -182,12 +182,12 @@
   </el-card>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, watch, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { to } from '@/utils/async'
-import { showError, showSuccess, showWarning, showInfo } from '@/utils/message'
+import { showError, showSuccess, showWarning } from '@/utils/message'
 import approvalApi from '@/api/approval'
 import quotationApi from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
@@ -198,18 +198,18 @@ const route = useRoute()
 const router = useRouter()
 const isHistoryRoute = computed(() => String(route.path || '').startsWith('/approval/history/'))
 const editMode = ref(route.query.mode === 'edit' && !isHistoryRoute.value)
-const logs = ref([])
+const logs = ref<Array<{ id: number | string; createdAt: string; action: string; operatorName: string; comment?: string }>>([])
 const actionLoading = ref(false)
 const hasUnsavedChanges = computed(() => JSON.stringify(getPayload()) !== originalPayloadStr.value)
 const canApprove = computed(() => meta.status === 'pending' && !editMode.value && !hasUnsavedChanges.value)
 const approveButtonText = computed(() => (canApprove.value ? '准予通过' : '请先保存修改'))
 
 const meta = reactive({
-  id: null,
+  id: null as number | string | null,
   quotationNo: '',
   name: '',
   ownerName: '',
-  status: 'pending'
+  status: 'pending' as string
 })
 
 const {
@@ -229,12 +229,15 @@ const {
   originalPayloadStr
 } = useQuotationDraft()
 
-const tagType = (status) => ({
+const safeDiscount = computed<number>(() => Number(discount.value || 0) || 0)
+const safeFinalPrice = computed<number>(() => Number(finalPrice.value || 0) || 0)
+
+const tagType = (status: string) => ({
   draft: 'info', pending: 'warning', approved: 'success', rejected: 'danger', deleted: 'info',
   submit: 'primary', approve: 'success', reject: 'danger', recall: 'warning'
 }[status] || 'info')
 
-const statusLabel = (status) => ({
+const statusLabel = (status: string) => ({
   draft: '草稿', pending: '待审批', approved: '已通过', rejected: '已驳回', deleted: '已删除',
   submit: '提交审批', approve: '审批通过', reject: '审批驳回'
 }[status] || status)
@@ -247,10 +250,10 @@ const isViewMode = computed(() => !editMode.value || isHistoryRoute.value)
  * @param {*} value - 待转换的值
  * @returns {number|null} 转换后的数字值，无法转换返回 null
  */
-const toNumber = (value) => {
-  if (value === null || value === undefined || value === '') return null
+const toNumber = (value: unknown): number | undefined => {
+  if (value === null || value === undefined || value === '') return undefined
   const num = Number(value)
-  return Number.isFinite(num) ? num : null
+  return Number.isFinite(num) ? num : undefined
 }
 
 const {
@@ -268,8 +271,8 @@ const goBackToList = () => {
   router.push(isHistoryRoute.value ? '/approval/history' : '/approval')
 }
 
-async function loadDetail () {
-  const [err, res] = await to(approvalApi.get(route.params.id))
+async function loadDetail() {
+  const [err, res] = await to(approvalApi.get(String(route.params.id)))
   if (err) {
     showError(err, '加载详情失败')
     return
@@ -287,12 +290,12 @@ async function loadDetail () {
   loadRecord(q, editMode.value && !isHistoryRoute.value ? 'edit' : 'view')
 }
 
-async function save () {
+async function save() {
   if (actionLoading.value) return
   if (!companyName.value.trim()) return showWarning('公司名称不能为空')
   const payload = getPayload()
   actionLoading.value = true
-  const [err] = await to(quotationApi.update(meta.id, payload))
+  const [err] = await to(quotationApi.update(meta.id as number | string, payload as import('@/types').QuotationData))
   if (err) {
     showError(err, '保存失败')
     actionLoading.value = false
@@ -304,7 +307,7 @@ async function save () {
   actionLoading.value = false
 }
 
-async function approve () {
+async function approve() {
   if (actionLoading.value) return
   if (!canApprove.value) {
     showWarning('请先保存当前修改，再进行准予通过')
@@ -313,7 +316,7 @@ async function approve () {
   const prevStatus = meta.status
   actionLoading.value = true
   meta.status = 'approved'
-  const [err] = await to(quotationApi.approve(meta.id, '审批通过 (已完成保存后同意)'))
+  const [err] = await to(quotationApi.approve(meta.id as number | string, '审批通过 (已完成保存后同意)'))
   if (err) {
     meta.status = prevStatus
     showError(err, '操作失败')
@@ -324,7 +327,7 @@ async function approve () {
   goBackToList()
 }
 
-async function reject () {
+async function reject() {
   if (actionLoading.value) return
   const prevStatus = meta.status
   const [promptErr, promptRes] = await to(ElMessageBox.prompt('请输入驳回原因', '审批驳回', {
@@ -335,7 +338,7 @@ async function reject () {
 
   actionLoading.value = true
   meta.status = 'rejected'
-  const [apiErr] = await to(quotationApi.reject(meta.id, promptRes.value || '拒绝'))
+  const [apiErr] = await to(quotationApi.reject(meta.id as number | string, promptRes?.value || '拒绝'))
   if (apiErr) {
     meta.status = prevStatus
     actionLoading.value = false

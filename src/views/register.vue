@@ -119,7 +119,7 @@
   </AuthLayout>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
@@ -148,7 +148,7 @@ const form = reactive({
 })
 
 /** 确认密码验证逻辑 */
-const validatePass2 = (rule, value, callback) => {
+const validatePass2 = (_rule: unknown, value: string, callback: (err?: Error) => void) => {
   if (value === '') {
     callback(new Error('请再次输入密码以确认'))
   } else if (value !== form.password) {
@@ -182,7 +182,7 @@ const rules = {
 /** 执行注册提交核心逻辑 */
 const handleRegister = async () => {
   if (!formRef.value) return
-  await formRef.value.validate(async (valid) => {
+  await formRef.value.validate(async (valid: boolean) => {
     if (!valid) return
     loading.value = true
     const [err] = await to(userStore.register({

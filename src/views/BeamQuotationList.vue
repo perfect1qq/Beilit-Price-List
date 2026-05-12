@@ -72,7 +72,7 @@
 
           <div class="name-group">
             <span class="label">横梁名称:</span>
-            <el-form-item prop="recordName" :rules="beamNameRule2">
+            <el-form-item prop="recordName" :rules="beamNameRule">
               <el-input v-model="recordName" placeholder="必填" style="width: 280px" />
             </el-form-item>
           </div>
@@ -90,7 +90,7 @@
           <el-table-column label="长度(mm)" align="center">
             <template #default="{ row, $index }">
               <el-form-item :prop="'items.' + $index + '.length'"
-                :rules="[{ required: true, message: '请输入长度', trigger: 'blur' }, { validator: (rule, value, callback) => { if (value && !value.trim()) callback(new Error('长度不能只包含空格')); else callback(); }, trigger: 'blur' }]">
+                :rules="[{ required: true, message: '请输入长度', trigger: 'blur' }, { validator: noSpaceRawValidator, trigger: 'blur' }]">
                 <el-input v-model="row.length" size="small" placeholder="必填" />
               </el-form-item>
             </template>
@@ -98,7 +98,7 @@
           <el-table-column label="规格(mm)" align="center">
             <template #default="{ row, $index }">
               <el-form-item :prop="'items.' + $index + '.spec'"
-                :rules="[{ required: true, message: '请输入规格', trigger: 'blur' }, { validator: (rule, value, callback) => { if (value && !value.trim()) callback(new Error('规格不能只包含空格')); else callback(); }, trigger: 'blur' }]">
+                :rules="[{ required: true, message: '请输入规格', trigger: 'blur' }, { validator: noSpaceRawValidator, trigger: 'blur' }]">
                 <el-input v-model="row.spec" size="small" placeholder="必填" />
               </el-form-item>
             </template>
@@ -121,26 +121,26 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 import { Plus, Delete, DocumentAdd } from '@element-plus/icons-vue'
 import beamApi from '../api/beam'
 import { to } from '@/utils/async'
 import { showWarning, showError, showSuccess } from '@/utils/message'
-import { beamNameRule, beamNameRule2, positiveIntegerRule, positiveDecimalRule } from '@/utils/formRules'
+import { beamNameRule, positiveDecimalRule, noSpaceRawValidator } from '@/utils/formRules'
 import { usePermissions } from '@/composables/usePermissions'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 
 const { isGuest } = usePermissions()
 
 const recordName = ref('')
-const items = ref([{ name: '', length: '', spec: '', maxLoad: '' }])
+const items = ref<Array<{ name: string; length: string; spec: string; maxLoad: string }>>([{ name: '', length: '', spec: '', maxLoad: '' }])
 const saving = ref(false)
-const formRef = ref(null)
+const formRef = ref<InstanceType<typeof import('element-plus')['ElForm']> | null>(null)
 
 const addRow = () => items.value.push({ name: '', length: '', spec: '', maxLoad: '' })
 
-const deleteRow = (index) => {
+const deleteRow = (index: number) => {
   if (items.value.length <= 1) {
     return showWarning('至少需要保留一行数据！')
   }
@@ -150,7 +150,7 @@ const deleteRow = (index) => {
 const handleSave = async () => {
   if (saving.value) return
 
-  const [validateErr] = await to(formRef.value?.validate())
+  const [validateErr] = await to(formRef.value?.validate() ?? Promise.resolve(undefined))
   if (validateErr) return
 
   const [, checkRes] = await to(beamApi.checkName(recordName.value.trim()))

@@ -85,7 +85,8 @@
                   class="smart-table" style="width: 100%">
                   <el-table-column label="名称" min-width="140" show-overflow-tooltip align="center">
                     <template #default="{ row }">
-                      {{ row.quotationNo && !row.quotationNo.startsWith('QT') ? row.quotationNo : (row.name || row.companyName || '-') }}
+                      {{ row.quotationNo && !row.quotationNo.startsWith('QT') ? row.quotationNo : (row.name ||
+                        row.companyName || '-') }}
                     </template>
                   </el-table-column>
                   <el-table-column prop="ownerName" label="提交人" min-width="90" align="center" v-if="role === 'admin'" />
@@ -140,37 +141,23 @@
             :disabled="isViewMode">确认保存报价单</el-button>
         </div>
 
-        <QuotationEditor
-          ref="formRef"
-          :is-view-mode="isViewMode"
-          :rules-disabled="rulesDisabled"
-          :form-model="formModel"
-          v-model:remark="remark"
-          v-model:discount="discount"
-          v-model:final-price="finalPrice"
-          v-model:raw-text="rawText"
-          :subtotal="subtotal"
-          :discount-amount="discountAmount"
-          :auto-final-price="autoFinalPrice"
-          :is-manual-final-price="isManualFinalPrice"
-          :items="items"
-          :visible-columns="visibleColumns"
-          :hide-action-column="isGuest"
-          @handle-discount-change="handleDiscountChange"
+        <QuotationEditor ref="formRef" :is-view-mode="isViewMode" :rules-disabled="rulesDisabled"
+          :form-model="formModel" v-model:remark="remark" v-model:discount="discount" v-model:final-price="finalPrice"
+          v-model:raw-text="rawText" :subtotal="subtotal" :discount-amount="discountAmount"
+          :auto-final-price="autoFinalPrice" :is-manual-final-price="isManualFinalPrice" :items="items"
+          :visible-columns="visibleColumns" :hide-action-column="isGuest" @handle-discount-change="handleDiscountChange"
           @handle-manual-final-price-change="handleManualFinalPriceChange"
-          @restore-auto-final-price="restoreAutoFinalPrice"
-          @update-row-total="updateRowTotal"
-          @remove-row="removeRow"
-        />
+          @restore-auto-final-price="restoreAutoFinalPrice" @update-row-total="updateRowTotal"
+          @remove-row="removeRow" />
       </el-card>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, ref, watch, reactive } from 'vue'
 import { useRoute } from 'vue-router'
-import { Delete, DocumentAdd, Plus, Refresh } from '@element-plus/icons-vue'
+import { DocumentAdd, Plus, Refresh } from '@element-plus/icons-vue'
 import quotationApi from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
 import { useQuotationHistory } from '@/composables/useQuotationHistory'
@@ -242,7 +229,7 @@ const {
   copyQuotation,
   deleteHistory
 } = useQuotationHistory({
-  api: quotationApi,
+  api: quotationApi as unknown as { list?: (params?: unknown) => Promise<unknown>; create?: (data: unknown) => Promise<unknown>; update?: (id: number | string, data: unknown) => Promise<unknown>; remove?: (id: number | string) => Promise<unknown>;[key: string]: unknown },
   loadToEditor: (record, mode) => loadRecord(record, mode)
 })
 
@@ -259,7 +246,6 @@ const {
   handleManualFinalPriceChange,
   handleDiscountChange,
   handleParseText,
-  validateRows,
   handleSubmit
 } = useQuotationEditor({
   isViewMode,
@@ -286,18 +272,18 @@ const {
   }
 })
 
-const fetchQuotationRecord = async (id) => {
+const fetchQuotationRecord = async (id: number | string) => {
   const result = await quotationApi.get(id)
   return result?.quotation || result?.record || result
 }
 
-const openDetail = async (record, mode = 'view') => {
+const openDetail = async (record: Record<string, unknown>, mode = 'view') => {
   if (!record?.id) return
   resetDraft()
   if (mode === 'edit') {
     rulesDisabled.value = false
   }
-  const detail = record.items ? record : await fetchQuotationRecord(record.id)
+  const detail = record.items ? record : await fetchQuotationRecord(record.id as string | number)
   loadRecord(detail, mode)
   formModel.quotationNo = quotationNo.value
   formModel.companyName = companyName.value
@@ -315,7 +301,7 @@ onMounted(async () => {
     await loadHistoryList()
 
     const queryId = route.query.id
-    const queryMode = route.query.mode || 'view'
+    const queryMode = String(route.query.mode || 'view')
     if (queryId) {
       const detail = await fetchQuotationRecord(Number(queryId))
       if (detail) {

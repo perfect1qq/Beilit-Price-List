@@ -160,12 +160,12 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, shallowRef } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import memoApi from '@/api/memo'
-import { createDebounce } from '@/utils/debounce'
+import { debounce } from '@/utils/debounce'
 import { to } from '@/utils/async'
 import { showError, showSuccess, showWarning } from '@/utils/message'
 import { useCancelableLoader } from '@/composables/useCancelableLoader'
@@ -176,17 +176,18 @@ import MemoEditorDrawer from '@/components/memo/MemoEditorDrawer.vue'
 import MemoHistoryDrawer from '@/components/memo/MemoHistoryDrawer.vue'
 import MemoCard from '@/components/memo/MemoCard.vue'
 import MemoFilter from '@/components/memo/MemoFilter.vue'
+import type { MemoData } from '@/types'
 
 // 1. 响应式状态：使用 shallowRef 优化大型列表性能
-const { isGuest, canEdit, canDelete } = usePermissions()
-const list = shallowRef([])
+const { isGuest } = usePermissions()
+const list = shallowRef<MemoData[]>([])
 const hasMore = ref(false)
-const memoEditorRef = ref(null)
+const memoEditorRef = ref<InstanceType<typeof MemoEditorDrawer> | null>(null)
 const { loading, run: runListLoad, isLatest } = useCancelableLoader()
 const saving = ref(false)
 const { keyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 50, keyword: '' })
 const activeListScope = ref('today')
-const historyCreatedOn = ref(null)
+const historyCreatedOn = ref<string | undefined>(undefined)
 const activeFilter = ref('all')
 const stats = reactive({ total: 0, todoTotal: 0, doneTotal: 0, pinnedTotal: 0 })
 
@@ -203,32 +204,32 @@ const scopeStatCopy = computed(() => {
 })
 
 const route = useRoute()
-const highlightId = ref(null)
+const highlightId = ref<number | undefined>(undefined)
 
 // 2. 交互状态
 const editorVisible = ref(false)
-const editorMode = ref('create')
-const editingId = ref(null)
-const form = reactive({ title: '', content: '', label: '', color: 'blue', pinned: false, completed: false, remindAt: null })
-const originalForm = reactive({ title: '', content: '', label: '', color: 'blue', pinned: false, completed: false, remindAt: null })
+const editorMode = ref<'create' | 'edit'>('create')
+const editingId = ref<number | null>(null)
+const form = reactive<MemoData>({ title: '', content: '', label: '', color: 'blue', pinned: false, completed: false, remindAt: undefined })
+const originalForm = reactive<MemoData>({ title: '', content: '', label: '', color: 'blue', pinned: false, completed: false, remindAt: undefined })
 const historyVisible = ref(false)
 const historyTitle = ref('日志')
-const historyList = shallowRef([])
+const historyList = shallowRef<MemoData[]>([])
 
 // 抖音式底部哨兵
-const loadMoreTriggerRef = ref(null)
-let observer = null
+const loadMoreTriggerRef = ref<HTMLElement | null>(null)
+let observer: IntersectionObserver | null = null
 
 const isBoardMode = computed(() => activeFilter.value === 'all')
-const todoList = computed(() => list.value.filter(i => !i.completed))
-const doneList = computed(() => list.value.filter(i => i.completed))
+const todoList = computed(() => list.value.filter((i: MemoData) => !i.completed))
+const doneList = computed(() => list.value.filter((i: MemoData) => i.completed))
 const emptyDescription = computed(() =>
   activeListScope.value === 'history' ? '这一天没有任何记录' : '今日还没有任务，给自己定个目标吧'
 )
 
 const loadList = async (targetPage = page.value, append = false) => {
   await runListLoad(async ({ signal, seq }) => {
-    const params = {
+    const params: Record<string, unknown> = {
       page: targetPage,
       pageSize: pageSize.value,
       keyword: keyword.value.trim(),
@@ -242,19 +243,19 @@ const loadList = async (targetPage = page.value, append = false) => {
 
     const res =
       activeListScope.value === 'history'
-        ? await memoApi.listHistory(params, { signal })
-        : await memoApi.list(params, { signal })
+        ? await (memoApi.listHistory as (params: Record<string, unknown>, opts?: Record<string, unknown>) => Promise<Record<string, unknown>>)(params, { signal })
+        : await (memoApi.list as (params: Record<string, unknown>, opts?: Record<string, unknown>) => Promise<Record<string, unknown>>)(params, { signal })
 
     if (!isLatest(seq)) return
 
-    const rows = res.list || []
-    list.value = append ? [...list.value, ...rows] : rows
-    hasMore.value = list.value.length < (res.total || 0)
+    const rows = (res as Record<string, unknown>).list || []
+    list.value = append ? [...list.value, ...(rows as MemoData[])] : (rows as MemoData[])
+    hasMore.value = list.value.length < (Number((res as Record<string, unknown>).total) || 0)
 
     Object.assign(stats, {
-      total: res.total || 0,
-      todoTotal: res.todoTotal || 0,
-      doneTotal: res.doneTotal || 0,
+      total: (res as Record<string, unknown>).total || 0,
+      todoTotal: (res as Record<string, unknown>).todoTotal || 0,
+      doneTotal: (res as Record<string, unknown>).doneTotal || 0,
       pinnedTotal: res.pinnedTotal || 0
     })
   })
@@ -296,20 +297,20 @@ const initInfiniteObserver = () => {
 
 const openCreate = () => {
   editorMode.value = 'create'
-  Object.assign(form, { title: '', content: '', label: '', color: 'blue', pinned: false, completed: false })
+  Object.assign(form, { title: '', content: '', label: '', color: 'blue', pinned: false, completed: false, remindAt: undefined })
   editorVisible.value = true
 }
 
-const openEdit = item => {
+const openEdit = (item: MemoData) => {
   editorMode.value = 'edit'
-  editingId.value = item.id
+  editingId.value = item.id ?? null
   Object.assign(form, { ...item })
   Object.assign(originalForm, { ...item })
   editorVisible.value = true
 }
 
 const saveMemo = async () => {
-  const [validateErr] = await to(memoEditorRef.value?.validate())
+  const [validateErr] = await to(memoEditorRef.value?.validate() ?? Promise.resolve(undefined))
   if (validateErr) return
 
   if (editorMode.value === 'edit') {
@@ -329,7 +330,7 @@ const saveMemo = async () => {
     }
     showSuccess('新增成功')
   } else {
-    const [err] = await to(memoApi.update(editingId.value, form))
+    const [err] = await to(memoApi.update(editingId.value as number, form))
     if (err) {
       saving.value = false
       return
@@ -342,8 +343,8 @@ const saveMemo = async () => {
   saving.value = false
 }
 
-const toggleCompleted = async item => {
-  const [err] = await to(memoApi.update(item.id, { ...item, completed: !item.completed }))
+const toggleCompleted = async (item: MemoData) => {
+  const [err] = await to(memoApi.update(item.id as number, { ...item, completed: !item.completed }))
   if (err) {
     showError('网络繁忙，请重试')
     return
@@ -353,8 +354,8 @@ const toggleCompleted = async item => {
   await loadList(1)
 }
 
-const togglePinned = async item => {
-  const [err] = await to(memoApi.update(item.id, { ...item, pinned: !item.pinned }))
+const togglePinned = async (item: MemoData) => {
+  const [err] = await to(memoApi.update(item.id as number, { ...item, pinned: !item.pinned }))
   if (err) {
     showError('操作失败')
     return
@@ -364,25 +365,25 @@ const togglePinned = async item => {
   await loadList(1)
 }
 
-const removeMemo = async item => {
+const removeMemo = async (item: MemoData) => {
   const [confirmErr] = await to(ElMessageBox.confirm('任务一旦删除将无法找回，确认继续吗？', '删除确认'))
   if (confirmErr) return
 
-  const [err] = await to(memoApi.remove(item.id))
+  const [err] = await to(memoApi.remove(item.id as number))
   if (err) return
   showSuccess('删除成功')
   page.value = 1
   await loadList(1)
 }
 
-const openHistory = async item => {
+const openHistory = async (item: MemoData) => {
   historyTitle.value = `${item.title} 的修订轨迹`
   historyVisible.value = true
-  const res = await memoApi.history(item.id)
+  const res = await memoApi.history(item.id as number)
   historyList.value = res.histories || []
 }
 
-const triggerSearch = createDebounce(() => {
+const triggerSearch = debounce(() => {
   resetToFirstPage()
   page.value = 1
   loadList(1)
@@ -397,7 +398,7 @@ const handleFilterChange = () => {
 }
 
 const handleListScopeChange = () => {
-  historyCreatedOn.value = null
+  historyCreatedOn.value = undefined
   resetToFirstPage()
   page.value = 1
   loadList(1)
@@ -410,7 +411,7 @@ const onHistoryDateChange = () => {
 }
 
 onMounted(async () => {
-  highlightId.value = route.query.highlight ? Number(route.query.highlight) : null
+  highlightId.value = route.query.highlight ? Number(typeof route.query.highlight === 'string' ? route.query.highlight : route.query.highlight[0]) : undefined
   await loadList(1)
   initInfiniteObserver()
   if (highlightId.value) {

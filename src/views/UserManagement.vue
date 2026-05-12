@@ -97,7 +97,7 @@
       <CardList :data="filteredUsers" :loading="loading" :show-pagination="false" :columns="3"
         empty-description="暂无用户数据" :empty-image-size="100">
         <template #card="{ item }">
-          <UserCard :user="item" :current-user-id="currentUser.id" @name-edit="startEditName"
+          <UserCard :user="(item as unknown as UserInfo)" :current-user-id="currentUser.id" @name-edit="startEditName"
             @name-blur="handleNameBlur" @name-confirm="confirmNameChange" @role-change="handleRoleChange"
             @reset-password="handleResetClick" @delete="handleDelete" />
         </template>
@@ -122,7 +122,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
@@ -136,12 +136,13 @@ import CardList from '@/components/common/CardList.vue'
 import AsyncDialog from '@/components/common/AsyncDialog.vue'
 import InviteCodeCard from '@/components/user/InviteCodeCard.vue'
 import UserCard from '@/components/user/UserCard.vue'
+import type { UserInfo } from '@/types'
 
 const loading = ref(false)
-const users = ref([])
+const users = ref<UserInfo[]>([])
 const search = ref('')
 const userStore = useUserStore()
-const currentUser = computed(() => userStore.user || {})
+const currentUser = computed(() => userStore.user || { id: 0, username: '', name: '', role: 'guest' as const })
 const { copy } = useClipboard()
 
 // 邀请码相关
@@ -175,13 +176,13 @@ const handleRefreshCode = async () => {
 // 重置密码弹窗的状态管理
 const resetDialog = reactive({
   visible: false,
-  userId: null,
+  userId: null as number | null,
   username: '',
   password: ''
 })
 
 /** 重置密码对话框引用 */
-const resetDialogRef = ref(null)
+const resetDialogRef = ref<InstanceType<typeof AsyncDialog> | null>(null)
 
 /**
  * 实时过滤用户列表
@@ -204,7 +205,7 @@ const fetchUsers = async () => {
   loading.value = false
 }
 
-const handleResetClick = (row) => {
+const handleResetClick = (row: UserInfo) => {
   resetDialog.userId = row.id
   resetDialog.username = row.username
   resetDialog.password = ''
@@ -222,7 +223,7 @@ const confirmReset = async () => {
 
   try {
     await resetDialogRef.value?.load(() =>
-      userApi.resetPassword(resetDialog.userId, resetDialog.password)
+      userApi.resetPassword(resetDialog.userId as number | string, resetDialog.password)
     )
     showSuccess(`用户 ${resetDialog.username} 的密码已成功重置`)
     resetDialog.visible = false
@@ -231,7 +232,7 @@ const confirmReset = async () => {
   }
 }
 
-const handleDelete = async (row) => {
+const handleDelete = async (row: UserInfo) => {
   const [confirmErr] = await to(ElMessageBox.confirm(`确定要删除用户 "${row.name || row.username}" 吗？此操作不可恢复！`, '删除确认', {
     type: 'warning',
     confirmButtonText: '删除',
@@ -248,9 +249,9 @@ const handleDelete = async (row) => {
   fetchUsers()
 }
 
-const handleRoleChange = async (row, newRole) => {
+const handleRoleChange = async (row: UserInfo, newRole: string) => {
   const oldRole = row.role
-  const roleLabels = { admin: '管理员', user: '业务员', guest: '游客(只读)' }
+  const roleLabels: Record<string, string> = { admin: '管理员', user: '业务员', guest: '游客(只读)' }
   const [confirmErr] = await to(ElMessageBox.confirm(`确定要将用户 ${row.username} 的权限修改为 "${roleLabels[newRole] || newRole}" 吗？`, '权限变更确认', {
     type: 'warning',
     confirmButtonText: '确定变更',
@@ -268,21 +269,21 @@ const handleRoleChange = async (row, newRole) => {
     fetchUsers()
     return
   }
-  row.role = newRole
+  row.role = newRole as 'admin' | 'user' | 'guest'
   showSuccess('用户权限更新成功')
 }
 
-const startEditName = (row) => {
+const startEditName = (row: UserInfo) => {
   row._editingName = true
   row._editNameValue = row.name || ''
 }
 
-const handleNameBlur = (row) => {
+const handleNameBlur = (row: UserInfo) => {
   if (!row._editingName) return
   confirmNameChange(row)
 }
 
-const confirmNameChange = async (row) => {
+const confirmNameChange = async (row: UserInfo) => {
   const newName = (row._editNameValue || '').trim()
   if (!newName) {
     row._editingName = false

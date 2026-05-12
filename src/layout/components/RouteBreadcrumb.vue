@@ -1,18 +1,15 @@
 <template>
   <el-breadcrumb separator="/" class="route-breadcrumb">
-    <el-breadcrumb-item
-      v-for="(item, index) in breadcrumbItems"
-      :key="`${item.label}-${index}`"
-      :to="index === breadcrumbItems.length - 1 || !item.path ? undefined : { path: item.path }"
-    >
+    <el-breadcrumb-item v-for="(item, index) in breadcrumbItems" :key="`${item.label}-${index}`"
+      :to="index === breadcrumbItems.length - 1 || !item.path ? undefined : { path: item.path }">
       {{ item.label }}
     </el-breadcrumb-item>
   </el-breadcrumb>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, type RouteLocationNormalized } from 'vue-router'
 import { resolveRouteDisplayTitle } from '@/utils/navigation'
 
 /**
@@ -26,7 +23,7 @@ const breadcrumbItems = computed(() => {
   const items = route.matched
     .filter(record => record && (record.meta?.title || record.path))
     .map(record => ({
-      label: record.path === '/message' ? resolveRouteDisplayTitle({ path: '/message' }) : (record.meta?.title || record.name || record.path),
+      label: record.path === '/message' ? resolveRouteDisplayTitle({ path: '/message' } as RouteLocationNormalized) : (record.meta?.title || record.name || record.path),
       path: record.path
     }))
 

@@ -150,22 +150,30 @@
   </div>
 </template>
 
-<script setup>
-import { computed, ref } from 'vue'
+<script setup lang="ts">
+import { ref } from 'vue'
 import { quotationStatisticsApi } from '../api/quotation'
 import { to } from '@/utils/async'
 import { showWarning, showError, showSuccess } from '@/utils/message'
 
+interface PartItem {
+  name: string
+  spec?: string
+  qty?: number | string
+  unit?: string
+  [key: string]: unknown
+}
+
 const rawText = ref('')
-const parts = ref([])
-const errors = ref([])
-const warnings = ref([])
+const parts = ref<PartItem[]>([])
+const errors = ref<string[]>([])
+const warnings = ref<string[]>([])
 const loading = ref(false)
 
 /**
  * 触发后端解析文本接口
  */
-async function parseNow () {
+async function parseNow() {
   if (!rawText.value.trim()) {
     return showWarning('请先提供完整的货架报价文本用于解析。')
   }
@@ -190,27 +198,12 @@ async function parseNow () {
 }
 
 /** 清空当前分析状态 */
-function clearText () {
+function clearText() {
   rawText.value = ''
   parts.value = []
   errors.value = []
   warnings.value = []
 }
-
-const summaryCards = computed(() => {
-  const totals = {}
-  for (let i = 0; i < parts.value.length; i++) {
-    const row = parts.value[i]
-    totals[row.name] = (totals[row.name] || 0) + Number(row.qty || 0)
-  }
-
-  return [
-    { label: '立柱片', value: totals['立柱片'] || 0 },
-    { label: '横梁', value: totals['横梁'] || 0 },
-    { label: '网层板', value: totals['网层板'] || 0 },
-    { label: '层板', value: totals['层板'] || 0 },
-  ]
-})
 
 </script>
 

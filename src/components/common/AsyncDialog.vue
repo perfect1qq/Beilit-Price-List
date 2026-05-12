@@ -26,7 +26,7 @@
   </el-dialog>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue'
 
 const props = defineProps({
@@ -73,7 +73,7 @@ defineExpose({
   loading,
   startLoading: () => { loading.value = true },
   stopLoading: () => { loading.value = false },
-  async load(asyncFn) {
+  async load(asyncFn: () => Promise<unknown>) {
     loading.value = true
     try {
       const result = await asyncFn()

@@ -88,8 +88,9 @@
 
     <!-- 卡片列表 -->
     <div v-else class="cards-grid" :class="'grid-' + columns">
-      <div v-for="(item, index) in data" :key="item[idField] !== undefined ? item[idField] : index" class="card-item"
-        :class="{
+      <div v-for="(item, index) in data"
+        :key="(item[idField] as string | number) !== undefined ? (item[idField] as string | number) : index"
+        class="card-item" :class="{
           'is-selected': isSelected(item),
           'is-disabled': isDisabled(item),
           'is-draggable': draggable
@@ -98,7 +99,7 @@
         <!-- 选中状态指示器 -->
         <div v-if="selectable && (multiple || isSelected(item))" class="selection-indicator">
           <el-checkbox :model-value="isSelected(item)" @click.stop
-            @change="(val) => handleSelectChange(item, val, $event)" />
+            @change="(val: unknown) => handleSelectChange(item, !!val, undefined)" />
         </div>
 
         <!-- 卡片内容插槽 -->
@@ -139,15 +140,16 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
+import type { PropType } from 'vue'
 import PagePagination from './PagePagination.vue'
 import { DEFAULT_PAGINATION } from '@/constants/table'
 
 const props = defineProps({
   /** 数据列表 */
   data: {
-    type: Array,
+    type: Array as PropType<any[]>,
     default: () => []
   },
   /** 是否加载中 */
@@ -172,7 +174,7 @@ const props = defineProps({
   },
   /** 分页大小选项 */
   pageSizes: {
-    type: Array,
+    type: Array as PropType<number[]>,
     default: () => DEFAULT_PAGINATION.pageSizes
   },
   /** 是否显示分页 */
@@ -184,7 +186,7 @@ const props = defineProps({
   columns: {
     type: Number,
     default: 2,
-    validator: (val) => [1, 2, 3, 4].includes(val)
+    validator: (val: unknown) => [1, 2, 3, 4].includes(val as number)
   },
   /** 空状态描述文字 */
   emptyDescription: {
@@ -211,7 +213,7 @@ const props = defineProps({
   },
   /** 已选中的项（v-model支持） */
   selectedItems: {
-    type: Array,
+    type: Array as PropType<Record<string, unknown>[]>,
     default: () => []
   },
   /** 数据唯一标识字段名 */
@@ -241,7 +243,7 @@ const props = defineProps({
   },
   /** 是否禁用项判断函数 */
   disabledFn: {
-    type: Function,
+    type: Function as PropType<(item: Record<string, unknown>) => boolean>,
     default: null
   },
   /** 是否启用加载更多模式（替代分页） */
@@ -300,7 +302,7 @@ const currentPageSize = computed({
  * @param {Object} item - 数据项
  * @returns {boolean}
  */
-const isSelected = (item) => {
+const isSelected = (item: Record<string, unknown>): boolean => {
   if (!props.selectable) return false
   const id = item[props.idField]
   return props.selectedItems.some(selected => selected[props.idField] === id)
@@ -311,7 +313,7 @@ const isSelected = (item) => {
  * @param {Object} item - 数据项
  * @returns {boolean}
  */
-const isDisabled = (item) => {
+const isDisabled = (item: Record<string, unknown>): boolean => {
   return props.disabledFn ? props.disabledFn(item) : false
 }
 
@@ -320,7 +322,7 @@ const isDisabled = (item) => {
  * @param {Object} item - 数据项
  * @param {Event} event - 点击事件
  */
-const handleCardClick = (item, event) => {
+const handleCardClick = (item: Record<string, unknown>, event: MouseEvent): void => {
   if (isDisabled(item)) return
 
   if (props.selectable) {
@@ -341,7 +343,7 @@ const handleCardClick = (item, event) => {
  * @param {boolean} selected - 是否选中
  * @param {Event} event - 事件对象
  */
-const handleSelectChange = (item, selected, event) => {
+const handleSelectChange = (item: Record<string, unknown>, selected: boolean, _event?: MouseEvent): void => {
   if (props.multiple) {
     let newSelected = [...props.selectedItems]
     if (selected) {
@@ -361,7 +363,7 @@ const handleSelectChange = (item, selected, event) => {
  * 处理分页变化
  * @param {number} page - 页码
  */
-const handlePageChange = (page) => {
+const handlePageChange = (page: number): void => {
   emit('page-change', page)
 }
 </script>

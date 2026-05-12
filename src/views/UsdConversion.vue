@@ -174,12 +174,14 @@
         </div>
         <div class="summary-item difference">
           <span class="label">相差人民币：</span>
-          <span class="val" :class="diffRmb >= 0 ? 'usd-text' : 'highlight'">{{ diffRmb >= 0 ? '+' : '' }}{{ diffRmb
+          <span class="val" :class="Number(diffRmb) >= 0 ? 'usd-text' : 'highlight'">{{ Number(diffRmb) >= 0 ? '+' : ''
+          }}{{
+              diffRmb
             }}</span>
           <span class="desc">（汇率人民币 - 顶部手填的原单总人民币）</span>
         </div>
 
-        <div class="info-alert" :class="diffRmb >= 0 ? 'success-bg' : 'error-bg'">
+        <div class="info-alert" :class="Number(diffRmb) >= 0 ? 'success-bg' : 'error-bg'">
           <el-icon class="info-icon">
             <InfoFilled />
           </el-icon>
@@ -200,7 +202,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted } from 'vue'
 import { Plus, Delete, InfoFilled } from '@element-plus/icons-vue'
 import { useUsdCalculator } from '@/composables/useUsdCalculator'
@@ -233,21 +235,21 @@ const {
 
 const addRow = () => tableData.value.push(defaultRow())
 
-const removeRow = (index) => {
+const removeRow = (index: number) => {
   tableData.value.splice(index, 1)
   if (!tableData.value.length) addRow()
 }
 
-const handlePaste = (event, startIndex) => {
+const handlePaste = (event: ClipboardEvent, startIndex: number) => {
   event.preventDefault()
-  const pasteData = event.clipboardData.getData('text')
+  const pasteData = (event.clipboardData as DataTransfer).getData('text')
   if (!pasteData) return
 
-  const rows = pasteData.split(/\r?\n/).filter(i => i.trim())
+  const rows = pasteData.split(/\r?\n/).filter((i: string) => i.trim())
 
   let index = startIndex
 
-  rows.forEach(line => {
+  rows.forEach((line: string) => {
     const cols = line.split(/\t/)
 
     if (!tableData.value[index]) addRow()
@@ -262,9 +264,9 @@ const handlePaste = (event, startIndex) => {
   })
 }
 
-const getSummaries = ({ columns }) => {
-  const sums = []
-  columns.forEach((col, i) => {
+const getSummaries = ({ columns }: { columns: Array<{ property?: string }> }) => {
+  const sums: string[] = []
+  columns.forEach((col: { property?: string }, i: number) => {
     if (i === 0) sums[i] = '总计'
     else if (col.property === 'subTotal') sums[i] = '$' + productsTotalUsd.value
     else sums[i] = ''
