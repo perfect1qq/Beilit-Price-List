@@ -24,7 +24,7 @@
   ┌─────────────────────────────────────────┐
   │  CardList 组件渲染                        │
   │  每张卡片包含：                            │
-  │  - 报价单号 (quotationNo)                │
+  │  - 名称 (name)                           │
   │  - 审批状态标签 (approved/rejected)       │
   │  - 公司名称 (companyName)                 │
   │  - 提交人 (ownerName)                    │
@@ -68,7 +68,7 @@
         <template #card="{ item }">
           <div class="history-card-item">
             <div class="card-header">
-              <h3 class="quotation-name">{{ item.quotationNo }}</h3>
+              <h3 class="quotation-name">{{ item.name || item.companyName || '-' }}</h3>
               <el-tag :type="tagType(item.status)" size="small">{{ statusLabel(item.status) }}</el-tag>
             </div>
 

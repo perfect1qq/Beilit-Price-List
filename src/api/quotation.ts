@@ -28,6 +28,15 @@ const reject = (id: number | string, comment?: string) =>
 const copy = (id: number | string) =>
   request.post(`/api/quotations/${id}/copy`)
 
+const checkCompanyName = (companyName: string, excludeId?: number | string) =>
+  request.get('/api/quotations/check-company', { params: { companyName, excludeId } })
+
+const checkName = (name: string, excludeId?: number | string) =>
+  request.get('/api/quotations/check-name', { params: { name, excludeId } })
+
+const suggestName = (name: string, companyName?: string, excludeId?: number | string) =>
+  request.get('/api/quotations/suggest-name', { params: { name, companyName, excludeId } })
+
 const parseStatistics = (rawText: string) =>
   request.post('/api/tools/calculate', {
     text: rawText,
@@ -46,6 +55,9 @@ const quotationApi = {
   reject: unwrap(reject),
   copy: unwrap(copy),
   parse: unwrap(parseStatistics),
+  checkCompanyName: unwrap(checkCompanyName),
+  checkName: unwrap(checkName),
+  suggestName: unwrap(suggestName),
 }
 
 const quotationStatisticsApi = {

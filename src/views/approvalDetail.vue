@@ -85,7 +85,8 @@
     <div class="head">
       <div>
         <h2>{{ companyName || meta.name || '审批详情' }}</h2>
-        <div class="sub">单据名称：{{ meta.quotationNo || '-' }} ｜ 发起人：{{ meta.ownerName || '-' }}</div>
+        <div class="sub">名称：{{ meta.name || '-' }} ｜ 公司名称：{{ meta.companyName || '-' }} ｜ 发起人：{{ meta.ownerName || '-'
+        }}</div>
       </div>
       <div class="actions">
         <el-tag :type="tagType(meta.status)" effect="dark">{{ statusLabel(meta.status) }}</el-tag>
@@ -110,15 +111,16 @@
         </el-col>
         <el-col :span="8">
           <el-form-item label="折扣 (%)">
-            <el-input-number :model-value="(safeDiscount as unknown as number)" :disabled="!editMode || isHistoryRoute" :min="0" :max="100"
-              controls-position="right" style="width: 100%"
+            <el-input-number :model-value="(safeDiscount as unknown as number)" :disabled="!editMode || isHistoryRoute"
+              :min="0" :max="100" controls-position="right" style="width: 100%"
               @change="(val: unknown) => { discount = val as number | undefined; handleDiscountChange?.() }" />
           </el-form-item>
         </el-col>
         <el-col :span="8">
           <el-form-item label="成交价">
-            <el-input-number :model-value="(safeFinalPrice as unknown as number)" :disabled="!editMode || isHistoryRoute" :min="0"
-              :precision="2" controls-position="right" style="width: 100%"
+            <el-input-number :model-value="(safeFinalPrice as unknown as number)"
+              :disabled="!editMode || isHistoryRoute" :min="0" :precision="2" controls-position="right"
+              style="width: 100%"
               @input="(val: unknown) => { finalPrice = val as number | undefined; handleManualFinalPriceChange?.(val) }" />
           </el-form-item>
         </el-col>
@@ -206,8 +208,8 @@ const approveButtonText = computed(() => (canApprove.value ? '准予通过' : '�
 
 const meta = reactive({
   id: null as number | string | null,
-  quotationNo: '',
   name: '',
+  companyName: '',
   ownerName: '',
   status: 'pending' as string
 })
@@ -279,8 +281,8 @@ async function loadDetail() {
   }
   const q = res.approval || {}
   meta.id = q.id
-  meta.quotationNo = q.quotationNo
   meta.name = q.name
+  meta.companyName = q.companyName
   meta.ownerName = q.ownerName
   meta.status = q.status
   logs.value = res.logs || []

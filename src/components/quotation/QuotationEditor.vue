@@ -47,7 +47,7 @@
   └──────────────────────────────────────────────────────────────┘
 
   Props 定义：
-  - formModel: Object - 表单数据模型（quotationNo, companyName, remark）
+  - formModel: Object - 表单数据模型（name, companyName, remark）
   - discount: number - 折扣百分比（0-100）
   - finalPrice: number - 成交价（可为手动或自动计算）
   - subtotal: number - 小计（Σ 数量 × 单价）
@@ -94,8 +94,9 @@
             <div class="section-title">基础信息</div>
           </template>
           <el-form ref="formRef" :model="localFormModel" label-width="92px">
-            <el-form-item label="名称" prop="quotationNo" :rules="quotationNameRule">
-              <el-input v-model="localFormModel.quotationNo" placeholder="请输入名称" :disabled="isViewMode" />
+            <el-form-item label="名称" prop="name" :rules="quotationNameRule">
+              <el-input v-model="localFormModel.name" placeholder="请输入名称" :disabled="isViewMode"
+                @blur="handleNameBlur" />
             </el-form-item>
             <el-form-item label="公司名称" prop="companyName" :rules="companyNameRule">
               <el-input v-model="localFormModel.companyName" placeholder="请输入公司名称" :disabled="isViewMode" />
@@ -215,15 +216,18 @@
 import { ref, computed } from 'vue'
 import type { PropType } from 'vue'
 import { Delete } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import { formatMoney } from '@/utils/number'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 import { quotationNameRule as quotationNameBaseRule, companyNameRule as companyNameBaseRule } from '@/utils/formRules'
 import type { QuotationData, QuotationItem } from '@/types'
+import { quotationApi } from '@/api/quotation'
 
 const props = defineProps({
   isViewMode: Boolean,
   rulesDisabled: Boolean,
   hideActionColumn: Boolean,
+  editingHistoryId: { type: Number, default: null },
   formModel: {
     type: Object as PropType<QuotationData>,
     required: true
@@ -273,6 +277,29 @@ defineExpose({
 const quotationNameRule = computed(() => (props.isViewMode || props.rulesDisabled) ? [] : quotationNameBaseRule)
 
 const companyNameRule = computed(() => (props.isViewMode || props.rulesDisabled) ? [] : companyNameBaseRule)
+
+let nameCheckTimer: ReturnType<typeof setTimeout> | null = null
+
+const handleNameBlur = async () => {
+  if (props.isViewMode) return
+  const currentName = String(props.formModel.name || '').trim()
+  const currentCompany = String(props.formModel.companyName || '').trim()
+  if (!currentName) return
+
+  if (nameCheckTimer) clearTimeout(nameCheckTimer)
+  nameCheckTimer = setTimeout(async () => {
+    try {
+      const [err, res] = await quotationApi.suggestName(currentName, currentCompany || undefined, props.editingHistoryId ?? undefined)
+      if (err || !res?.suggestedName) return
+      if (res.suggestedName !== currentName) {
+        ElMessage.warning(`名称「${currentName}」在该公司下已存在，已自动修改为「${res.suggestedName}」`)
+        emit('update:formModel', { ...props.formModel, name: res.suggestedName })
+      }
+    } catch (_e) {
+      // ignore
+    }
+  }, 300)
+}
 </script>
 
 <style scoped>

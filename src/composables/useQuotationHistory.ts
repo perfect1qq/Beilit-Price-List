@@ -142,32 +142,44 @@ const toDateValue = (record: Partial<HistoryRecord> = {}): number => {
 }
 
 const groupByCompany = (records: HistoryRecord[] = []): CompanyGroup[] => {
-  const map = new Map<string, { companyName: string; records: HistoryRecord[] }>()
+  const map = new Map<string, CompanyGroup>()
 
-  records.forEach((record) => {
+  for (let i = 0; i < records.length; i++) {
+    const record = records[i]
     const companyName = normalizeCompanyName(record)
-    if (!map.has(companyName)) {
-      map.set(companyName, { companyName, records: [] })
+    let group = map.get(companyName)
+    if (!group) {
+      group = { companyName, count: 0, latestDate: '', latestTime: '', records: [] }
+      map.set(companyName, group)
     }
-    map.get(companyName)!.records.push(record)
+    group.records.push(record)
+  }
+
+  const earliestMap = new Map<string, number>()
+  const groups: CompanyGroup[] = []
+  for (const group of map.values()) {
+    const recordsSorted = group.records.sort((a, b) => toDateValue(b) - toDateValue(a))
+    const earliest = recordsSorted[recordsSorted.length - 1]
+    const earliestTime = toDateValue(earliest)
+    earliestMap.set(group.companyName, earliestTime)
+    groups.push({
+      companyName: group.companyName,
+      count: recordsSorted.length,
+      latestDate: recordsSorted[0]?.createDate || '',
+      latestTime: recordsSorted[0]?.createTime || recordsSorted[0]?.updateTime || '',
+      records: recordsSorted
+    })
+  }
+
+  groups.sort((a, b) => {
+    const aTime = earliestMap.get(a.companyName) ?? 0
+    const bTime = earliestMap.get(b.companyName) ?? 0
+    const diff = aTime - bTime
+    if (!Number.isNaN(diff) && diff !== 0) return diff
+    return a.companyName.localeCompare(b.companyName, 'zh-Hans-CN')
   })
 
-  return [...map.values()]
-    .map((group) => {
-      const recordsSorted = [...group.records].sort((a, b) => toDateValue(b) - toDateValue(a))
-      return {
-        companyName: group.companyName,
-        count: recordsSorted.length,
-        latestDate: recordsSorted[0]?.createDate || '',
-        latestTime: recordsSorted[0]?.createTime || recordsSorted[0]?.updateTime || '',
-        records: recordsSorted
-      }
-    })
-    .sort((a, b) => {
-      const diff = new Date(b.latestTime || 0).getTime() - new Date(a.latestTime || 0).getTime()
-      if (!Number.isNaN(diff) && diff !== 0) return diff
-      return a.companyName.localeCompare(b.companyName, 'zh-Hans-CN')
-    })
+  return groups
 }
 
 const fetchAllRecords = async (api: QuotationHistoryOptions['api'], keyword = ''): Promise<HistoryRecord[]> => {
@@ -316,7 +328,7 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
 
   const copyQuotation = async (record: HistoryRecord): Promise<HistoryRecord | null> => {
     const [confirmErr] = await to(ElMessageBox.confirm(
-      `确定要复制「${record.quotationNo || record.name || '-'}」这条报价单吗？`,
+      `确定要复制「${record.name || record.companyName || '-'}」这条报价单吗？\n复制后名称将自动添加「-副本」后缀`,
       '提示',
       { confirmButtonText: '确定', cancelButtonText: '取消', type: 'info' }
     ))
@@ -328,7 +340,7 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
 
     if (newRecord) {
       await loadHistoryList()
-      ElMessage.success('复制成功')
+      ElMessage.success(`复制成功，新名称：「${newRecord.name || newRecord.companyName || '-'}」`)
     }
 
     return newRecord

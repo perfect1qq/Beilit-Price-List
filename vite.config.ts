@@ -25,18 +25,6 @@ export default defineConfig({
         globIgnores: ['**/assets/js/**'],
         runtimeCaching: [
           {
-            urlPattern: /^\/api\/(?!.*(?:login|register|refresh|create|update|delete|submit|add|remove)).*$/i,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-cache',
-              expiration: { maxEntries: 50, maxAgeSeconds: 5 * 60 }
-            }
-          },
-          {
-            urlPattern: /\/api\/.*(?:login|register|refresh|create|update|delete|submit|add|remove).*$/i,
-            handler: 'NetworkOnly'
-          },
-          {
             urlPattern: /\/assets\/js\/.+\.js$/i,
             handler: 'NetworkFirst',
             options: {

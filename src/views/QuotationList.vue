@@ -93,7 +93,7 @@
 
         Props 说明：
         - isViewMode: 是否只读查看模式
-        - formModel: { quotationNo, companyName } 基础信息
+        - formModel: { name, companyName } 基础信息
         - items: 明细行数据数组
         - visibleColumns: 动态列配置
 
@@ -103,6 +103,7 @@
         - remove-row: 删除某一行
       -->
       <QuotationEditor ref="formRef" :is-view-mode="isViewMode" :rules-disabled="rulesDisabled" :form-model="formModel"
+        :editing-history-id="editingHistoryId"
         v-model:remark="remark" v-model:discount="discount" v-model:final-price="finalPrice" v-model:raw-text="rawText"
         :subtotal="subtotal" :discount-amount="discountAmount" :auto-final-price="autoFinalPrice"
         :is-manual-final-price="isManualFinalPrice" :items="items" :visible-columns="visibleColumns"
@@ -143,11 +144,11 @@ const formRef = ref(null)
 
 /**
  * 基础表单模型（响应式对象）
- * - quotationNo: 报价单编号
+ * - name: 报价单名称
  * - companyName: 公司名称
  */
 const formModel = reactive({
-  quotationNo: '',
+  name: '',
   companyName: '',
 })
 
@@ -168,7 +169,7 @@ const rulesDisabled = ref(false)
 // 2. 区分"自动成交价"与"手动覆盖成交价"
 // 3. 动态显隐表格列 (根据解析出的内容)
 const {
-  quotationNo,
+  name,
   companyName,
   remark,
   discount,
@@ -197,8 +198,8 @@ const {
 } = useQuotationDraft()
 
 // 同步 formModel 与 useQuotationDraft 的值
-watch(quotationNo, (val) => {
-  formModel.quotationNo = val
+watch(name, (val) => {
+  formModel.name = val
 })
 watch(companyName, (val) => {
   formModel.companyName = val
@@ -222,7 +223,7 @@ const {
   isSubmitting,
   rawText,
   items,
-  quotationNo,
+  name,
   companyName,
   formRef,
   formModel,
@@ -250,12 +251,12 @@ const {
 const switchToEdit = () => {
   if (!isViewMode.value) return
   rulesDisabled.value = false
-  formModel.quotationNo = quotationNo.value
+  formModel.name = name.value
   formModel.companyName = companyName.value
   loadRecord(
     {
       id: editingHistoryId.value,
-      quotationNo: quotationNo.value,
+      name: name.value,
       companyName: companyName.value,
       remark: remark.value,
       discount: discount.value,

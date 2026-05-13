@@ -1,6 +1,7 @@
 import axios, { type AxiosInstance, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 import http from '../api/http'
 import { triggerAuthExpired } from './authRuntime'
+import { ElMessage } from 'element-plus'
 import type { RequestConfig } from '@/types'
 
 let isRefreshing = false
@@ -152,12 +153,6 @@ const service: AxiosInstance = axios.create({
 })
 
 service.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const method = String(config?.method || 'get').toLowerCase()
-
-  if (method === 'get' && !config.disableCacheBust) {
-    config.params = { ...(config.params || {}), _t: Date.now() }
-  }
-
   if (!config.skipCancel) {
     const requestKey = generateRequestKey(config)
     cancelPendingRequest(requestKey)
@@ -255,12 +250,7 @@ service.interceptors.response.use(
     const errorMessage = getErrorMessage(error)
 
     if (errorMessage && !config?.silent) {
-      try {
-        const { ElMessage } = await import('element-plus')
-        ElMessage.error(errorMessage)
-      } catch {
-        // silently ignore
-      }
+      ElMessage.error(errorMessage)
     }
 
     return Promise.reject(error)

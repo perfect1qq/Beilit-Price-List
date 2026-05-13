@@ -29,6 +29,8 @@ import { to } from '@/utils/async'
 import { showError, showSuccess, showWarning } from '@/utils/message'
 import { ref } from 'vue'
 import type { Ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { quotationApi } from '@/api/quotation'
 
 interface QuotationRow {
   name?: string
@@ -40,7 +42,7 @@ interface QuotationRow {
 }
 
 interface FormModel {
-  quotationNo: string
+  name: string
   companyName: string
   [key: string]: unknown
 }
@@ -51,7 +53,7 @@ interface QuotationEditorDeps {
   isSubmitting: Ref<boolean>
   rawText: Ref<string>
   items: Ref<QuotationRow[]>
-  quotationNo: Ref<string>
+  name: Ref<string>
   companyName: Ref<string>
   formRef: Ref<{ validate: () => Promise<boolean> } | null>
   formModel: FormModel
@@ -82,10 +84,10 @@ const useQuotationEditor = (deps: Partial<QuotationEditorDeps>): Partial<Quotati
     isSubmitting = ref(false),
     rawText = ref(''),
     items = ref([]),
-    quotationNo = ref(''),
+    name = ref(''),
     companyName = ref(''),
     formRef = ref(null),
-    formModel = { quotationNo: '', companyName: '' },
+    formModel = { name: '', companyName: '' },
     editingHistoryId = ref(null),
     originalPayloadStr = ref(''),
     isManualFinalPrice = ref(false),
@@ -169,7 +171,7 @@ const useQuotationEditor = (deps: Partial<QuotationEditorDeps>): Partial<Quotati
       return meaningful ? (hasQty && hasUnit) || hasTotal : false
     })
 
-    if (!quotationNo.value.trim()) {
+    if (!name.value.trim()) {
       showWarning('请先填写名称')
       return false
     }
@@ -196,13 +198,26 @@ const useQuotationEditor = (deps: Partial<QuotationEditorDeps>): Partial<Quotati
   const handleSubmit = async (): Promise<void> => {
     if (isSubmitting.value) return
 
-    quotationNo.value = formModel.quotationNo
+    name.value = formModel.name
     companyName.value = formModel.companyName
 
     const [validateErr] = await to(formRef.value?.validate() ?? Promise.resolve(false))
     if (validateErr) return
 
     if (!validateRows()) return
+
+    const currentName = String(name.value || '').trim()
+    const currentCompany = String(companyName.value || '').trim()
+    if (currentName && currentCompany) {
+      const [suggestErr, suggestRes] = await to(
+        quotationApi.suggestName(currentName, currentCompany, editingHistoryId?.value ?? undefined)
+      )
+      if (!suggestErr && suggestRes?.suggestedName && suggestRes.suggestedName !== currentName) {
+        ElMessage.warning(`名称「${currentName}」在该公司下已存在，已自动修改为「${suggestRes.suggestedName}」`)
+        name.value = suggestRes.suggestedName
+        formModel.name = suggestRes.suggestedName
+      }
+    }
 
     const payload = getPayload()
 

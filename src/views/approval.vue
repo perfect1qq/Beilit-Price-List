@@ -79,7 +79,7 @@
       <template #card="{ item }">
         <div class="approval-card-item">
           <div class="card-header">
-            <h3 class="quotation-name">{{ item.quotationNo }}</h3>
+            <h3 class="quotation-name">{{ item.name || item.companyName || '-' }}</h3>
             <el-tag :type="tagType(item.status)" size="small">{{ statusLabel(item.status) }}</el-tag>
           </div>
 

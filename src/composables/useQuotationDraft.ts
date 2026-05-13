@@ -15,7 +15,7 @@
  * ┌─────────────────────────────────────────────────────────────┐
  * │  useQuotationDraft (本模块)                                 │
  * │  ┌──────────────┬────────────────────────────────────────┐  │
- * │  │ 表头状态      │ quotationNo, companyName, remark      │  │
+ * │  │ 表头状态      │ name, companyName, remark             │  │
  * │  ├──────────────┼────────────────────────────────────────┤  │
  * │  │ 价格计算链    │ items → subtotal → autoFinalPrice     │  │
  * │  │              │                    ↓                  │  │
@@ -31,7 +31,7 @@
  *
  * 使用方式：
  * const {
- *   quotationNo, companyName, remark,
+ *   name, companyName, remark,
  *   discount, finalPrice, isManualFinalPrice,
  *   items, subtotal, autoFinalPrice, discountAmount,
  *   addRow, removeRow, updateRowTotal,
@@ -53,7 +53,7 @@ interface QuotationRow {
 
 interface QuotationDraftReturn {
   FIELD_ORDER: string[]
-  quotationNo: Ref<string>
+  name: Ref<string>
   companyName: Ref<string>
   remark: Ref<string>
   discount: Ref<number>
@@ -133,7 +133,7 @@ const normalizeRow = (row: Record<string, unknown> = {}): QuotationRow => {
 }
 
 export function useQuotationDraft(): QuotationDraftReturn {
-  const quotationNo = ref('')
+  const name = ref('')
 
   const companyName = ref('')
 
@@ -182,7 +182,7 @@ export function useQuotationDraft(): QuotationDraftReturn {
   watch([subtotal, discount], syncAutoPrice, { immediate: true })
 
   const resetDraft = (): void => {
-    quotationNo.value = ''
+    name.value = ''
     companyName.value = ''
     remark.value = ''
     discount.value = 0
@@ -273,9 +273,8 @@ export function useQuotationDraft(): QuotationDraftReturn {
   const originalPayloadStr = ref('')
 
   const loadRecord = (record: Record<string, unknown>, newMode = 'edit'): void => {
-    const rawNo = String(record.quotationNo || '').trim()
-    quotationNo.value = (rawNo && !rawNo.startsWith('QT')) ? rawNo : (record.name || record.companyName || rawNo) as string
-    companyName.value = (record.companyName || record.name || '') as string
+    name.value = String(record.name || '').trim()
+    companyName.value = String(record.companyName || record.name || '').trim()
     remark.value = (record.remark || '') as string
     discount.value = Number(record.discount || 0)
     finalPrice.value = Number(record.finalPrice || 0)
@@ -307,9 +306,8 @@ export function useQuotationDraft(): QuotationDraftReturn {
   }
 
   const getPayload = (): Record<string, unknown> => ({
-    quotationNo: quotationNo.value,
+    name: name.value,
     companyName: companyName.value,
-    name: companyName.value,
     remark: remark.value,
     discount: Number(discount.value || 0),
     finalPrice: Number(finalPrice.value || 0),
@@ -319,7 +317,7 @@ export function useQuotationDraft(): QuotationDraftReturn {
 
   return {
     FIELD_ORDER,
-    quotationNo,
+    name,
     companyName,
     remark,
     discount,

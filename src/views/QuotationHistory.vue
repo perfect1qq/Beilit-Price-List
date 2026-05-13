@@ -85,8 +85,7 @@
                   class="smart-table" style="width: 100%">
                   <el-table-column label="名称" min-width="140" show-overflow-tooltip align="center">
                     <template #default="{ row }">
-                      {{ row.quotationNo && !row.quotationNo.startsWith('QT') ? row.quotationNo : (row.name ||
-                        row.companyName || '-') }}
+                      {{ row.name || row.companyName || '-' }}
                     </template>
                   </el-table-column>
                   <el-table-column prop="ownerName" label="提交人" min-width="90" align="center" v-if="role === 'admin'" />
@@ -142,6 +141,7 @@
         </div>
 
         <QuotationEditor ref="formRef" :is-view-mode="isViewMode" :rules-disabled="rulesDisabled"
+          :editing-history-id="editingHistoryId"
           :form-model="formModel" v-model:remark="remark" v-model:discount="discount" v-model:final-price="finalPrice"
           v-model:raw-text="rawText" :subtotal="subtotal" :discount-amount="discountAmount"
           :auto-final-price="autoFinalPrice" :is-manual-final-price="isManualFinalPrice" :items="items"
@@ -181,12 +181,12 @@ const activePanels = ref([])
 
 const formRef = ref(null)
 const formModel = reactive({
-  quotationNo: '',
+  name: '',
   companyName: ''
 })
 
 const {
-  quotationNo,
+  name,
   companyName,
   remark,
   discount,
@@ -254,7 +254,7 @@ const {
   isSubmitting,
   rawText,
   items,
-  quotationNo,
+  name,
   companyName,
   formRef,
   formModel,
@@ -284,9 +284,9 @@ const openDetail = async (record: Record<string, unknown>, mode = 'view') => {
   if (mode === 'edit') {
     rulesDisabled.value = false
   }
-  const detail = record.items ? record : await fetchQuotationRecord(record.id as string | number)
+  const detail = (Array.isArray(record.items) && record.items.length > 0) ? record : await fetchQuotationRecord(record.id as string | number)
   loadRecord(detail, mode)
-  formModel.quotationNo = quotationNo.value
+  formModel.name = name.value
   formModel.companyName = companyName.value
   viewState.value = 'detail'
 }
@@ -312,7 +312,7 @@ onMounted(async () => {
           rulesDisabled.value = true
         }
         loadRecord(detail, queryMode)
-        formModel.quotationNo = quotationNo.value
+        formModel.name = name.value
         formModel.companyName = companyName.value
         viewState.value = 'detail'
       }
