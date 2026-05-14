@@ -155,13 +155,9 @@ const groupByCompany = (records: HistoryRecord[] = []): CompanyGroup[] => {
     group.records.push(record)
   }
 
-  const earliestMap = new Map<string, number>()
   const groups: CompanyGroup[] = []
   for (const group of map.values()) {
     const recordsSorted = group.records.sort((a, b) => toDateValue(b) - toDateValue(a))
-    const earliest = recordsSorted[recordsSorted.length - 1]
-    const earliestTime = toDateValue(earliest)
-    earliestMap.set(group.companyName, earliestTime)
     groups.push({
       companyName: group.companyName,
       count: recordsSorted.length,
@@ -172,10 +168,6 @@ const groupByCompany = (records: HistoryRecord[] = []): CompanyGroup[] => {
   }
 
   groups.sort((a, b) => {
-    const aTime = earliestMap.get(a.companyName) ?? 0
-    const bTime = earliestMap.get(b.companyName) ?? 0
-    const diff = aTime - bTime
-    if (!Number.isNaN(diff) && diff !== 0) return diff
     return a.companyName.localeCompare(b.companyName, 'zh-Hans-CN')
   })
 
