@@ -119,8 +119,8 @@ const clone = <T>(value: T): T => (value === null || value === undefined ? value
 const normalizeRecord = (record: Partial<HistoryRecord> = {}): HistoryRecord => ({
   ...record,
   id: record.id ?? 0,
-  companyName: record.companyName || '',
-  name: record.name || '',
+  companyName: record.companyName || record.name || '',
+  name: record.name || record.companyName || '',
   createDate: record.createDate || formatDateOnly(record.createTime || record.createdAt || ''),
   createTime: record.createTime || record.createdAt || '',
   updateTime: record.updateTime || record.updatedAt || ''
@@ -133,7 +133,7 @@ const hasPaginationMeta = (result: Record<string, unknown>): boolean => Boolean(
 ))
 
 const normalizeCompanyName = (record: Partial<HistoryRecord> = {}): string =>
-  String(record.companyName || '未命名公司').trim() || '未命名公司'
+  String(record.companyName || record.name || '未命名公司').trim() || '未命名公司'
 
 const toDateValue = (record: Partial<HistoryRecord> = {}): number => {
   const value = record.createTime || record.updateTime || record.createDate || ''
