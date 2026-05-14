@@ -150,7 +150,10 @@
 
     <el-card v-if="!isViewMode" shadow="never" class="inner-card">
       <template #header>
-        <div class="section-title">粘贴 Word 内容</div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div class="section-title">粘贴 Word 内容</div>
+          <slot name="parse-action"></slot>
+        </div>
       </template>
       <el-input :model-value="rawText" @update:model-value="$emit('update:rawText', $event)" type="textarea" :rows="8"
         resize="vertical" placeholder="把 Word 里复制出来的表格直接粘贴到这里，再点击“智能解析粘贴内容”" />

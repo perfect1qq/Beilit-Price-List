@@ -59,11 +59,6 @@
       <div class="toolbar">
         <!-- 非游客用户显示的操作按钮 -->
         <template v-if="!isGuest">
-          <!-- AI 智能解析：将粘贴的文本自动识别为表格行 -->
-          <el-button v-if="!isViewMode" type="primary" :icon="DocumentAdd" @click="handleParseText" :loading="parsing">
-            智能解析粘贴内容
-          </el-button>
-
           <!-- 清空当前表格所有行 -->
           <el-button :icon="Refresh" @click="clearRows" :disabled="isViewMode">
             清空当前表格
@@ -103,13 +98,18 @@
         - remove-row: 删除某一行
       -->
       <QuotationEditor ref="formRef" :is-view-mode="isViewMode" :rules-disabled="rulesDisabled" :form-model="formModel"
-        :editing-history-id="editingHistoryId"
-        v-model:remark="remark" v-model:discount="discount" v-model:final-price="finalPrice" v-model:raw-text="rawText"
-        :subtotal="subtotal" :discount-amount="discountAmount" :auto-final-price="autoFinalPrice"
-        :is-manual-final-price="isManualFinalPrice" :items="items" :visible-columns="visibleColumns"
-        :hide-action-column="isGuest" @handle-discount-change="handleDiscountChange"
-        @handle-manual-final-price-change="handleManualFinalPriceChange"
+        :editing-history-id="editingHistoryId" v-model:remark="remark" v-model:discount="discount"
+        v-model:final-price="finalPrice" v-model:raw-text="rawText" :subtotal="subtotal"
+        :discount-amount="discountAmount" :auto-final-price="autoFinalPrice" :is-manual-final-price="isManualFinalPrice"
+        :items="items" :visible-columns="visibleColumns" :hide-action-column="isGuest"
+        @handle-discount-change="handleDiscountChange" @handle-manual-final-price-change="handleManualFinalPriceChange"
         @restore-auto-final-price="restoreAutoFinalPrice" @update-row-total="updateRowTotal" @remove-row="removeRow">
+        <!-- 插槽：粘贴区域操作按钮 -->
+        <template #parse-action>
+          <el-button v-if="!isViewMode" type="primary" :icon="DocumentAdd" @click="handleParseText" :loading="parsing">
+            智能解析粘贴内容
+          </el-button>
+        </template>
         <!-- 插槽：明细表格上方的操作按钮 -->
         <template #detail-action>
           <el-button v-if="!isGuest && !isViewMode" type="primary" plain :icon="Plus" @click="addRow" size="small">
