@@ -97,7 +97,7 @@
       <CardList :data="filteredUsers" :loading="loading" :show-pagination="false" :columns="3"
         empty-description="暂无用户数据" :empty-image-size="100">
         <template #card="{ item }">
-          <UserCard :user="(item as unknown as UserInfo)" :current-user-id="currentUser.id" @name-edit="startEditName"
+          <UserCard :user="item" :current-user-id="currentUser.id" @name-edit="startEditName"
             @name-blur="handleNameBlur" @name-confirm="confirmNameChange" @role-change="handleRoleChange"
             @reset-password="handleResetClick" @delete="handleDelete" />
         </template>
@@ -302,9 +302,6 @@ const confirmNameChange = async (row: UserInfo) => {
   row.name = newName
   row._editingName = false
   if (currentUser.value.id === row.id) {
-    if (userStore.user) {
-      userStore.user.name = newName
-    }
     userStore.refreshProfile()
   }
   showSuccess('姓名已更新')

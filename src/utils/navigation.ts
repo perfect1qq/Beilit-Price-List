@@ -1,11 +1,12 @@
 import { useUserStore } from '@/stores/user'
 import { pinia } from '@/stores'
+import { ROLES } from '@/types'
 import type { UserInfo, GuestUser } from '@/types'
 import type { RouteLocationNormalized, RouteRecordRaw } from 'vue-router'
 
 export const readCurrentUser = (): UserInfo | GuestUser => {
   const store = useUserStore(pinia)
-  return store.user || { role: 'guest' }
+  return store.user || { role: ROLES.GUEST }
 }
 
 type TitleResolver = (route?: RouteLocationNormalized | RouteRecordRaw) => string
@@ -13,7 +14,7 @@ type TitleResolver = (route?: RouteLocationNormalized | RouteRecordRaw) => strin
 const ROUTE_TITLE_MAP: Record<string, TitleResolver> = {
   '/message': () => {
     const user = readCurrentUser()
-    return user.role === 'admin' ? '留言管理' : '我的留言'
+    return user.role === ROLES.ADMIN ? '留言管理' : '我的留言'
   },
   '/home': () => '首页',
   '/quotation': () => '报价单',

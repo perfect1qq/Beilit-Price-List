@@ -1,55 +1,68 @@
 import request from '../utils/request'
-import type { LoginCredentials, RegisterPayload, RequestConfig } from '@/types'
+import type { LoginCredentials, RegisterPayload, RequestConfig, SessionPayload, UserInfo } from '@/types'
 
-const login = (data: LoginCredentials, config: RequestConfig = {}) =>
-  request.post('/api/login', data, {
+const login = async (data: LoginCredentials, config: RequestConfig = {}): Promise<SessionPayload> => {
+  const response = await request.post<SessionPayload>('/api/login', data, {
     authRedirect: false,
     skipCancel: true,
     ...config,
   })
+  return response.data
+}
 
-const register = (data: RegisterPayload, config: RequestConfig = {}) =>
-  request.post('/api/register', data, {
+const register = async (data: RegisterPayload, config: RequestConfig = {}): Promise<{ user: UserInfo }> => {
+  const response = await request.post<{ user: UserInfo }>('/api/register', data, {
     authRedirect: false,
     skipCancel: true,
     ...config,
   })
+  return response.data
+}
 
-const getProfile = (config: RequestConfig = {}) =>
-  request.get('/api/profile', {
+const getProfile = async (config: RequestConfig = {}): Promise<SessionPayload> => {
+  const response = await request.get<SessionPayload>('/api/profile', {
     disableCacheBust: true,
     skipCancel: true,
     silent: true,
     authRedirect: false,
     ...config,
   })
+  return response.data
+}
 
-const logout = (config: RequestConfig = {}) =>
-  request.post('/api/logout', null, {
+const logout = async (config: RequestConfig = {}): Promise<void> => {
+  await request.post('/api/logout', null, {
     authRedirect: false,
     skipCancel: true,
     silent: true,
     ...config,
   })
+}
 
-const uploadAvatar = (formData: FormData) =>
-  request.post('/api/avatar', formData, {
+const uploadAvatar = async (formData: FormData): Promise<{ avatar: string }> => {
+  const response = await request.post<{ avatar: string }>('/api/avatar', formData, {
     authRedirect: false,
     skipCancel: true,
   } as RequestConfig)
+  return response.data
+}
 
-const deleteAvatar = () =>
-  request.delete('/api/avatar', {
+const deleteAvatar = async (): Promise<void> => {
+  await request.delete('/api/avatar', {
     authRedirect: false,
     skipCancel: true,
   } as RequestConfig)
+}
 
-const refreshToken = () =>
-  request.post('/api/refresh', null, {
+const refresh = async (): Promise<SessionPayload> => {
+  const response = await request.post<SessionPayload>('/api/refresh', null, {
     authRedirect: false,
     skipCancel: true,
     silent: true,
+    _isRefreshRequest: true,
   } as RequestConfig)
+  return response.data
+}
 
 export default {
   login,
@@ -58,5 +71,6 @@ export default {
   logout,
   uploadAvatar,
   deleteAvatar,
-  refreshToken,
+  refresh,
+  refreshToken: refresh,
 }

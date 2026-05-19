@@ -34,6 +34,7 @@ export const useNavbarPasswordDialog = ({ request: _request, onSuccess, dialogRe
     if (!oldPassword || !newPassword) { ElMessage.warning('请填写必填项'); return }
     if (newPassword !== confirmPassword) { ElMessage.warning('两次输入的新密码不一致'); return }
     if (newPassword.length < 6) { ElMessage.warning('密码长度至少为 6 位'); return }
+    if (newPassword.length > 100) { ElMessage.warning('密码长度不能超过 100 位'); return }
 
     try {
       await dialogRef?.value?.load(() =>

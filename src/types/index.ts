@@ -1,12 +1,27 @@
+export const ROLES = {
+  ADMIN: 'admin',
+  USER: 'user',
+  GUEST: 'guest',
+} as const
+
+export type UserRole = typeof ROLES[keyof typeof ROLES]
+
 export interface UserInfo {
   id: number
   username: string
   name: string
-  role: 'admin' | 'user' | 'guest'
+  role: UserRole
   avatar?: string
   createdAt?: string
   _editingName?: boolean
   _editNameValue?: string
+}
+
+export interface MenuItem {
+  name: string
+  path: string
+  icon?: string
+  children?: MenuItem[]
 }
 
 export interface GuestUser {
@@ -16,7 +31,7 @@ export interface GuestUser {
 export interface SessionPayload {
   user?: UserInfo | null
   permissions?: string[]
-  menu?: Record<string, unknown>[]
+  menu?: MenuItem[]
 }
 
 export interface LoginCredentials {
@@ -35,7 +50,6 @@ export interface PaginationParams {
   page?: number
   pageSize?: number
   keyword?: string
-  [key: string]: unknown
 }
 
 export interface ApiResponse<T = unknown> {
@@ -52,28 +66,35 @@ export interface QuotationItem {
   quantity?: string | number
   unitPrice?: string | number
   totalPrice?: string | number
-  [key: string]: unknown
 }
 
 export interface QuotationData {
   id?: number
+  name?: string
   companyName: string
   items?: QuotationItem[]
   discount?: number
   finalPrice?: number
+  isManual?: boolean
   status?: string
+  remark?: string
   createdAt?: string
   updatedAt?: string
-  [key: string]: unknown
+}
+
+export interface BeamQuotationItem {
+  name: string
+  length: string
+  spec: string
+  maxLoad: string
 }
 
 export interface BeamQuotationData {
   id?: number
   name?: string
   recordName?: string
-  editingItems?: Record<string, unknown>[]
-  items?: Record<string, unknown>[]
-  [key: string]: unknown
+  editingItems?: BeamQuotationItem[]
+  items?: BeamQuotationItem[]
 }
 
 export interface ApprovalData {
@@ -82,7 +103,6 @@ export interface ApprovalData {
   status: string
   comment?: string
   createdAt?: string
-  [key: string]: unknown
 }
 
 export interface CustomerData {
@@ -93,12 +113,12 @@ export interface CustomerData {
   cooperationStatus?: string
   customerType?: string
   deliveryDays?: number | null
+  shelfType?: string
   remark?: string
   ownerName?: string
   createdAt?: string
   updatedAt?: string
   followUps?: FollowUpData[]
-  [key: string]: unknown
 }
 
 export interface FollowUpData {
@@ -124,19 +144,19 @@ export interface MemoData {
   status?: string
   createdAt?: string
   updatedAt?: string
-  [key: string]: unknown
 }
 
 export interface MessageData {
-  id?: number
+  id?: number | string
   contactInfo?: string
   content?: string
   remark?: string
   status?: string
-  assignedTo?: number
-  assignee?: { name?: string; username?: string }
+  assignedTo?: number | string | null
+  hiddenByAssignee?: boolean
+  assignee?: { id?: number | string; name?: string; username?: string } | null
   createdAt?: string
-  [key: string]: unknown
+  updatedAt?: string
 }
 
 export interface NotificationData {
@@ -148,7 +168,13 @@ export interface NotificationData {
 }
 
 export interface MediumShelfWeightData {
-  [key: string]: unknown
+  title?: string
+  payload?: {
+    summaryRows?: unknown[]
+    detailRows?: unknown[]
+  }
+  summaryRows?: unknown[]
+  detailRows?: unknown[]
 }
 
 export interface NotepadData {
@@ -161,7 +187,6 @@ export interface NotepadData {
   ownerName?: string
   createdAt?: string
   updatedAt?: string
-  [key: string]: unknown
 }
 
 export interface NotepadHistoryData {
@@ -173,7 +198,6 @@ export interface NotepadHistoryData {
   operatorId?: number
   operatorName?: string
   createdAt?: string
-  [key: string]: unknown
 }
 
 export type AsyncResult<T = unknown> = [Error | null, T | null]
@@ -183,7 +207,6 @@ export interface MemoStatsData {
   todoTotal: number
   doneTotal: number
   pinnedTotal: number
-  [key: string]: unknown
 }
 
 export interface MemoScopeStatData {
@@ -193,7 +216,6 @@ export interface MemoScopeStatData {
   todoTip?: string
   doneTip?: string
   pinnedTip?: string
-  [key: string]: unknown
 }
 
 export interface MemoHistoryItem {
@@ -202,7 +224,6 @@ export interface MemoHistoryItem {
   operatorName?: string
   content?: string
   createdAt?: string
-  [key: string]: unknown
 }
 
 export interface FormRules {
@@ -215,6 +236,7 @@ export type RequestConfig = Record<string, unknown> & {
   silent?: boolean
   disableCacheBust?: boolean
   _isRefreshRequest?: boolean
+  _retryAfterRefresh?: boolean
   __retryCount?: number
   signal?: AbortSignal
   params?: Record<string, unknown>

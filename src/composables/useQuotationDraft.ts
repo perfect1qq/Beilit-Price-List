@@ -41,8 +41,9 @@
  */
 
 import { computed, ref, watch, type Ref, type ComputedRef } from 'vue'
+import type { QuotationData } from '@/types'
 
-interface QuotationRow {
+export interface QuotationRow {
   name: string
   spec: string
   quantity: string | number
@@ -79,7 +80,7 @@ interface QuotationDraftReturn {
   restoreAutoFinalPrice: () => void
   loadRecord: (record: Record<string, unknown>, viewMode?: string) => void
   setMode: (newMode: string) => void
-  getPayload: () => Record<string, unknown>
+  getPayload: () => QuotationData
   resetDraft: () => void
   setRows: (newItems: QuotationRow[], columns?: string[]) => void
 }
@@ -305,7 +306,7 @@ export function useQuotationDraft(): QuotationDraftReturn {
     mode.value = newMode
   }
 
-  const getPayload = (): Record<string, unknown> => ({
+  const getPayload = (): QuotationData => ({
     name: name.value,
     companyName: companyName.value,
     remark: remark.value,

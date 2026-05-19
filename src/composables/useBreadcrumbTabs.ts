@@ -66,6 +66,7 @@
 import { computed, reactive, watch, type ComputedRef } from 'vue'
 import { useRoute, useRouter, type RouteLocationNormalized } from 'vue-router'
 import { resolveRouteDisplayTitle, readCurrentUser } from '@/utils/navigation'
+import { ROLES } from '@/types'
 
 type RouterQuery = Record<string, string | string[] | undefined>
 
@@ -127,7 +128,7 @@ let initialized = false
  */
 const resolveUserKey = (): string => {
   const user = readCurrentUser()
-  if (user.role === 'guest') return 'anonymous'
+  if (user.role === ROLES.GUEST) return 'anonymous'
   return String(user.id ?? user.username ?? 'anonymous')
 }
 

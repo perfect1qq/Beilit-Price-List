@@ -1,8 +1,3 @@
-<!--
-  @file views/CustomerManagement.vue
-  @description 客户管理页面（CRUD + 跟进记录 + 报价联动）
--->
-
 <template>
   <div class="customer-management">
     <el-card shadow="never">
@@ -17,7 +12,7 @@
       </template>
 
       <div class="search-filter-row">
-        <SearchBar v-model="searchKeyword" placeholder="搜索公司名称、客户姓名、联系方式" @search="handleSearch" />
+        <SearchBar v-model="searchKeyword" placeholder="搜索公司名称、客户姓名、联系方式、货架类型" @search="handleSearch" />
 
         <div class="filter-group">
           <el-select v-model="filterCooperationStatus" placeholder="合作状态" clearable style="width: 130px">
@@ -54,23 +49,28 @@
             </div>
 
             <div class="card-body">
-              <div class="info-row">
-                <span class="label">客户姓名：</span>
-                <span class="value">{{ item.customerName || '-' }}</span>
-              </div>
-              <div class="info-row">
-                <span class="label">联系方式：</span>
-                <span class="value">{{ item.contactInfo || '-' }}</span>
+              <div class="info-row two-col">
+                <div class="col-item">
+                  <span class="label">客户姓名：</span>
+                  <span class="value">{{ item.customerName || '-' }}</span>
+                </div>
+                <div class="col-item">
+                  <span class="label">联系方式：</span>
+                  <span class="value">{{ item.contactInfo || '-' }}</span>
+                </div>
               </div>
 
-              <div v-if="item.hasQuotation" class="info-row quotation-info">
-                <span class="label">报价状态：</span>
-                <el-tag type="success" size="small">已报价</el-tag>
-                <span v-if="item.quotationDate" class="quotation-date">{{ item.quotationDate }}</span>
-              </div>
-              <div v-else class="info-row quotation-info">
-                <span class="label">报价状态：</span>
-                <el-tag type="info" size="small" plain>未报价</el-tag>
+              <div class="info-row two-col">
+                <div class="col-item">
+                  <span class="label">货架类型：</span>
+                  <span class="value">{{ item.shelfType || '-' }}</span>
+                </div>
+                <div class="col-item quotation-info">
+                  <span class="label">报价状态：</span>
+                  <el-tag v-if="item.hasQuotation" type="success" size="small">已报价</el-tag>
+                  <el-tag v-else type="info" size="small" plain>未报价</el-tag>
+                  <!-- <span v-if="item.quotationDate" class="quotation-date">{{ item.quotationDate }}</span> -->
+                </div>
               </div>
 
               <div class="info-row">
@@ -83,7 +83,7 @@
                 <span class="delivery-days-value">{{ item.deliveryDays }}天</span>
                 <span class="delivery-arrow">→</span>
                 <span class="delivery-date-label">预计完成：</span>
-                <span class="delivery-date-value">{{ getDeliveryDate(item.deliveryDays) }}</span>
+                <span class="delivery-date-value">{{ item.deliveryDate }}</span>
               </div>
 
               <div v-if="item.latestFollowUp" class="info-row follow-up-info">
@@ -104,14 +104,15 @@
 
             <div class="card-footer">
               <div class="action-buttons">
-                <el-button type="primary" size="small" round @click.stop="handleViewDetail(item)">详情</el-button>
+                <el-button type="primary" size="small" round
+                  @click.stop="handleViewDetail(item as CustomerListItem)">详情</el-button>
                 <el-button v-if="item.hasQuotation && item.quotationId" type="success" size="small" round
-                  @click.stop="handleGoToQuotation(item)">查看报价单</el-button>
+                  @click.stop="handleGoToQuotation(item as CustomerListItem)">查看报价单</el-button>
                 <template v-if="!isGuest">
                   <el-button v-if="canEdit" type="warning" size="small" plain
-                    @click.stop="handleEdit(item)">编辑</el-button>
+                    @click.stop="handleEdit(item as CustomerListItem)">编辑</el-button>
                   <el-button v-if="canDelete" type="danger" size="small" plain
-                    @click.stop="handleDelete(item)">删除</el-button>
+                    @click.stop="handleDelete(item as CustomerListItem)">删除</el-button>
                 </template>
               </div>
             </div>
@@ -129,35 +130,26 @@
 
     <CustomerDetailDialog v-model="detailVisible" :customer="currentCustomer" :can-create="canCreate"
       :is-guest="isGuest" append-to-body @open="handleDetailOpen" @add-follow-up="showAddFollowUpDialog"
-      @delete-follow-up="handleDeleteFollowUp" />
+      @delete-follow-up="(item: FollowUpData) => handleDeleteFollowUp(item, loadList)" />
 
-    <FollowUpFormDialog v-model="followUpDialogVisible" :form-data="followUpFormData" @submit="handleFollowUpSubmit"
-      append-to-body />
+    <FollowUpFormDialog v-model="followUpDialogVisible" :form-data="followUpFormData"
+      @submit="(data: FollowUpData) => handleFollowUpSubmit(data, loadList)" append-to-body />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, shallowRef } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { Plus, Search } from '@element-plus/icons-vue'
 import customerApi from '@/api/customer'
 import { to } from '@/utils/async'
-import { formatDate, addDays } from '@/utils/date'
+import { formatDate } from '@/utils/date'
 import { showError, showSuccess } from '@/utils/message'
-import { usePagination } from '@/composables/usePagination'
 import { usePermissions } from '@/composables/usePermissions'
-import { useFormSubmit } from '@/composables/useFormSubmit'
+import { useCustomerList, useCustomerForm, useFollowUp } from '@/composables/useCustomer'
 import type { CustomerData, FollowUpData } from '@/types'
-
-interface CustomerListItem extends CustomerData {
-  latestFollowUp?: FollowUpData
-  followUpCount?: number
-  ownerName?: string
-  hasQuotation?: boolean
-  quotationId?: number | string
-  quotationDate?: string
-}
+import type { CustomerListItem } from '@/composables/useCustomer'
 
 import SearchBar from '@/components/common/SearchBar.vue'
 import CardHeader from '@/components/common/CardHeader.vue'
@@ -168,119 +160,40 @@ import FollowUpFormDialog from '@/components/customer/FollowUpFormDialog.vue'
 
 const router = useRouter()
 const { isGuest, canCreate, canEdit, canDelete } = usePermissions()
-const { withSubmitLock } = useFormSubmit()
 
-const loading = ref(false)
-const customerList = shallowRef<CustomerListItem[]>([])
-const searchKeyword = ref('')
-const filterCooperationStatus = ref('')
-const filterCustomerType = ref('')
+const {
+  loading, customerList, searchKeyword, filterCooperationStatus, filterCustomerType,
+  page, pageSize, total, loadList, handleSearch, handleResetFilter, updateLocalItem
+} = useCustomerList()
 
-const { page, pageSize, total, resetToFirstPage } = usePagination({
-  defaultPage: 1,
-  defaultPageSize: 10,
-  onLoad: () => loadList()
-})
+const {
+  dialogVisible, editingId, formData, handleAdd, handleEdit, withSubmitLock
+} = useCustomerForm()
 
-const dialogVisible = ref(false)
-const editingId = ref<number | string | null>(null)
-
-const formData = reactive<CustomerData>({
-  companyName: '',
-  customerName: '',
-  contactInfo: '',
-  cooperationStatus: '未合作',
-  customerType: '终端',
-  deliveryDays: null,
-  remark: ''
-})
-
-const detailVisible = ref(false)
-const currentCustomer = ref<CustomerListItem | null>(null)
-
-const followUpDialogVisible = ref(false)
-const followUpFormData = reactive({ content: '', nextTime: '' })
-
-const getDeliveryDate = (days: number): string => {
-  if (!days || days <= 0) return ''
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  return formatDate(addDays(days - 1, tomorrow))
-}
-
-const loadList = async () => {
-  loading.value = true
-  const params: Record<string, unknown> = {
-    keyword: searchKeyword.value || undefined,
-    page: page.value,
-    pageSize: pageSize.value
-  }
-  if (filterCooperationStatus.value?.trim()) params.cooperationStatus = filterCooperationStatus.value.trim()
-  if (filterCustomerType.value?.trim()) params.customerType = filterCustomerType.value.trim()
-
-  const [err, res] = await to(customerApi.list(params))
-  if (err) { showError(err, '加载客户列表失败'); loading.value = false; return }
-
-  customerList.value = res?.customers || []
-  total.value = Number(res?.total ?? 0)
-  loading.value = false
-}
-
-const handleSearch = () => { resetToFirstPage(); loadList() }
-
-const handleResetFilter = () => {
-  searchKeyword.value = ''
-  filterCooperationStatus.value = ''
-  filterCustomerType.value = ''
-  resetToFirstPage()
-  loadList()
-}
-
-const resetForm = () => {
-  formData.companyName = ''
-  formData.customerName = ''
-  formData.contactInfo = ''
-  formData.cooperationStatus = '未合作'
-  formData.customerType = '终端'
-  formData.deliveryDays = null
-  formData.remark = ''
-  editingId.value = null
-}
-
-const handleAdd = () => { resetForm(); dialogVisible.value = true }
-
-const handleEdit = (row: CustomerListItem) => {
-  resetForm()
-  editingId.value = row.id ?? null
-  Object.assign(formData, {
-    companyName: row.companyName,
-    customerName: row.customerName,
-    contactInfo: row.contactInfo,
-    cooperationStatus: row.cooperationStatus || '未合作',
-    customerType: row.customerType || '终端',
-    deliveryDays: row.deliveryDays ?? null,
-    remark: row.remark
-  })
-  dialogVisible.value = true
-}
+const {
+  detailVisible, currentCustomer, followUpDialogVisible, followUpFormData,
+  handleViewDetail, handleDetailOpen, showAddFollowUpDialog,
+  handleFollowUpSubmit, handleDeleteFollowUp
+} = useFollowUp()
 
 const handleFormSubmit = async (data: CustomerData) => {
   await withSubmitLock(async () => {
     if (editingId.value) {
-      const [err] = await to(customerApi.update(editingId.value, { ...data }))
+      const [err, res] = await to(customerApi.update(editingId.value, { ...data }))
       if (err) { showError(err, '更新客户失败'); throw err }
+      if (res?.customer) updateLocalItem(editingId.value as number, res.customer)
       showSuccess('客户更新成功')
     } else {
       const [err] = await to(customerApi.create({ ...data }))
       if (err) { showError(err, '创建客户失败'); throw err }
       showSuccess('客户创建成功')
+      loadList()
     }
     dialogVisible.value = false
-    loadList()
   })
 }
 
-const handleDelete = async (row: CustomerListItem) => {
+const handleDelete = async (row: { id?: number | string; companyName: string }) => {
   const [confirmErr] = await to(ElMessageBox.confirm(
     `确定要删除客户"${row.companyName}"吗？此操作将同时删除所有跟进记录。`,
     '删除确认', { type: 'warning', confirmButtonText: '确定删除', cancelButtonText: '取消' }
@@ -293,62 +206,12 @@ const handleDelete = async (row: CustomerListItem) => {
   loadList()
 }
 
-const handleViewDetail = async (row: CustomerListItem) => {
-  currentCustomer.value = null
-  detailVisible.value = true
-  try {
-    const res = await customerApi.getDetail(row.id!)
-    currentCustomer.value = res?.customer || null
-  } catch (err) {
-    showError(err, '加载客户详情失败')
-    detailVisible.value = false
-  }
-}
-
-const handleDetailOpen = () => { currentCustomer.value = null }
-
-const showAddFollowUpDialog = () => {
-  followUpFormData.content = ''
-  followUpFormData.nextTime = ''
-  followUpDialogVisible.value = true
-}
-
-const handleFollowUpSubmit = async (data: FollowUpData) => {
-  await withSubmitLock(async () => {
-    const [err] = await to(customerApi.addFollowUp(currentCustomer.value!.id!, { ...data }))
-    if (err) { showError(err, '添加跟进记录失败'); throw err }
-    showSuccess('跟进记录添加成功')
-    followUpDialogVisible.value = false
-
-    const [, res] = await to(customerApi.getDetail(currentCustomer.value!.id!))
-    if (res?.customer) currentCustomer.value = res.customer
-    loadList()
-  })
-}
-
-const handleDeleteFollowUp = async (item: FollowUpData) => {
-  const [confirmErr] = await to(ElMessageBox.confirm(
-    '确定要删除这条跟进记录吗？', '删除确认',
-    { type: 'warning', confirmButtonText: '确定删除', cancelButtonText: '取消' }
-  ))
-  if (confirmErr) return
-
-  const [err] = await to(customerApi.deleteFollowUp(item.id as number | string))
-  if (err) { showError(err, '删除跟进记录失败'); return }
-  showSuccess('跟进记录删除成功')
-
-  const customerId = currentCustomer.value!.id!
-  const [, res] = await to(customerApi.getDetail(customerId))
-  if (res?.customer) currentCustomer.value = res.customer
-  loadList()
-}
-
 const getCustomerTypeTagType = (type?: string | null) => {
   const map: Record<string, string> = { 终端: 'info', 经销商: 'primary', 待确认: 'warning' }
   return map[type || ''] || 'info'
 }
 
-const handleGoToQuotation = (item: CustomerListItem) => {
+const handleGoToQuotation = (item: { quotationId?: number | string }) => {
   if (item.quotationId) {
     router.push({ path: '/quotation/history', query: { id: String(item.quotationId), mode: 'view' } as Record<string, string> })
   }
@@ -470,5 +333,24 @@ onMounted(() => loadList())
   color: #e6a23c;
   font-weight: 600;
   font-size: 13px;
+}
+
+.two-col {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.two-col .col-item {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.two-col .quotation-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 </style>

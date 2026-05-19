@@ -47,6 +47,7 @@ import { to } from '@/utils/async'
 import { formatDateOnly } from '@/utils/date'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { useListQueryState } from '@/composables/useListQueryState'
+import type { QuotationData } from '@/types'
 
 interface HistoryRecord {
   id: number | string
@@ -84,9 +85,9 @@ interface CompanyGroup {
 
 interface QuotationHistoryOptions {
   api: {
-    list?: (params?: unknown) => Promise<unknown>
-    create?: (data: unknown) => Promise<unknown>
-    update?: (id: number | string, data: unknown) => Promise<unknown>
+    list?: (params?: Record<string, unknown>) => Promise<Record<string, unknown>>
+    create?: (data: QuotationData) => Promise<unknown>
+    update?: (id: number | string, data: QuotationData) => Promise<unknown>
     remove?: (id: number | string) => Promise<unknown>
     [key: string]: unknown
   }
@@ -107,7 +108,7 @@ interface QuotationHistoryReturn {
   onKeywordInput: () => void
   handleCurrentChange: (val: number) => void
   handleSizeChange: (val: number) => void
-  saveQuotation: (payload: Record<string, unknown>, editingId?: number | string | null) => Promise<HistoryRecord | null>
+  saveQuotation: (payload: QuotationData, editingId?: number | string | null) => Promise<HistoryRecord | null>
   copyQuotation: (record: HistoryRecord) => Promise<HistoryRecord | null>
   deleteHistory: (record: HistoryRecord) => Promise<void>
   viewHistory: (record: HistoryRecord) => void
@@ -272,7 +273,7 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
     if (sizeErr) ElMessage.error((sizeErr as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (sizeErr as { message?: string })?.message || '历史记录加载失败')
   }
 
-  const saveQuotation = async (payload: Record<string, unknown>, editingId?: number | string | null): Promise<HistoryRecord | null> => {
+  const saveQuotation = async (payload: QuotationData, editingId?: number | string | null): Promise<HistoryRecord | null> => {
     const body = clone(payload)
 
     if (editingId) {

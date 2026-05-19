@@ -28,7 +28,7 @@
     <el-form :model="localAssignForm" label-width="90px">
       <el-form-item label="指派对象" required>
         <el-select v-model="localAssignForm.userId" placeholder="请选择业务员" filterable style="width: 100%">
-          <el-option v-for="u in staffList" :key="u.id" :label="((u.name as string) || '').trim() || u.username"
+          <el-option v-for="u in staffList" :key="u.id" :label="(u.name || '').trim() || u.username"
             :value="u.id" />
         </el-select>
       </el-form-item>
@@ -47,19 +47,36 @@ import AsyncDialog from '@/components/common/AsyncDialog.vue'
 import type { PropType } from 'vue'
 import type { MessageData } from '@/types'
 
+export interface AssignForm {
+  messageId: number | string | null
+  userId: number | string | null
+}
+
+export interface StaffUser {
+  id: number | string
+  username: string
+  name?: string
+  role: string
+}
+
 const props = defineProps({
   viewVisible: Boolean,
   viewTitle: String,
   viewRow: { type: Object as PropType<MessageData | null>, default: null },
   assignVisible: Boolean,
-  assignForm: { type: Object as PropType<Record<string, unknown>>, default: () => ({}) },
-  staffList: { type: Array as PropType<Array<Record<string, unknown>>>, default: () => [] },
+  assignForm: { type: Object as PropType<AssignForm>, default: () => ({ messageId: null, userId: null }) },
+  staffList: { type: Array as PropType<StaffUser[]>, default: () => [] },
   assignLoading: Boolean,
   formatTime: { type: Function as PropType<(dateStr: string | undefined) => string>, default: (d: string | undefined) => d || '' }
 })
-const emit = defineEmits(['update:viewVisible', 'update:assignVisible', 'confirm-assign', 'update:assignForm'])
+const emit = defineEmits<{
+  'update:viewVisible': [value: boolean]
+  'update:assignVisible': [value: boolean]
+  'confirm-assign': []
+  'update:assignForm': [value: AssignForm]
+}>()
 
-const assignDialogRef = ref(null)
+const assignDialogRef = ref<InstanceType<typeof AsyncDialog> | null>(null)
 
 const viewVisibleProxy = computed({
   get: () => props.viewVisible,

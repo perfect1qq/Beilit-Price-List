@@ -59,6 +59,7 @@ import { useHistoryView } from '@/composables/useHistoryView'
 import { formatDate } from '@/utils/date'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 import beamApi from '@/api/beam'
+import type { BeamQuotationItem } from '@/types'
 import SearchBar from '@/components/common/SearchBar.vue'
 import BeamQuotationEditor from '@/components/beam/BeamQuotationEditor.vue'
 
@@ -66,9 +67,9 @@ const { isGuest, isAdmin } = usePermissions()
 
 const editingId = ref<number | string | null>(null)
 const editingName = ref('')
-const editingItems = ref<Array<{ name: string; length: string; spec: string; maxLoad: string }>>([])
+const editingItems = ref<BeamQuotationItem[]>([])
 const originalDataStr = ref('')
-const formModel = reactive<{ recordName: string; editingItems: typeof editingItems.value; items?: typeof editingItems.value }>({ recordName: '', editingItems: editingItems.value })
+const formModel = reactive<{ recordName: string; editingItems: BeamQuotationItem[]; items?: BeamQuotationItem[] }>({ recordName: '', editingItems: editingItems.value })
 
 watch(editingName, (val) => { formModel.recordName = val })
 

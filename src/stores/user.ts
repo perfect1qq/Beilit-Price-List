@@ -1,11 +1,18 @@
 import { defineStore } from 'pinia'
 import authApi from '@/api/auth'
-import type { UserInfo, SessionPayload, LoginCredentials, RegisterPayload } from '@/types'
+import { ROLES } from '@/types'
+import type {
+  LoginCredentials,
+  MenuItem,
+  RegisterPayload,
+  SessionPayload,
+  UserInfo,
+} from '@/types'
 
 interface UserState {
   user: UserInfo | null
   permissions: string[]
-  menu: Record<string, unknown>[]
+  menu: MenuItem[]
   hydrated: boolean
   loading: boolean
   authError: string | null
@@ -30,16 +37,19 @@ export const useUserStore = defineStore('user', {
 
     role: (state: UserState): string => state.user?.role || '',
 
-    displayName: (state: UserState): string => state.user?.name || state.user?.username || '',
+    displayName: (state: UserState): string =>
+      state.user?.name || state.user?.username || '',
 
-    isAdmin: (state: UserState): boolean => state.user?.role === 'admin',
+    isAdmin: (state: UserState): boolean => state.user?.role === ROLES.ADMIN,
 
-    isGuest: (state: UserState): boolean => state.user?.role === 'guest',
+    isGuest: (state: UserState): boolean => state.user?.role === ROLES.GUEST,
 
-    hasPermission: (state: UserState) => (permission: string): boolean => {
-      if (!permission) return true
-      return state.permissions.includes(permission)
-    },
+    hasPermission:
+      (state: UserState) =>
+      (permission: string): boolean => {
+        if (!permission) return true
+        return state.permissions.includes(permission)
+      },
   },
 
   actions: {
@@ -64,11 +74,18 @@ export const useUserStore = defineStore('user', {
     async login(credentials: LoginCredentials): Promise<UserInfo> {
       this.loading = true
       try {
-        const response = await authApi.login(credentials)
-        this.setSession(response.data as SessionPayload)
-        return response.data as UserInfo
+        const session = await authApi.login(credentials)
+        this.setSession(session)
+        if (!this.user) {
+          throw new Error('Login response missing user')
+        }
+        return this.user
       } catch (error: unknown) {
-        const err = error as { response?: { data?: { message?: string } }; message?: string }
+        this.clearSession()
+        const err = error as {
+          response?: { data?: { message?: string } }
+          message?: string
+        }
         this.authError =
           err?.response?.data?.message || err?.message || '登录失败'
         throw error
@@ -77,9 +94,8 @@ export const useUserStore = defineStore('user', {
       }
     },
 
-    async register(payload: RegisterPayload): Promise<unknown> {
-      const response = await authApi.register(payload)
-      return response.data
+    async register(payload: RegisterPayload): Promise<{ user: UserInfo }> {
+      return authApi.register(payload)
     },
 
     async restoreSession(force: boolean = false): Promise<UserInfo | null> {
@@ -93,18 +109,14 @@ export const useUserStore = defineStore('user', {
 
       restorePromise = authApi
         .getProfile()
-        .then((response) => {
-          this.setSession(response.data as SessionPayload)
+        .then((session: SessionPayload) => {
+          this.setSession(session)
           return this.user
         })
         .catch((error: unknown) => {
+          this.clearSession()
           const err = error as { response?: { status?: number } }
-          if (err?.response?.status === 401) {
-            this.clearSession()
-            return null
-          }
-
-          this.hydrated = true
+          if (err?.response?.status === 401) return null
           throw error
         })
         .finally(() => {
@@ -115,9 +127,14 @@ export const useUserStore = defineStore('user', {
     },
 
     async refreshProfile(): Promise<UserInfo | null> {
-      const response = await authApi.getProfile({ disableCacheBust: false })
-      this.setSession(response.data as SessionPayload)
-      return this.user
+      try {
+        const session = await authApi.getProfile({ disableCacheBust: false })
+        this.setSession(session)
+        return this.user
+      } catch (error) {
+        this.clearSession()
+        throw error
+      }
     },
 
     async logout(): Promise<void> {
@@ -125,6 +142,12 @@ export const useUserStore = defineStore('user', {
         await authApi.logout()
       } finally {
         this.clearSession()
+      }
+    },
+
+    updateAvatar(avatar: string): void {
+      if (this.user) {
+        this.user.avatar = avatar
       }
     },
   },

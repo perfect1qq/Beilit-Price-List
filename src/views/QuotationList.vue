@@ -207,7 +207,7 @@ watch(companyName, (val) => {
 
 // --- [状态管理] 历史记录逻辑 ---
 const { saveQuotation, loading } = useQuotationHistory({
-  api: quotationApi as unknown as { list?: (params?: unknown) => Promise<unknown>; create?: (data: unknown) => Promise<unknown>; update?: (id: number | string, data: unknown) => Promise<unknown>; remove?: (id: number | string) => Promise<unknown>;[key: string]: unknown },
+  api: quotationApi,
   loadToEditor: (record, mode) => loadRecord(record, mode),
 })
 

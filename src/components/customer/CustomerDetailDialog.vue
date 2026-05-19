@@ -6,7 +6,14 @@
         <el-descriptions-item label="公司名称">{{ customer.companyName }}</el-descriptions-item>
         <el-descriptions-item label="客户姓名">{{ customer.customerName }}</el-descriptions-item>
         <el-descriptions-item label="联系方式">{{ customer.contactInfo || '—' }}</el-descriptions-item>
-        <el-descriptions-item label="负责人">{{ customer.ownerName }}</el-descriptions-item>
+        <el-descriptions-item label="负责人">{{ customer.ownerName || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="货架类型">{{ customer.shelfType || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="工期">
+          <template v-if="customer.deliveryDays && customer.deliveryDays > 0">
+            {{ customer.deliveryDays }}天
+          </template>
+          <template v-else>—</template>
+        </el-descriptions-item>
         <el-descriptions-item label="备注" :span="2">{{ customer.remark || '—' }}</el-descriptions-item>
         <el-descriptions-item label="创建时间">{{ formatDate(customer.createdAt || '') }}</el-descriptions-item>
         <el-descriptions-item label="更新时间">{{ formatDate(customer.updatedAt || '') }}</el-descriptions-item>

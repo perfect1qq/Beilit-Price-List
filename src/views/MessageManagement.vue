@@ -77,7 +77,7 @@
     </el-card>
 
     <MessageDialogs v-model:view-visible="viewVisible" v-model:assign-visible="assignVisible" :view-title="viewTitle"
-      :view-row="viewRow as unknown as MessageData" :assign-form="assignForm" :staff-list="staffList"
+      :view-row="viewRow" :assign-form="assignForm" :staff-list="staffList"
       :assign-loading="assignLoading" :format-time="formatTime" @confirm-assign="confirmAssign" />
 
   </div>
@@ -92,7 +92,7 @@ import userApi from '@/api/user'
 import type { MessageData } from '@/types'
 import { debounce } from '@/utils/debounce'
 import { to } from '@/utils/async'
-import { readCurrentUser } from '@/utils/navigation'
+import { useUserStore } from '@/stores/user'
 import { formatDateTime } from '@/utils/date'
 import { showError, showSuccess, showWarning } from '@/utils/message'
 import { useCancelableLoader } from '@/composables/useCancelableLoader'
@@ -109,14 +109,14 @@ import CardList from '@/components/common/CardList.vue'
  * - 测试账号视角显示为“我的指派”，只展示当前账号被分配的线索；
  * - 通过分页与搜索降低线索量增长后的渲染压力。
  */
-const currentUser = ref(readCurrentUser())
+const userStore = useUserStore()
 
 /**
  * 刷新当前账号快照。
  * 适合在登录态切换、页面回到前台或 storage 事件触发时调用。
  */
 const refreshCurrentUser = () => {
-  currentUser.value = readCurrentUser()
+  userStore.refreshProfile()
 }
 
 const { isAdmin, isGuest } = usePermissions()

@@ -155,7 +155,7 @@ const emit = defineEmits(['toggle-mobile-sidebar'])
 const changePassDialogRef = ref(null)
 const userName = computed(() => userStore.displayName || '管理员')
 const userInitial = computed(() => userName.value.charAt(0).toUpperCase() || 'A')
-const userRole = computed(() => userStore.role || 'guest')
+const isAdmin = computed(() => userStore.isAdmin)
 const device = ref('desktop')
 const homeRoute = '/home'
 const {
@@ -168,7 +168,7 @@ const {
   markAllAsRead,
   deleteNotification,
   goNoticePage
-} = useNavbarNotifications({ request, router, userRole })
+} = useNavbarNotifications({ request, router, isAdmin })
 
 const { changePassDialog, confirmChangePass } = useNavbarPasswordDialog({
   request,

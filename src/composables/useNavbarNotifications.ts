@@ -35,13 +35,13 @@
  * @example
  * // 在 Navbar 组件中使用
  * const { unreadApprovalCount, isBellRinging, fetchUnreadCount } =
- *   useNavbarNotifications({ request, router, userRole })
+ *   useNavbarNotifications({ request, router, isAdmin })
  *
  * // 定时轮询（建议间隔 30-60 秒）
  * setInterval(fetchUnreadCount, 30000)
  */
 
-import { ref, type Ref } from 'vue'
+import { ref, triggerRef, type Ref, type ComputedRef } from 'vue'
 import { ElMessage, ElNotification } from 'element-plus'
 import { to } from '@/utils/async'
 import { notificationApi } from '@/api/notifications'
@@ -58,7 +58,7 @@ interface NotificationItem {
 interface NavbarNotificationsDeps {
   request: unknown
   router: Router
-  userRole: Ref<string>
+  isAdmin: ComputedRef<boolean>
 }
 
 interface NavbarNotificationsReturn {
@@ -73,7 +73,7 @@ interface NavbarNotificationsReturn {
   goNoticePage: () => void
 }
 
-export const useNavbarNotifications = ({ request: _request, router, userRole }: NavbarNotificationsDeps): NavbarNotificationsReturn => {
+export const useNavbarNotifications = ({ request: _request, router, isAdmin }: NavbarNotificationsDeps): NavbarNotificationsReturn => {
   const unreadApprovalCount = ref(0)
 
   const noticeList = ref<NotificationItem[]>([])
@@ -96,14 +96,15 @@ export const useNavbarNotifications = ({ request: _request, router, userRole }: 
     isFetching = true
 
     try {
-      const [countErr, resCount] = await to(notificationApi.getUnreadCount())
-      if (countErr) return
+      const [[countErr, resCount], [listErr, resList]] = await Promise.all([
+        to(notificationApi.getUnreadCount()),
+        to(notificationApi.list())
+      ])
+      if (countErr || listErr) return
 
       const newCount = (resCount as { count?: number }).count ?? 0
       const oldCount = unreadApprovalCount.value
 
-      const [listErr, resList] = await to(notificationApi.list())
-      if (listErr) return
       const listData = resList as { list?: NotificationItem[] }
       noticeList.value = (listData.list || []).slice(0, 10)
 
@@ -154,7 +155,7 @@ export const useNavbarNotifications = ({ request: _request, router, userRole }: 
   }
 
   const goNoticePage = (): void => {
-    if (userRole.value === 'admin') router.push('/approval')
+    if (isAdmin.value) router.push('/approval')
     else router.push('/quotation')
   }
 
@@ -164,13 +165,11 @@ export const useNavbarNotifications = ({ request: _request, router, userRole }: 
       e.preventDefault()
     }
     if (!notice?.id) return
-    const idSet = new Set(deletingIds.value)
-    idSet.add(notice.id)
-    deletingIds.value = idSet
+    deletingIds.value.add(notice.id)
+    triggerRef(deletingIds)
     const [err] = await to(notificationApi.remove(notice.id))
-    const idSetAfter = new Set(deletingIds.value)
-    idSetAfter.delete(notice.id)
-    deletingIds.value = idSetAfter
+    deletingIds.value.delete(notice.id)
+    triggerRef(deletingIds)
     if (err) return
     noticeList.value = noticeList.value.filter(item => item.id !== notice.id)
     await fetchUnreadCount()

@@ -55,6 +55,7 @@ import { computed } from 'vue'
 import type { PropType } from 'vue'
 import { Lock, Delete, Edit } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/date'
+import { ROLES } from '@/types'
 import type { UserInfo } from '@/types'
 
 const props = defineProps({
@@ -70,14 +71,14 @@ const localUser = computed({
 })
 
 const roleTagType = computed(() => {
-  if (props.user.role === 'admin') return 'danger'
-  if (props.user.role === 'user') return 'primary'
+  if (props.user.role === ROLES.ADMIN) return 'danger'
+  if (props.user.role === ROLES.USER) return 'primary'
   return 'info'
 })
 
 const roleLabel = computed(() => {
-  if (props.user.role === 'admin') return '管理员'
-  if (props.user.role === 'user') return '业务员'
+  if (props.user.role === ROLES.ADMIN) return '管理员'
+  if (props.user.role === ROLES.USER) return '业务员'
   return '游客(只读)'
 })
 </script>

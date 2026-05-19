@@ -98,8 +98,8 @@ const getAvatarFromResponse = (res: UploadResponse): string | undefined =>
   res?.data?.avatar || res?.avatar || res?.data?.data?.avatar
 
 const updateUserAvatar = (avatar: string): boolean => {
-  if (!avatar || !userStore.user) return false
-  userStore.user.avatar = avatar
+  if (!avatar) return false
+  userStore.updateAvatar(avatar)
   return true
 }
 

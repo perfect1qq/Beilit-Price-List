@@ -109,7 +109,17 @@ import SearchBar from '@/components/common/SearchBar.vue'
 
 const router = useRouter()
 const loading = ref(false)
-const list = ref<Record<string, unknown>[]>([])
+interface ApprovalHistoryItem {
+  id: number | string
+  name?: string
+  companyName?: string
+  ownerName?: string
+  createDate?: string
+  status: string
+  [key: string]: unknown
+}
+
+const list = ref<ApprovalHistoryItem[]>([])
 const total = ref(0)
 const { keyword: searchKeyword, page, pageSize } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
 

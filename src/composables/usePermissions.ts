@@ -1,9 +1,9 @@
 import { computed, type ComputedRef } from 'vue'
-import { readCurrentUser } from '@/utils/navigation'
-import type { UserInfo } from '@/types'
+import { useUserStore } from '@/stores/user'
+import { ROLES } from '@/types'
 
 interface PermissionsReturn {
-  currentUser: ComputedRef<UserInfo | { role: string }>
+  currentUser: ComputedRef<{ role: string }>
   isAdmin: ComputedRef<boolean>
   isGuest: ComputedRef<boolean>
   canEdit: ComputedRef<boolean>
@@ -13,9 +13,10 @@ interface PermissionsReturn {
 }
 
 export const usePermissions = (): PermissionsReturn => {
-  const currentUser = computed(() => readCurrentUser())
-  const isAdmin = computed(() => currentUser.value.role === 'admin')
-  const isGuest = computed(() => currentUser.value.role === 'guest')
+  const store = useUserStore()
+  const currentUser = computed(() => store.user || { role: ROLES.GUEST })
+  const isAdmin = computed(() => currentUser.value.role === ROLES.ADMIN)
+  const isGuest = computed(() => currentUser.value.role === ROLES.GUEST)
   const canEdit = computed(() => !isGuest.value)
   const canDelete = computed(() => !isGuest.value)
   const canCreate = computed(() => !isGuest.value)

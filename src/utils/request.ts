@@ -4,8 +4,7 @@ import { triggerAuthExpired } from './authRuntime'
 import { ElMessage } from 'element-plus'
 import type { RequestConfig } from '@/types'
 
-let isRefreshing = false
-let refreshSubscribers: Array<() => void> = []
+let refreshPromise: Promise<void> | null = null
 
 const buildApiUrl = (path: string): string => {
   const baseURL = String(http.defaults.baseURL || '').replace(/\/+$/, '')
@@ -13,26 +12,19 @@ const buildApiUrl = (path: string): string => {
   return `${baseURL}${apiPath}`
 }
 
-const onRefreshed = (): void => {
-  refreshSubscribers.forEach((cb) => cb())
-  refreshSubscribers = []
+const refreshAccessToken = async (): Promise<void> => {
+  await axios.post(buildApiUrl('/api/refresh'), null, {
+    withCredentials: true,
+  })
 }
 
-const addRefreshSubscriber = (cb: () => void): void => {
-  refreshSubscribers.push(cb)
-}
-
-const refreshAccessToken = async (): Promise<boolean> => {
-  try {
-    await axios.post(
-      buildApiUrl('/api/refresh'),
-      null,
-      { withCredentials: true }
-    )
-    return true
-  } catch {
-    return false
+const getRefreshPromise = (): Promise<void> => {
+  if (!refreshPromise) {
+    refreshPromise = refreshAccessToken().finally(() => {
+      refreshPromise = null
+    })
   }
+  return refreshPromise
 }
 
 const CONFIG = {
@@ -166,6 +158,19 @@ service.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     ;(config as unknown as Record<string, unknown>).signal = controller.signal
   }
 
+  if (pendingControllers.size > 200) {
+    const keysToDelete: string[] = []
+    for (const [key] of pendingControllers) {
+      keysToDelete.push(key)
+      if (keysToDelete.length >= 100) break
+    }
+    keysToDelete.forEach((key) => {
+      const c = pendingControllers.get(key)
+      c?.abort()
+      pendingControllers.delete(key)
+    })
+  }
+
   return config
 })
 
@@ -211,35 +216,26 @@ service.interceptors.response.use(
     const reasonCode = error?.response?.data?.code
 
     if (status === 401) {
-      if (config?._isRefreshRequest) {
+      if (config?._isRefreshRequest || config?._retryAfterRefresh) {
         if (config.authRedirect !== false) {
           triggerAuthExpired(reasonCode)
         }
         return Promise.reject(error)
       }
 
-      if (!isRefreshing) {
-        isRefreshing = true
-        const success = await refreshAccessToken()
-        isRefreshing = false
-
-        if (success) {
-          onRefreshed()
-          return service(error.config!)
-        }
-
-        onRefreshed()
+      try {
+        await getRefreshPromise()
+        const replayConfig = {
+          ...error.config!,
+          _retryAfterRefresh: true,
+        } as InternalAxiosRequestConfig & RequestConfig
+        return service(replayConfig)
+      } catch {
         if (config?.authRedirect !== false) {
           triggerAuthExpired(reasonCode)
         }
         return Promise.reject(error)
       }
-
-      return new Promise((resolve) => {
-        addRefreshSubscriber(() => {
-          resolve(service(error.config!))
-        })
-      })
     }
 
     if (shouldRetry(error) && config && config.__retryCount! < CONFIG.retryCount) {

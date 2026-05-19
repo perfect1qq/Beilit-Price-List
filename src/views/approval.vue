@@ -101,9 +101,9 @@
           <div class="card-footer">
             <el-button type="primary" size="small" round @click.stop="editDetail(item.id)">详情</el-button>
             <el-button type="success" size="small" plain :loading="isActionLoading(item.id as string | number)"
-              @click.stop="approveRow(item)">通过</el-button>
+              @click.stop="approveRow(item as ApprovalItem)">通过</el-button>
             <el-button type="danger" size="small" plain :loading="isActionLoading(item.id as string | number)"
-              @click.stop="rejectRow(item)">驳回</el-button>
+              @click.stop="rejectRow(item as ApprovalItem)">驳回</el-button>
           </div>
         </div>
       </template>
@@ -129,6 +129,11 @@ const router = useRouter()
 const loading = ref(false)
 interface ApprovalItem {
   id: number | string
+  name?: string
+  companyName?: string
+  ownerName?: string
+  createDate?: string
+  status: string
   [key: string]: unknown
 }
 

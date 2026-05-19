@@ -111,17 +111,16 @@
         </el-col>
         <el-col :span="8">
           <el-form-item label="折扣 (%)">
-            <el-input-number :model-value="(safeDiscount as unknown as number)" :disabled="!editMode || isHistoryRoute"
-              :min="0" :max="100" controls-position="right" style="width: 100%"
-              @change="(val: unknown) => { discount = val as number | undefined; handleDiscountChange?.() }" />
+            <el-input-number :model-value="safeDiscount" :disabled="!editMode || isHistoryRoute" :min="0" :max="100"
+              controls-position="right" style="width: 100%"
+              @change="handleDiscountInput" />
           </el-form-item>
         </el-col>
         <el-col :span="8">
           <el-form-item label="成交价">
-            <el-input-number :model-value="(safeFinalPrice as unknown as number)"
-              :disabled="!editMode || isHistoryRoute" :min="0" :precision="2" controls-position="right"
-              style="width: 100%"
-              @input="(val: unknown) => { finalPrice = val as number | undefined; handleManualFinalPriceChange?.(val) }" />
+            <el-input-number :model-value="safeFinalPrice" :disabled="!editMode || isHistoryRoute" :min="0"
+              :precision="2" controls-position="right" style="width: 100%"
+              @input="handleFinalPriceInput" />
           </el-form-item>
         </el-col>
       </el-row>
@@ -152,7 +151,7 @@
           <template #default="{ row }">
             <el-input-number :model-value="toNumber(row.unitPrice)" :disabled="!editMode || isHistoryRoute" :min="0"
               :precision="2" controls-position="right" style="width:100%"
-              @change="(val: unknown) => { row.unitPrice = val as number | null; updateRowTotal(row) }" />
+              @change="(val: number | undefined) => handleUnitPriceChange(row, val)" />
           </template>
         </el-table-column>
         <el-table-column label="总价" width="150" align="right">
@@ -193,8 +192,10 @@ import { showError, showSuccess, showWarning } from '@/utils/message'
 import approvalApi from '@/api/approval'
 import quotationApi from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
+import type { QuotationRow } from '@/composables/useQuotationDraft'
 import { useQuotationEditor } from '@/composables/useQuotationEditor'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
+import type { QuotationData } from '@/types'
 
 const route = useRoute()
 const router = useRouter()
@@ -202,9 +203,6 @@ const isHistoryRoute = computed(() => String(route.path || '').startsWith('/appr
 const editMode = ref(route.query.mode === 'edit' && !isHistoryRoute.value)
 const logs = ref<Array<{ id: number | string; createdAt: string; action: string; operatorName: string; comment?: string }>>([])
 const actionLoading = ref(false)
-const hasUnsavedChanges = computed(() => JSON.stringify(getPayload()) !== originalPayloadStr.value)
-const canApprove = computed(() => meta.status === 'pending' && !editMode.value && !hasUnsavedChanges.value)
-const approveButtonText = computed(() => (canApprove.value ? '准予通过' : '请先保存修改'))
 
 const meta = reactive({
   id: null as number | string | null,
@@ -233,6 +231,9 @@ const {
 
 const safeDiscount = computed<number>(() => Number(discount.value || 0) || 0)
 const safeFinalPrice = computed<number>(() => Number(finalPrice.value || 0) || 0)
+const hasUnsavedChanges = computed<boolean>(() => JSON.stringify(getPayload()) !== originalPayloadStr.value)
+const canApprove = computed<boolean>(() => meta.status === 'pending' && !editMode.value && !hasUnsavedChanges.value)
+const approveButtonText = computed<string>(() => (canApprove.value ? '准予通过' : '请先保存修改'))
 
 const tagType = (status: string) => ({
   draft: 'info', pending: 'warning', approved: 'success', rejected: 'danger', deleted: 'info',
@@ -269,6 +270,27 @@ const {
   restoreAutoFinalPrice
 })
 
+const toInputNumber = (value: unknown): number => {
+  const num = Number(value ?? 0)
+  return Number.isFinite(num) ? num : 0
+}
+
+const handleDiscountInput = (value: number | undefined): void => {
+  discount.value = toInputNumber(value)
+  handleDiscountChange()
+}
+
+const handleFinalPriceInput = (value: number | undefined): void => {
+  const nextValue = toInputNumber(value)
+  finalPrice.value = nextValue
+  handleManualFinalPriceChange(nextValue)
+}
+
+const handleUnitPriceChange = (row: QuotationRow, value: number | undefined): void => {
+  row.unitPrice = value ?? 0
+  updateRowTotal(row)
+}
+
 const goBackToList = () => {
   router.push(isHistoryRoute.value ? '/approval/history' : '/approval')
 }
@@ -297,7 +319,7 @@ async function save() {
   if (!companyName.value.trim()) return showWarning('公司名称不能为空')
   const payload = getPayload()
   actionLoading.value = true
-  const [err] = await to(quotationApi.update(meta.id as number | string, payload as import('@/types').QuotationData))
+  const [err] = await to(quotationApi.update(meta.id as number | string, payload as QuotationData))
   if (err) {
     showError(err, '保存失败')
     actionLoading.value = false

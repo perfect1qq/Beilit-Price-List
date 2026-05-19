@@ -58,7 +58,7 @@
 -->
 <template>
   <div class="app-wrapper"
-    :class="{ hideSidebar: !sidebar.opened, mobile: isMobile, mobileSidebarOpen: mobileSidebarOpen }">
+    :class="{ mobile: isMobile, mobileSidebarOpen: mobileSidebarOpen }">
     <div v-if="isMobile && mobileSidebarOpen" class="sidebar-mask" @click="closeMobileSidebar"></div>
     <Sidebar class="sidebar-container" />
     <div class="main-container">
@@ -77,16 +77,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import Sidebar from './components/Sidebar.vue'
 import Navbar from './components/Navbar.vue'
 import AppMain from './components/AppMain.vue'
 import ErrorBoundary from '@/components/common/ErrorBoundary.vue'
-
-const sidebar = computed(() => ({
-  opened: true,
-  withoutAnimation: false
-}))
 
 const isMobile = ref(false)
 const mobileSidebarOpen = ref(false)
@@ -163,18 +158,6 @@ onUnmounted(() => {
   transition: width 0.28s;
 }
 
-.hideSidebar .sidebar-container {
-  width: 54px !important;
-}
-
-.hideSidebar .main-container {
-  margin-left: 54px;
-}
-
-.hideSidebar .fixed-header {
-  width: calc(100% - 54px);
-}
-
 .sidebar-mask {
   position: fixed;
   inset: 0;
@@ -219,10 +202,5 @@ onUnmounted(() => {
     width: 100% !important;
   }
 
-  .hideSidebar .main-container,
-  .hideSidebar .fixed-header {
-    margin-left: 0;
-    width: 100%;
-  }
 }
 </style>

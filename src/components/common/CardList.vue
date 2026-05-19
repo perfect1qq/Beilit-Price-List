@@ -140,16 +140,22 @@
   </div>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends CardListItem">
 import { computed } from 'vue'
 import type { PropType } from 'vue'
 import PagePagination from './PagePagination.vue'
 import { DEFAULT_PAGINATION } from '@/constants/table'
 
+export type CardListItem = Record<string, unknown> & {
+  id?: string | number
+  title?: string
+  description?: string
+}
+
 const props = defineProps({
   /** 数据列表 */
   data: {
-    type: Array as PropType<any[]>,
+    type: Array as PropType<T[]>,
     default: () => []
   },
   /** 是否加载中 */
@@ -213,7 +219,7 @@ const props = defineProps({
   },
   /** 已选中的项（v-model支持） */
   selectedItems: {
-    type: Array as PropType<Record<string, unknown>[]>,
+    type: Array as PropType<T[]>,
     default: () => []
   },
   /** 数据唯一标识字段名 */
@@ -243,7 +249,7 @@ const props = defineProps({
   },
   /** 是否禁用项判断函数 */
   disabledFn: {
-    type: Function as PropType<(item: Record<string, unknown>) => boolean>,
+    type: Function as PropType<(item: T) => boolean>,
     default: null
   },
   /** 是否启用加载更多模式（替代分页） */
@@ -273,19 +279,28 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits([
-  'update:currentPage',
-  'update:pageSize',
-  'update:selectedItems',
-  'page-change',
-  'card-click',
-  'card-contextmenu',
-  'card-select',
-  'card-dblclick',
-  'load-more',
-  'drag-start',
-  'drag-end'
-])
+defineSlots<{
+  card?: (props: { item: T; index: number; selected: boolean }) => unknown
+  actions?: (props: { item: T; index: number }) => unknown
+  loading?: () => unknown
+  'empty-image'?: () => unknown
+  'empty-action'?: () => unknown
+  'drag-handle'?: () => unknown
+}>()
+
+const emit = defineEmits<{
+  'update:currentPage': [value: number]
+  'update:pageSize': [value: number]
+  'update:selectedItems': [value: T[]]
+  'page-change': [page: number]
+  'card-click': [item: T, event: MouseEvent]
+  'card-contextmenu': [item: T, event: MouseEvent]
+  'card-select': [item: T, selected: boolean, selectedItems: T[]]
+  'card-dblclick': [item: T, event: MouseEvent]
+  'load-more': []
+  'drag-start': [item: T]
+  'drag-end': [item: T]
+}>()
 
 const currentPage = computed({
   get: () => props.currentPage,
@@ -302,7 +317,7 @@ const currentPageSize = computed({
  * @param {Object} item - 数据项
  * @returns {boolean}
  */
-const isSelected = (item: Record<string, unknown>): boolean => {
+const isSelected = (item: T): boolean => {
   if (!props.selectable) return false
   const id = item[props.idField]
   return props.selectedItems.some(selected => selected[props.idField] === id)
@@ -313,7 +328,7 @@ const isSelected = (item: Record<string, unknown>): boolean => {
  * @param {Object} item - 数据项
  * @returns {boolean}
  */
-const isDisabled = (item: Record<string, unknown>): boolean => {
+const isDisabled = (item: T): boolean => {
   return props.disabledFn ? props.disabledFn(item) : false
 }
 
@@ -322,7 +337,7 @@ const isDisabled = (item: Record<string, unknown>): boolean => {
  * @param {Object} item - 数据项
  * @param {Event} event - 点击事件
  */
-const handleCardClick = (item: Record<string, unknown>, event: MouseEvent): void => {
+const handleCardClick = (item: T, event: MouseEvent): void => {
   if (isDisabled(item)) return
 
   if (props.selectable) {
@@ -343,7 +358,7 @@ const handleCardClick = (item: Record<string, unknown>, event: MouseEvent): void
  * @param {boolean} selected - 是否选中
  * @param {Event} event - 事件对象
  */
-const handleSelectChange = (item: Record<string, unknown>, selected: boolean, _event?: MouseEvent): void => {
+const handleSelectChange = (item: T, selected: boolean, _event?: MouseEvent): void => {
   if (props.multiple) {
     let newSelected = [...props.selectedItems]
     if (selected) {

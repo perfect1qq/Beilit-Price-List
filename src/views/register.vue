@@ -171,7 +171,8 @@ const rules = {
   ],
   password: [
     { required: true, message: '请设置登录密码', trigger: 'blur' },
-    { min: 6, message: '密码安全长度至少为 6 个字符', trigger: 'blur' }
+    { min: 6, message: '密码安全长度至少为 6 个字符', trigger: 'blur' },
+    { max: 100, message: '密码长度不能超过 100 个字符', trigger: 'blur' }
   ],
   confirmPassword: [{ validator: validatePass2, trigger: 'blur', required: true }],
   inviteCode: [

@@ -31,6 +31,7 @@ import { ref } from 'vue'
 import type { Ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { quotationApi } from '@/api/quotation'
+import type { QuotationData } from '@/types'
 
 interface QuotationRow {
   name?: string
@@ -62,9 +63,9 @@ interface QuotationEditorDeps {
   isManualFinalPrice: Ref<boolean>
   setFinalPriceManual: (value: unknown) => void
   restoreAutoFinalPrice: () => void
-  setRows?: (...args: any[]) => void
-  getPayload: () => Record<string, unknown>
-  saveQuotation: (payload: Record<string, unknown>, editingId?: number | null) => Promise<unknown>
+  setRows?: (newItems: QuotationRow[], columns?: string[]) => void
+  getPayload: () => QuotationData
+  saveQuotation: (payload: QuotationData, editingId?: number | null) => Promise<unknown>
   onSaveSuccess?: (result?: unknown) => void
   parseTextFn: (text: string) => Promise<{ items: QuotationRow[]; columns: unknown[]; warnings?: string[] } | null>
 }
@@ -94,7 +95,7 @@ const useQuotationEditor = (deps: Partial<QuotationEditorDeps>): Partial<Quotati
     setFinalPriceManual,
     restoreAutoFinalPrice,
     setRows = () => {},
-    getPayload = () => ({}),
+    getPayload = () => ({}) as QuotationData,
     saveQuotation = async () => {},
     onSaveSuccess,
     parseTextFn = async () => null,

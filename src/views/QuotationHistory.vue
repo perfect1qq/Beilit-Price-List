@@ -88,7 +88,7 @@
                       {{ row.name || row.companyName || '-' }}
                     </template>
                   </el-table-column>
-                  <el-table-column prop="ownerName" label="提交人" min-width="90" align="center" v-if="role === 'admin'" />
+                  <el-table-column prop="ownerName" label="提交人" min-width="90" align="center" v-if="isAdmin" />
                   <el-table-column prop="finalPrice" label="成交价" min-width="110" align="center">
                     <template #default="{ row }">¥ {{ formatMoney(row.finalPrice) }}</template>
                   </el-table-column>
@@ -163,7 +163,6 @@ import quotationApi from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
 import { useQuotationHistory } from '@/composables/useQuotationHistory'
 import { useQuotationEditor } from '@/composables/useQuotationEditor'
-import { readCurrentUser } from '@/utils/navigation'
 import { usePermissions } from '@/composables/usePermissions'
 import { formatMoney } from '@/utils/number'
 import { showError } from '@/utils/message'
@@ -171,8 +170,7 @@ import { TABLE_HEADER_STYLE } from '@/constants/table'
 import QuotationEditor from '@/components/quotation/QuotationEditor.vue'
 
 const route = useRoute()
-const role = ref(readCurrentUser().role || 'user')
-const { isGuest } = usePermissions()
+const { isAdmin, isGuest } = usePermissions()
 const parsing = ref(false)
 const isSubmitting = ref(false)
 const rulesDisabled = ref(false)
@@ -230,7 +228,7 @@ const {
   copyQuotation,
   deleteHistory
 } = useQuotationHistory({
-  api: quotationApi as unknown as { list?: (params?: unknown) => Promise<unknown>; create?: (data: unknown) => Promise<unknown>; update?: (id: number | string, data: unknown) => Promise<unknown>; remove?: (id: number | string) => Promise<unknown>;[key: string]: unknown },
+  api: quotationApi,
   loadToEditor: (record, mode) => loadRecord(record, mode)
 })
 

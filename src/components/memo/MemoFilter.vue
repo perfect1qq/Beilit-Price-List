@@ -1,19 +1,25 @@
 <template>
   <header class="memo-header">
-    <div class="header-left">
-      <h1 class="memo-title">{{ pageTitle }}</h1>
-      <div class="memo-badge">{{ activeListScope === 'today' ? 'LIVE' : 'ARCHIVE' }}</div>
+    <div class="header-top">
+      <div class="header-left">
+        <h1 class="memo-title">{{ pageTitle }}</h1>
+        <div class="memo-badge">{{ activeListScope === 'today' ? 'LIVE' : 'ARCHIVE' }}</div>
+      </div>
+
+      <div v-if="activeListScope === 'today' && !isGuest" class="header-actions">
+        <el-button type="primary" :icon="Plus" class="main-add-btn" @click="$emit('create')">
+          新建任务
+        </el-button>
+      </div>
     </div>
 
-    <div class="header-right">
-      <div class="control-group">
+    <div class="header-bottom">
+      <div class="bottom-group">
         <el-segmented v-model="scopeModel" :options="listScopeOptions" class="custom-segmented"
           @change="$emit('scope-change')" />
       </div>
 
-      <div class="vertical-spacer"></div>
-
-      <div class="control-group search-container">
+      <div class="bottom-group">
         <el-input v-model="keywordModel" placeholder="搜索标题或内容..." :prefix-icon="Search" clearable class="custom-search"
           @input="$emit('keyword-input')" />
 
@@ -23,17 +29,9 @@
         </div>
       </div>
 
-      <div class="vertical-spacer"></div>
-
-      <div class="control-group">
+      <div class="bottom-group">
         <el-segmented v-model="filterModel" :options="filterOptions" class="custom-segmented"
           @change="$emit('filter-change')" />
-      </div>
-
-      <div v-if="activeListScope === 'today' && !isGuest" class="action-box">
-        <el-button type="primary" :icon="Plus" class="main-add-btn" @click="$emit('create')">
-          新建任务
-        </el-button>
       </div>
     </div>
   </header>
@@ -92,13 +90,15 @@ const filterModel = computed({
 
 <style scoped>
 .memo-header {
-  padding: 28px;
+  padding: 24px 28px;
   border-bottom: 1px solid #f1f5f9;
+}
+
+.header-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 24px;
+  margin-bottom: 16px;
 }
 
 .header-left {
@@ -107,9 +107,14 @@ const filterModel = computed({
   gap: 12px;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
 .memo-title {
-  font-size: 24px;
-  font-weight: 850;
+  font-size: 22px;
+  font-weight: 800;
   letter-spacing: -0.5px;
   margin: 0;
 }
@@ -117,87 +122,81 @@ const filterModel = computed({
 .memo-badge {
   font-size: 10px;
   font-weight: 800;
-  padding: 2px 6px;
+  padding: 2px 8px;
   border-radius: 4px;
-  background: #f1f5f9;
-  color: #475569;
+  background: #eff6ff;
+  color: #3b82f6;
 }
 
-.header-right {
+.header-bottom {
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
-.vertical-spacer {
-  width: 1px;
-  height: 32px;
-  background: #e2e8f0;
-  margin: 0 4px;
-}
-
-.search-container {
+.bottom-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+}
+
+.bottom-group:first-child,
+.bottom-group:last-child {
+  flex-shrink: 0;
+}
+
+.bottom-group:nth-child(2) {
   flex: 1;
-  min-width: 450px;
+  min-width: 200px;
+}
+
+.bottom-group .custom-segmented {
+  width: auto;
 }
 
 .custom-search {
-  width: 240px;
+  flex: 1;
+  min-width: 140px;
 }
 
 .custom-search :deep(.el-input__wrapper) {
   background-color: #f8fafc;
   box-shadow: none !important;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
 }
 
 .date-picker-box {
-  width: 0;
-  opacity: 0;
-  overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: none;
 }
 
 .date-picker-box.is-expanded {
-  width: 220px;
-  opacity: 1;
+  display: block;
+  flex-shrink: 0;
 }
 
 .custom-segmented {
   background: #f1f5f9;
-  border-radius: 10px;
-  padding: 4px;
+  border-radius: 8px;
+  padding: 3px;
 }
 
 .main-add-btn {
-  border-radius: 10px;
-  font-weight: 700;
-  height: 40px;
-  padding: 0 24px;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
-}
-
-@media (max-width: 1280px) {
-  .search-container {
-    min-width: 350px;
-  }
-  .custom-search {
-    width: 180px;
-  }
+  border-radius: 8px;
+  font-weight: 600;
+  height: 36px;
+  padding: 0 20px;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.18);
 }
 
 @media (max-width: 1024px) {
-  .header-right {
-    width: 100%;
-    justify-content: flex-start;
+  .header-bottom {
+    flex-direction: column;
+    gap: 12px;
   }
-  .search-container {
+
+  .bottom-group {
     width: 100%;
-    min-width: auto;
   }
 }
 </style>
