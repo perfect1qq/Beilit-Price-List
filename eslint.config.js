@@ -62,6 +62,17 @@ export default [
     }
   },
   {
+    files: ['scripts/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      globals: globals.node
+    },
+    rules: {
+      'no-console': 'off'
+    }
+  },
+  {
     ignores: ['dist/**', 'node_modules/**', '*.config.js']
   }
 ]

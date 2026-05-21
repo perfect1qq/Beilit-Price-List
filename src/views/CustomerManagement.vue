@@ -181,7 +181,11 @@ const handleFormSubmit = async (data: CustomerData) => {
     if (editingId.value) {
       const [err, res] = await to(customerApi.update(editingId.value, { ...data }))
       if (err) { showError(err, '更新客户失败'); throw err }
-      if (res?.customer) updateLocalItem(editingId.value as number, res.customer)
+      if (res?.customer) {
+        updateLocalItem(editingId.value as number, res.customer)
+      } else {
+        loadList()
+      }
       showSuccess('客户更新成功')
     } else {
       const [err] = await to(customerApi.create({ ...data }))

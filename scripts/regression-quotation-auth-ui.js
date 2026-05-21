@@ -1,5 +1,6 @@
-#!/usr/bin/env node
-/* eslint-disable no-console */
+
+ 
+/// <reference types="node" />
 /**
  * 前端关键回归（静态规则）：
  * 1) 查看模式隐藏智能解析区域

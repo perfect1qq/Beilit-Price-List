@@ -1,3 +1,5 @@
+// @ts-check
+/// <reference types="node" />
 import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
