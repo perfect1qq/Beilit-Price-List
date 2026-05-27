@@ -56,14 +56,14 @@ import { ref, computed } from 'vue'
 import type { PropType } from 'vue'
 import type { FormInstance } from 'element-plus'
 import { memoTitleRule, memoLabelRule, memoContentRule } from '@/utils/formRules'
-import type { MemoData } from '@/types'
+import type { MemoCreatePayload } from '@/types'
 
 const elFormRef = ref<FormInstance | null>(null)
 
 const props = defineProps({
   visible: { type: Boolean, required: true },
   isCreate: { type: Boolean, default: true },
-  form: { type: Object as PropType<MemoData>, required: true },
+  form: { type: Object as PropType<MemoCreatePayload>, required: true },
   saving: { type: Boolean, default: false },
 })
 

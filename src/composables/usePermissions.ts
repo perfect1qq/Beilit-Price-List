@@ -17,18 +17,15 @@ export const usePermissions = (): PermissionsReturn => {
   const currentUser = computed(() => store.user || { role: ROLES.GUEST })
   const isAdmin = computed(() => currentUser.value.role === ROLES.ADMIN)
   const isGuest = computed(() => currentUser.value.role === ROLES.GUEST)
-  const canEdit = computed(() => !isGuest.value)
-  const canDelete = computed(() => !isGuest.value)
-  const canCreate = computed(() => !isGuest.value)
-  const canExport = computed(() => !isGuest.value)
+  const canWrite = computed(() => !isGuest.value)
 
   return {
     currentUser,
     isAdmin,
     isGuest,
-    canEdit,
-    canDelete,
-    canCreate,
-    canExport
+    canEdit: canWrite,
+    canDelete: canWrite,
+    canCreate: canWrite,
+    canExport: canWrite,
   }
 }

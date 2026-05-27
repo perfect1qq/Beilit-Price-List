@@ -64,12 +64,12 @@ import { computed } from 'vue'
 import { Plus, Delete } from '@element-plus/icons-vue'
 import { beamNameRule, recordNameRule, positiveDecimalRule, noSpaceRawValidator } from '@/utils/formRules'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
-import type { BeamQuotationData, QuotationItem } from '@/types'
+import type { BeamQuotationData, BeamQuotationItem } from '@/types'
 
 const props = defineProps({
   mode: { type: String, required: true },
   formModel: { type: Object as PropType<BeamQuotationData>, required: true },
-  items: { type: Array as PropType<QuotationItem[]>, required: true }
+  items: { type: Array as PropType<BeamQuotationItem[]>, required: true }
 })
 
 const emit = defineEmits(['back', 'update', 'add-row', 'remove-row', 'update:formModel'])

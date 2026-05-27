@@ -16,12 +16,22 @@ import { to } from '@/utils/async'
 import { showError, showSuccess } from '@/utils/message'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 
+interface ListResult {
+  list?: unknown[]
+  records?: unknown[]
+  items?: unknown[]
+  total?: number
+  page?: number
+  pageSize?: number
+  [key: string]: unknown
+}
+
 interface HistoryViewOptions {
   api: {
-    list: (params: Record<string, unknown>) => Promise<Record<string, unknown>>
+    list: (params: Record<string, unknown>) => Promise<ListResult>
     remove: (id: number | string) => Promise<unknown>
   }
-  fetchList?: (page: number) => Promise<Record<string, unknown>>
+  fetchList?: (page: number) => Promise<ListResult>
   onEnterDetail?: (row: Record<string, unknown>, mode: string) => void
 }
 
@@ -66,7 +76,7 @@ export function useHistoryView({ api, fetchList, onEnterDetail }: HistoryViewOpt
     const loader = fetchList || (async (p: number) => {
       const [err, res] = await to(api.list({ page: p, pageSize: pageSize.value, keyword: searchKeyword.value.trim() }))
       if (err) throw err
-      return res as Record<string, unknown>
+      return res as ListResult
     })
 
     try {

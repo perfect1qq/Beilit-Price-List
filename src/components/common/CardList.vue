@@ -89,7 +89,7 @@
     <!-- 卡片列表 -->
     <div v-else class="cards-grid" :class="'grid-' + columns">
       <div v-for="(item, index) in data"
-        :key="(item[idField] as string | number) !== undefined ? (item[idField] as string | number) : index"
+        :key="((item as Record<string, unknown>)[idField] as string | number) !== undefined ? ((item as Record<string, unknown>)[idField] as string | number) : index"
         class="card-item" :class="{
           'is-selected': isSelected(item),
           'is-disabled': isDisabled(item),
@@ -106,8 +106,8 @@
         <slot name="card" :item="item" :index="index" :selected="isSelected(item)">
           <!-- 默认卡片内容 -->
           <div class="default-card">
-            <h4>{{ item[titleField] || item.title || '未命名' }}</h4>
-            <p>{{ item[descriptionField] || item.description || '' }}</p>
+            <h4>{{ (item as Record<string, unknown>)[titleField] || item.title || '未命名' }}</h4>
+            <p>{{ (item as Record<string, unknown>)[descriptionField] || item.description || '' }}</p>
           </div>
         </slot>
 
@@ -146,7 +146,7 @@ import type { PropType } from 'vue'
 import PagePagination from './PagePagination.vue'
 import { DEFAULT_PAGINATION } from '@/constants/table'
 
-export type CardListItem = Record<string, unknown> & {
+export type CardListItem = {
   id?: string | number
   title?: string
   description?: string
@@ -319,8 +319,9 @@ const currentPageSize = computed({
  */
 const isSelected = (item: T): boolean => {
   if (!props.selectable) return false
-  const id = item[props.idField]
-  return props.selectedItems.some(selected => selected[props.idField] === id)
+  const itemRecord = item as Record<string, unknown>
+  const id = itemRecord[props.idField]
+  return props.selectedItems.some(selected => (selected as Record<string, unknown>)[props.idField] === id)
 }
 
 /**
@@ -364,7 +365,7 @@ const handleSelectChange = (item: T, selected: boolean, _event?: MouseEvent): vo
     if (selected) {
       newSelected.push(item)
     } else {
-      newSelected = newSelected.filter(i => i[props.idField] !== item[props.idField])
+      newSelected = newSelected.filter(i => (i as Record<string, unknown>)[props.idField] !== (item as Record<string, unknown>)[props.idField])
     }
     emit('update:selectedItems', newSelected)
     emit('card-select', item, selected, newSelected)

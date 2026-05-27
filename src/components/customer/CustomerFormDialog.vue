@@ -26,8 +26,8 @@
     </el-form-item>
     <el-form-item label="工期" prop="deliveryDays">
       <div class="delivery-input-row">
-        <el-input-number v-model="localData.deliveryDays" :min="1" :max="365" controls-position="right"
-          placeholder="天数" style="width: 140px" />
+        <el-input-number v-model="localData.deliveryDays" :min="1" :max="365" controls-position="right" placeholder="天数"
+          style="width: 140px" />
         <span class="delivery-unit">天</span>
         <span v-if="localData.deliveryDays && localData.deliveryDays > 0" class="delivery-preview">
           → 预计完成：{{ getDeliveryDate(localData.deliveryDays) }}
@@ -50,11 +50,11 @@ import type { PropType } from 'vue'
 import FormDialog from '@/components/common/FormDialog.vue'
 import { createRequiredRule, createMaxLengthRule, noSpaceValidator } from '@/utils/formRules'
 import { addDays, formatDate } from '@/utils/date'
-import type { CustomerData } from '@/types'
+import type { CustomerCreatePayload, CustomerUpdatePayload } from '@/types'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
-  formData: { type: Object as PropType<CustomerData>, required: true },
+  formData: { type: Object as PropType<CustomerCreatePayload & CustomerUpdatePayload>, required: true },
   isEdit: { type: Boolean, default: false }
 })
 
@@ -65,7 +65,7 @@ const visible = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
-const localData = reactive<CustomerData>({ ...props.formData })
+const localData = reactive<CustomerCreatePayload & CustomerUpdatePayload>({ ...props.formData })
 
 watch(() => props.formData, (newVal) => {
   Object.assign(localData, newVal)

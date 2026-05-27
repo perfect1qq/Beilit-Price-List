@@ -41,7 +41,7 @@
  */
 
 import { computed, ref, watch, type Ref, type ComputedRef } from 'vue'
-import type { QuotationData } from '@/types'
+import type { QuotationCreatePayload, QuotationData } from '@/types'
 
 export interface QuotationRow {
   name: string
@@ -78,9 +78,9 @@ interface QuotationDraftReturn {
   setCompanyName: (value: unknown) => void
   setFinalPriceManual: (value: unknown) => void
   restoreAutoFinalPrice: () => void
-  loadRecord: (record: Record<string, unknown>, viewMode?: string) => void
+  loadRecord: (record: Record<string, unknown> | QuotationData, viewMode?: string) => void
   setMode: (newMode: string) => void
-  getPayload: () => QuotationData
+  getPayload: () => QuotationCreatePayload
   resetDraft: () => void
   setRows: (newItems: QuotationRow[], columns?: string[]) => void
 }
@@ -273,9 +273,9 @@ export function useQuotationDraft(): QuotationDraftReturn {
 
   const originalPayloadStr = ref('')
 
-  const loadRecord = (record: Record<string, unknown>, newMode = 'edit'): void => {
+  const loadRecord = (record: Record<string, unknown> | QuotationData, newMode = 'edit'): void => {
     name.value = String(record.name || '').trim()
-    companyName.value = String(record.companyName || record.name || '').trim()
+    companyName.value = String(record.companyName || '').trim()
     remark.value = (record.remark || '') as string
     discount.value = Number(record.discount || 0)
     finalPrice.value = Number(record.finalPrice || 0)
@@ -306,7 +306,7 @@ export function useQuotationDraft(): QuotationDraftReturn {
     mode.value = newMode
   }
 
-  const getPayload = (): QuotationData => ({
+  const getPayload = (): QuotationCreatePayload => ({
     name: name.value,
     companyName: companyName.value,
     remark: remark.value,

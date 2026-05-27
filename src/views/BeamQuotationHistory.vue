@@ -86,7 +86,7 @@ const {
       page: targetPage, pageSize: pageSize.value, keyword: searchKeyword.value.trim()
     }))
     if (err) throw err
-    return res
+    return res ?? { list: [], total: 0, page: targetPage, pageSize: pageSize.value }
   }
 })
 

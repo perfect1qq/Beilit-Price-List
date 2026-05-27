@@ -31,16 +31,8 @@ import { ref } from 'vue'
 import type { Ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { quotationApi } from '@/api/quotation'
-import type { QuotationData } from '@/types'
-
-interface QuotationRow {
-  name?: string
-  spec?: string
-  quantity?: string | number
-  unitPrice?: string | number
-  totalPrice?: string | number
-  [key: string]: unknown
-}
+import type { QuotationCreatePayload, QuotationItem } from '@/types'
+import type { QuotationRow } from '@/composables/useQuotationDraft'
 
 interface FormModel {
   name: string
@@ -64,10 +56,10 @@ interface QuotationEditorDeps {
   setFinalPriceManual: (value: unknown) => void
   restoreAutoFinalPrice: () => void
   setRows?: (newItems: QuotationRow[], columns?: string[]) => void
-  getPayload: () => QuotationData
-  saveQuotation: (payload: QuotationData, editingId?: number | null) => Promise<unknown>
+  getPayload: () => QuotationCreatePayload
+  saveQuotation: (payload: QuotationCreatePayload, editingId?: number | null) => Promise<unknown>
   onSaveSuccess?: (result?: unknown) => void
-  parseTextFn: (text: string) => Promise<{ items: QuotationRow[]; columns: unknown[]; warnings?: string[] } | null>
+  parseTextFn: (text: string) => Promise<{ items: QuotationItem[]; columns: unknown[]; warnings?: string[] } | null>
 }
 
 interface QuotationEditorReturn {
@@ -95,7 +87,7 @@ const useQuotationEditor = (deps: Partial<QuotationEditorDeps>): Partial<Quotati
     setFinalPriceManual,
     restoreAutoFinalPrice,
     setRows = () => {},
-    getPayload = () => ({}) as QuotationData,
+    getPayload = () => ({}) as QuotationCreatePayload,
     saveQuotation = async () => {},
     onSaveSuccess,
     parseTextFn = async () => null,
@@ -148,7 +140,14 @@ const useQuotationEditor = (deps: Partial<QuotationEditorDeps>): Partial<Quotati
       return
     }
 
-    setRows(result.items || [], result.columns || [])
+    const mappedRows: QuotationRow[] = (result.items || []).map((item) => ({
+      name: String(item.name ?? ''),
+      spec: String(item.spec ?? ''),
+      quantity: (item.quantity ?? '') as string | number,
+      unitPrice: (item.unitPrice ?? '') as string | number,
+      totalPrice: (item.totalPrice ?? '') as string | number,
+    }))
+    setRows(mappedRows, (result.columns || []) as string[])
 
     if (result.warnings?.length) {
       showWarning(result.warnings[0])

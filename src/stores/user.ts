@@ -53,7 +53,7 @@ export const useUserStore = defineStore('user', {
   },
 
   actions: {
-    setSession(payload: SessionPayload = {}): void {
+    setSession(payload: Partial<SessionPayload> = {}): void {
       this.user = payload.user || null
       this.permissions = Array.isArray(payload.permissions)
         ? payload.permissions
@@ -148,6 +148,12 @@ export const useUserStore = defineStore('user', {
     updateAvatar(avatar: string): void {
       if (this.user) {
         this.user.avatar = avatar
+      }
+    },
+
+    updateName(name: string): void {
+      if (this.user) {
+        this.user.name = name
       }
     },
   },

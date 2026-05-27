@@ -47,33 +47,9 @@ import { to } from '@/utils/async'
 import { formatDateOnly } from '@/utils/date'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { useListQueryState } from '@/composables/useListQueryState'
-import type { QuotationData } from '@/types'
+import type { QuotationData, QuotationCreatePayload, QuotationListResult, PaginationParams } from '@/types'
 
-interface HistoryRecord {
-  id: number | string
-  companyName?: string
-  name?: string
-  title?: string
-  createDate?: string
-  createTime?: string
-  createdAt?: string
-  updateTime?: string
-  updatedAt?: string
-  [key: string]: unknown
-}
-
-interface ApiListResponse {
-  quotations?: HistoryRecord[]
-  records?: HistoryRecord[]
-  list?: HistoryRecord[]
-  items?: HistoryRecord[]
-  quotation?: HistoryRecord
-  record?: HistoryRecord
-  pageSize?: number
-  page?: number
-  total?: number
-  [key: string]: unknown
-}
+type HistoryRecord = QuotationData
 
 interface CompanyGroup {
   companyName: string
@@ -83,14 +59,17 @@ interface CompanyGroup {
   records: HistoryRecord[]
 }
 
+interface QuotationHistoryApi {
+  list: (params?: PaginationParams) => Promise<QuotationListResult>
+  create: (data: QuotationCreatePayload) => Promise<{ quotation: QuotationData }>
+  update: (id: number | string, data: QuotationCreatePayload) => Promise<{ quotation: QuotationData }>
+  remove: (id: number | string) => Promise<null>
+  copy?: (id: number | string) => Promise<{ quotation: QuotationData }>
+  [key: string]: unknown
+}
+
 interface QuotationHistoryOptions {
-  api: {
-    list?: (params?: Record<string, unknown>) => Promise<Record<string, unknown>>
-    create?: (data: QuotationData) => Promise<unknown>
-    update?: (id: number | string, data: QuotationData) => Promise<unknown>
-    remove?: (id: number | string) => Promise<unknown>
-    [key: string]: unknown
-  }
+  api: QuotationHistoryApi
   loadToEditor: (record: HistoryRecord, mode: string) => void
 }
 
@@ -108,7 +87,7 @@ interface QuotationHistoryReturn {
   onKeywordInput: () => void
   handleCurrentChange: (val: number) => void
   handleSizeChange: (val: number) => void
-  saveQuotation: (payload: QuotationData, editingId?: number | string | null) => Promise<HistoryRecord | null>
+  saveQuotation: (payload: QuotationCreatePayload, editingId?: number | string | null) => Promise<HistoryRecord | null>
   copyQuotation: (record: HistoryRecord) => Promise<HistoryRecord | null>
   deleteHistory: (record: HistoryRecord) => Promise<void>
   viewHistory: (record: HistoryRecord) => void
@@ -117,28 +96,18 @@ interface QuotationHistoryReturn {
 
 const clone = <T>(value: T): T => (value === null || value === undefined ? value : JSON.parse(JSON.stringify(value)))
 
-const normalizeRecord = (record: Partial<HistoryRecord> = {}): HistoryRecord => ({
-  ...record,
-  id: record.id ?? 0,
-  companyName: record.companyName || record.name || '',
-  name: record.name || record.companyName || '',
-  createDate: record.createDate || formatDateOnly(record.createTime || record.createdAt || ''),
-  createTime: record.createTime || record.createdAt || '',
-  updateTime: record.updateTime || record.updatedAt || ''
-})
-
-const hasPaginationMeta = (result: Record<string, unknown>): boolean => Boolean(result && (
+const hasPaginationMeta = (result: QuotationListResult): boolean => Boolean(result && (
   Object.prototype.hasOwnProperty.call(result, 'total') ||
   Object.prototype.hasOwnProperty.call(result, 'page') ||
   Object.prototype.hasOwnProperty.call(result, 'pageSize')
 ))
 
-const normalizeCompanyName = (record: Partial<HistoryRecord> = {}): string =>
+const normalizeCompanyName = (record: Partial<QuotationData> = {}): string =>
   String(record.companyName || record.name || '未命名公司').trim() || '未命名公司'
 
-const toDateValue = (record: Partial<HistoryRecord> = {}): number => {
-  const value = record.createTime || record.updateTime || record.createDate || ''
-  const date = new Date(value as string)
+const toDateValue = (record: Partial<QuotationData> = {}): number => {
+  const value = record.createdAt || record.updatedAt || ''
+  const date = new Date(value)
   return Number.isNaN(date.getTime()) ? 0 : date.getTime()
 }
 
@@ -162,8 +131,8 @@ const groupByCompany = (records: HistoryRecord[] = []): CompanyGroup[] => {
     groups.push({
       companyName: group.companyName,
       count: recordsSorted.length,
-      latestDate: recordsSorted[0]?.createDate || '',
-      latestTime: recordsSorted[0]?.createTime || recordsSorted[0]?.updateTime || '',
+      latestDate: formatDateOnly(recordsSorted[0]?.createdAt || ''),
+      latestTime: recordsSorted[0]?.createdAt || recordsSorted[0]?.updatedAt || '',
       records: recordsSorted
     })
   }
@@ -183,14 +152,12 @@ const fetchAllRecords = async (api: QuotationHistoryOptions['api'], keyword = ''
   let safety = 0
 
   while (safety < 200) {
-    const result = await api.list!({ page: currentPage, pageSize, keyword: keyword.trim() }) as Record<string, unknown>
+    const result = await api.list({ page: currentPage, pageSize, keyword: keyword.trim() })
     
-    const rawList = result?.quotations || result?.records || result?.list || result?.items || result || []
-    const normalizedList = Array.isArray(rawList) ? (rawList as HistoryRecord[]).map(normalizeRecord) : []
+    const rawList = result?.list || []
+    if (!rawList.length) break
 
-    if (!normalizedList.length) break
-
-    const uniqueBatch = normalizedList.filter((item) => {
+    const uniqueBatch = rawList.filter((item) => {
       if (item.id === undefined || item.id === null) return true
       if (seenIds.has(item.id)) return false
       seenIds.add(item.id)
@@ -206,7 +173,7 @@ const fetchAllRecords = async (api: QuotationHistoryOptions['api'], keyword = ''
     const serverPage = Number(result?.page ?? currentPage)
     const serverTotal = Number(result?.total ?? merged.length)
 
-    if (!Number.isFinite(serverPageSize) || normalizedList.length < serverPageSize) break
+    if (!Number.isFinite(serverPageSize) || rawList.length < serverPageSize) break
     if (Number.isFinite(serverTotal) && merged.length >= serverTotal) break
 
     currentPage = serverPage + 1
@@ -243,7 +210,7 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
       throw err
     }
 
-    historyList.value = records as HistoryRecord[]
+    historyList.value = records ?? []
 
     const maxPage = Math.max(1, Math.ceil(groupedHistoryList.value.length / pageSize.value) || 1)
     if (page.value > maxPage) page.value = maxPage
@@ -273,21 +240,21 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
     if (sizeErr) ElMessage.error((sizeErr as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (sizeErr as { message?: string })?.message || '历史记录加载失败')
   }
 
-  const saveQuotation = async (payload: QuotationData, editingId?: number | string | null): Promise<HistoryRecord | null> => {
+  const saveQuotation = async (payload: QuotationCreatePayload, editingId?: number | string | null): Promise<HistoryRecord | null> => {
     const body = clone(payload)
 
     if (editingId) {
-      const result = await withActionLock(editingId, async () => api.update!(editingId, body)) as Record<string, unknown> | null | undefined
+      const result = await withActionLock(editingId, async () => api.update(editingId, body))
       if (!result) return null
-      const record = normalizeRecord((result?.quotation || result?.record || result) as Partial<HistoryRecord>)
+      const record = result.quotation
       const index = historyList.value.findIndex(item => item.id === record.id)
       if (index !== -1) historyList.value[index] = record
       else await loadHistoryList()
       return record
     }
 
-    const result = await api.create!(body) as Record<string, unknown> | null | undefined
-    const record = normalizeRecord((result?.quotation || result?.record || result) as Partial<HistoryRecord>)
+    const result = await api.create(body)
+    const record = result.quotation
     if (record) historyList.value.unshift(record)
     else await loadHistoryList()
     return record
@@ -304,7 +271,7 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
     const snapshot = [...historyList.value]
     removeById(record.id)
 
-    const [err] = await to(withActionLock(record.id, async () => api.remove!(record.id)))
+    const [err] = await to(withActionLock(record.id, async () => api.remove(record.id)))
     if (err) {
       historyList.value = snapshot
       ElMessage.error((err as { message?: string; response?: { data?: { message?: string } } })?.message || (err as { response?: { data?: { message?: string } } })?.response?.data?.message || '删除失败')
@@ -327,16 +294,15 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
     ))
     if (confirmErr) return null
 
-    const copyFn = (api as Record<string, unknown>).copy as ((id: number | string) => Promise<ApiListResponse>) | undefined
-    const result = copyFn ? await copyFn(record.id) : undefined
-    const newRecord = normalizeRecord(result?.quotation || result?.record || result as HistoryRecord)
+    const result = api.copy ? await api.copy(record.id) : undefined
+    const newRecord = result?.quotation
 
     if (newRecord) {
       await loadHistoryList()
       ElMessage.success(`复制成功，新名称：「${newRecord.name || newRecord.companyName || '-'}」`)
     }
 
-    return newRecord
+    return newRecord ?? null
   }
 
   return {

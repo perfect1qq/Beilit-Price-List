@@ -106,20 +106,11 @@ import approvalApi from '@/api/approval'
 import { useListQueryState } from '@/composables/useListQueryState'
 import CardList from '@/components/common/CardList.vue'
 import SearchBar from '@/components/common/SearchBar.vue'
+import type { QuotationData } from '@/types'
 
 const router = useRouter()
 const loading = ref(false)
-interface ApprovalHistoryItem {
-  id: number | string
-  name?: string
-  companyName?: string
-  ownerName?: string
-  createDate?: string
-  status: string
-  [key: string]: unknown
-}
-
-const list = ref<ApprovalHistoryItem[]>([])
+const list = ref<QuotationData[]>([])
 const total = ref(0)
 const { keyword: searchKeyword, page, pageSize } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
 
@@ -133,12 +124,12 @@ const loadList = async (targetPage = page.value) => {
     pageSize: pageSize.value,
     keyword: searchKeyword.value.trim()
   }))
-  if (err) {
+  if (err || !res) {
     showError(err, '审批历史加载失败')
     loading.value = false
     return
   }
-  list.value = res.approvals || []
+  list.value = res.list || []
   total.value = Number(res.total || 0)
   page.value = Number(res.page || targetPage)
   pageSize.value = Number(res.pageSize || pageSize.value)

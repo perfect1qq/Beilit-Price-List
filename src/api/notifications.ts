@@ -1,6 +1,6 @@
 import request from '../utils/request'
 import { unwrap } from '../utils/unwrap'
-import type { RequestConfig } from '@/types'
+import type { NotificationData, PaginatedResult, RequestConfig } from '@/types'
 
 const quietPollingConfig: RequestConfig = {
   silent: true,
@@ -9,15 +9,19 @@ const quietPollingConfig: RequestConfig = {
 }
 
 const getUnreadCount = () =>
-  request.get('/api/notifications/unread-count', quietPollingConfig)
+  request.get<{ count: number }>('/api/notifications/unread-count', quietPollingConfig)
 
-const list = () => request.get('/api/notifications', quietPollingConfig)
+const list = () =>
+  request.get<PaginatedResult<NotificationData>>('/api/notifications', quietPollingConfig)
 
-const markAsRead = (id: number | string) => request.put(`/api/notifications/${id}/read`)
+const markAsRead = (id: number | string) =>
+  request.put<null>(`/api/notifications/${id}/read`)
 
-const markAllAsRead = () => request.post('/api/notifications/read-all')
+const markAllAsRead = () =>
+  request.post<null>('/api/notifications/read-all')
 
-const remove = (id: number | string) => request.delete(`/api/notifications/${id}`)
+const remove = (id: number | string) =>
+  request.delete<null>(`/api/notifications/${id}`)
 
 const notificationApi = {
   getUnreadCount: unwrap(getUnreadCount),

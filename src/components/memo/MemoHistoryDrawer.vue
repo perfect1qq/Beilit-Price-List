@@ -9,7 +9,7 @@
       <el-timeline-item v-for="h in safeList" :key="h.id" :timestamp="formatTime(h.createdAt as string)"
         :type="h.action === 'complete' ? 'success' : 'primary'">
         <div class="log-box">
-          <p class="log-user"><strong>{{ h.operatorName }}</strong> {{ actionLabel(h.action) }}</p>
+          <p class="log-user"><strong>{{ h.operatorName }}</strong> {{ actionLabel(h.action!) }}</p>
           <div class="log-content">{{ h.content }}</div>
         </div>
       </el-timeline-item>

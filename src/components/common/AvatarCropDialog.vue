@@ -42,7 +42,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { VueCropper } from 'vue-cropper/next'
+import VueCropper from 'vue-cropper/next'
 import 'vue-cropper/next/dist/index.css'
 import authApi from '@/api/auth'
 import { useUserStore } from '@/stores/user'

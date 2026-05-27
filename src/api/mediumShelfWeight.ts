@@ -1,9 +1,12 @@
 import request from '../utils/request'
 import { unwrap } from '../utils/unwrap'
-import type { MediumShelfWeightData } from '@/types'
+import type { MediumShelfWeightData, MediumShelfWeightSavePayload } from '@/types'
 
-const getConfig = () => request.get('/api/medium-shelf-weight')
-const saveConfig = (data: MediumShelfWeightData) => request.put('/api/medium-shelf-weight', data)
+const getConfig = () =>
+  request.get<{ config: MediumShelfWeightData }>('/api/medium-shelf-weight')
+
+const saveConfig = (data: MediumShelfWeightSavePayload) =>
+  request.put<{ config: MediumShelfWeightData }>('/api/medium-shelf-weight', data)
 
 const mediumShelfWeightApi = {
   getConfig: unwrap(getConfig),

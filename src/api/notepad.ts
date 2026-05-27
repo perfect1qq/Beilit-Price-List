@@ -1,28 +1,38 @@
 import request from '../utils/request'
 import { unwrap } from '../utils/unwrap'
-import type { PaginationParams, NotepadData } from '@/types'
+import type { PaginationParams, NotepadCreatePayload, NotepadUpdatePayload, NotepadData, NotepadListResult, NotepadHistoryListResult } from '@/types'
 
-const list = (params?: PaginationParams & { keyword?: string; folder?: string }) =>
-  request.get('/api/notepads', { params })
+interface NotepadListParams extends PaginationParams {
+  keyword?: string
+  folder?: string
+}
 
-const listFolders = () => request.get('/api/notepads/folders')
+const list = (params?: NotepadListParams) =>
+  request.get<NotepadListResult>('/api/notepads', { params })
 
-const getById = (id: number | string) => request.get(`/api/notepads/${id}`)
+const listFolders = () =>
+  request.get<{ folders: string[] }>('/api/notepads/folders')
 
-const create = (data: NotepadData) => request.post('/api/notepads', data)
+const getById = (id: number | string) =>
+  request.get<{ note: NotepadData }>(`/api/notepads/${id}`)
 
-const update = (id: number | string, data: Partial<NotepadData>) =>
-  request.put(`/api/notepads/${id}`, data)
+const create = (data: NotepadCreatePayload) =>
+  request.post<{ note: NotepadData }>('/api/notepads', data)
 
-const togglePin = (id: number | string) => request.put(`/api/notepads/${id}/pin`)
+const update = (id: number | string, data: NotepadUpdatePayload) =>
+  request.put<{ note: NotepadData }>(`/api/notepads/${id}`, data)
 
-const remove = (id: number | string) => request.delete(`/api/notepads/${id}`)
+const togglePin = (id: number | string) =>
+  request.put<{ note: NotepadData }>(`/api/notepads/${id}/pin`)
+
+const remove = (id: number | string) =>
+  request.delete<null>(`/api/notepads/${id}`)
 
 const history = (id: number | string, params?: PaginationParams) =>
-  request.get(`/api/notepads/${id}/history`, { params })
+  request.get<{ history: NotepadHistoryListResult }>(`/api/notepads/${id}/history`, { params })
 
 const batchDelete = (ids: number[]) =>
-  request.post('/api/notepads/batch-delete', { ids })
+  request.post<{ success: boolean; deletedCount: number }>('/api/notepads/batch-delete', { ids })
 
 const notepadApi = {
   list: unwrap(list),

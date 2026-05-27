@@ -2,11 +2,28 @@ import request from '../utils/request'
 import { unwrap } from '../utils/unwrap'
 import type { PaginationParams, BeamQuotationData } from '@/types'
 
-const list = (params?: PaginationParams) => request.get('/api/beam-quotations', { params })
-const create = (data: BeamQuotationData) => request.post('/api/beam-quotations', data)
-const update = (id: number | string, data: BeamQuotationData) => request.put(`/api/beam-quotations/${id}`, data)
-const remove = (id: number | string) => request.delete(`/api/beam-quotations/${id}`)
-const checkName = (name: string) => request.get('/api/beam-quotations/check-name', { params: { name } })
+interface BeamListResult {
+  list: BeamQuotationData[]
+  total: number
+  page: number
+  pageSize: number
+  [key: string]: unknown
+}
+
+const list = (params?: PaginationParams) =>
+  request.get<BeamListResult>('/api/beam-quotations', { params })
+
+const create = (data: Partial<BeamQuotationData>) =>
+  request.post<{ record: BeamQuotationData }>('/api/beam-quotations', data)
+
+const update = (id: number | string, data: Partial<BeamQuotationData>) =>
+  request.put<{ record: BeamQuotationData }>(`/api/beam-quotations/${id}`, data)
+
+const remove = (id: number | string) =>
+  request.delete<null>(`/api/beam-quotations/${id}`)
+
+const checkName = (name: string) =>
+  request.get<{ exists: boolean }>('/api/beam-quotations/check-name', { params: { name } })
 
 const beamApi = {
   list: unwrap(list),

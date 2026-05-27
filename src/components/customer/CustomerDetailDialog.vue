@@ -62,11 +62,11 @@ import type { PropType } from 'vue'
 import { Plus } from '@element-plus/icons-vue'
 import AsyncDialog from '@/components/common/AsyncDialog.vue'
 import { formatDate, formatDateTime } from '@/utils/date'
-import type { CustomerData } from '@/types'
+import type { CustomerDetailData } from '@/types'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
-  customer: { type: Object as PropType<CustomerData | null>, default: null },
+  customer: { type: Object as PropType<CustomerDetailData | null>, default: null },
   canCreate: { type: Boolean, default: false },
   isGuest: { type: Boolean, default: false }
 })

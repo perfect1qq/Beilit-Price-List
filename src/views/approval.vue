@@ -101,9 +101,9 @@
           <div class="card-footer">
             <el-button type="primary" size="small" round @click.stop="editDetail(item.id)">详情</el-button>
             <el-button type="success" size="small" plain :loading="isActionLoading(item.id as string | number)"
-              @click.stop="approveRow(item as ApprovalItem)">通过</el-button>
+              @click.stop="approveRow(item)">通过</el-button>
             <el-button type="danger" size="small" plain :loading="isActionLoading(item.id as string | number)"
-              @click.stop="rejectRow(item as ApprovalItem)">驳回</el-button>
+              @click.stop="rejectRow(item)">驳回</el-button>
           </div>
         </div>
       </template>
@@ -122,22 +122,13 @@ import { notificationApi } from '@/api/notifications'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { useListQueryState } from '@/composables/useListQueryState'
 import CardList from '@/components/common/CardList.vue'
+import type { QuotationData } from '@/types'
 import SearchBar from '@/components/common/SearchBar.vue'
 import { showError, showSuccess } from '@/utils/message'
 
 const router = useRouter()
 const loading = ref(false)
-interface ApprovalItem {
-  id: number | string
-  name?: string
-  companyName?: string
-  ownerName?: string
-  createDate?: string
-  status: string
-  [key: string]: unknown
-}
-
-const list = ref<ApprovalItem[]>([])
+const list = ref<QuotationData[]>([])
 const total = ref(0)
 const { keyword: searchKeyword, page, pageSize } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
 const { isActionLoading, withActionLock, replaceById, removeById } = useInstantListActions(list)
@@ -153,12 +144,12 @@ const loadList = async (targetPage = page.value) => {
     page: targetPage,
     pageSize: pageSize.value
   }))
-  if (err) {
+  if (err || !res) {
     showError(err, '获取审批列表失败')
     loading.value = false
     return
   }
-  list.value = res.approvals || []
+  list.value = res.list || []
   total.value = Number(res.total || 0)
   page.value = Number(res.page || targetPage)
   pageSize.value = Number(res.pageSize || pageSize.value)
@@ -170,7 +161,7 @@ const editDetail = (id: number | string) => {
   router.push({ path: `/approval/${id}`, query: { mode: 'edit' } })
 }
 
-const approveRow = async (row: ApprovalItem) => {
+const approveRow = async (row: QuotationData) => {
   const [confirmErr] = await to(ElMessageBox.confirm(`确认通过报价单「${row.companyName || row.name}」吗？`, '审批通过', { type: 'warning' }))
   if (confirmErr) return
 
@@ -188,7 +179,7 @@ const approveRow = async (row: ApprovalItem) => {
   await loadList(page.value)
 }
 
-const rejectRow = async (row: ApprovalItem) => {
+const rejectRow = async (row: QuotationData) => {
   const [promptErr, promptRes] = await to(ElMessageBox.prompt('请输入驳回原因', '驳回报价单', {
     confirmButtonText: '确定',
     cancelButtonText: '取消'

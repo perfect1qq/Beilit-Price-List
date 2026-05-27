@@ -3,6 +3,7 @@ import { ElMessageBox } from 'element-plus'
 import mediumShelfWeightApi from '@/api/mediumShelfWeight'
 import { to } from '@/utils/async'
 import { showError, showSuccess, showWarning, showInfo } from '@/utils/message'
+import type { MediumShelfWeightData } from '@/types'
 
 interface SummaryRow {
   index: number
@@ -24,14 +25,6 @@ interface DetailRow {
   quote: string
   actual: string
   [key: string]: unknown
-}
-
-interface ShelfConfig {
-  title?: string
-  payload?: {
-    summaryRows?: SummaryRow[]
-    detailRows?: DetailRow[]
-  }
 }
 
 interface MediumShelfWeightReturn {
@@ -118,35 +111,37 @@ export function useMediumShelfWeight(): MediumShelfWeightReturn {
   const displaySummaryRows = computed(() => getCurrentSummaryRows())
   const displayDetailRows = computed(() => getCurrentDetailRows())
 
-  const applyConfig = (config: ShelfConfig): void => {
+  const applyConfig = (config: MediumShelfWeightData): void => {
     const payload = config?.payload || {}
+    const rawSummary = normalizeList(payload.summaryRows || []) as Record<string, unknown>[]
+    const rawDetail = normalizeList(payload.detailRows || []) as Record<string, unknown>[]
 
     configTitle.value = config?.title || '中型货架重量表'
 
     summaryRows.value = reindexRows(
-      cloneRows(normalizeList(payload.summaryRows || [])).map((item, index) => ({
-        index: item.index || index + 1,
-        name: item.name || '',
-        spec: item.spec || '',
-        layers: item.layers || '',
-        load: item.load || '',
-        totalWeight: item.totalWeight || '',
-        uprightWeight: item.uprightWeight || '',
-        beamWeight: item.beamWeight || '',
-        shelfWeight: item.shelfWeight || ''
-      }))
-    )
+      cloneRows(rawSummary).map((item, index) => ({
+        index: Number(item.index) || index + 1,
+        name: String(item.name || ''),
+        spec: String(item.spec || ''),
+        layers: String(item.layers || ''),
+        load: String(item.load || ''),
+        totalWeight: String(item.totalWeight || ''),
+        uprightWeight: String(item.uprightWeight || ''),
+        beamWeight: String(item.beamWeight || ''),
+        shelfWeight: String(item.shelfWeight || '')
+      })) as SummaryRow[]
+    ) as SummaryRow[]
 
     detailRows.value = reindexRows(
-      cloneRows(normalizeList(payload.detailRows || [])).map((item, index) => ({
-        index: item.index || index + 1,
-        layerGroup: item.layerGroup || '',
-        spec: item.spec || '',
-        loadPerLayer: item.loadPerLayer || '',
-        quote: item.quote || '',
-        actual: item.actual || ''
-      }))
-    )
+      cloneRows(rawDetail).map((item, index) => ({
+        index: Number(item.index) || index + 1,
+        layerGroup: String(item.layerGroup || ''),
+        spec: String(item.spec || ''),
+        loadPerLayer: String(item.loadPerLayer || ''),
+        quote: String(item.quote || ''),
+        actual: String(item.actual || '')
+      })) as DetailRow[]
+    ) as DetailRow[]
 
     if (editMode.value) {
       draftSummaryRows.value = cloneRows(summaryRows.value)
@@ -165,7 +160,7 @@ export function useMediumShelfWeight(): MediumShelfWeightReturn {
       loading.value = false
       return
     }
-    applyConfig((res as { config?: ShelfConfig })?.config as ShelfConfig)
+    applyConfig((res as { config?: MediumShelfWeightData })?.config as MediumShelfWeightData)
     loading.value = false
   }
 
@@ -250,7 +245,7 @@ export function useMediumShelfWeight(): MediumShelfWeightReturn {
       saving.value = false
       return
     }
-    applyConfig((res as { config?: ShelfConfig }).config as ShelfConfig)
+    applyConfig((res as { config?: MediumShelfWeightData }).config as MediumShelfWeightData)
     editMode.value = false
     draftSummaryRows.value = []
     draftDetailRows.value = []

@@ -1,85 +1,3 @@
-<!--
-  @file views/approvalDetail.vue
-  @description 审批详情页面（查看和审批报价单）
-
-  功能说明：
-  - 展示报价单的完整信息（公司名、项目明细、价格等）
-  - 支持编辑模式（可修改公司名称、折扣、备注、成交价）
-  - 执行审批操作：通过 / 驳回
-  - 实时计算价格（小计、优惠、成交价）
-  - 查看审批流水日志（如有）
-
-  页面布局：
-  ┌──────────────────────────────────────────────────────────────┐
-  │  approvalDetail (审批详情)                                    │
-  │                                                              │
-  │  Header:                                                     │
-  │  标题: 公司名称                                              │
-  │  副标题: 单据号: QT001 | 发起人: 张三                        │
-  │  按钮: [待审批标签] [返回] [通过] [驳回] [保存修改]        │
-  │                                                              │
-  │  Form (基本信息):                                            │
-  │  ┌─────────────┬──────────────┬──────────────┐             │
-  │  │ 公司名称     │ 折折扣 (%)   │ 成交价        │             │
-  │  │ [_________] │ [___0~100__] │ [____¥____]   │             │
-  │  ├─────────────┴──────────────┴──────────────┤             │
-  │  │ 备注: [____________________________]      │             │
-  │  └───────────────────────────────────────────┘             │
-  │                                                              │
-  │  Table (项目明细表):                                         │
-  │  ┌──────────┬──────────┬──────┬──────────┬──────────┐      │
-  │  │ 项目名称  │ 规格型号  │ 数量  │ 单价(¥)  │ 总价(¥)  │      │
-  │  ├──────────┼──────────┼──────┼──────────┼──────────┤      │
-  │  │ 立柱     │ 80×60    │ 100  │ 50.00    │ 5000.00  │      │
-  │  │ 横梁     │ 2.4m     │ 200  │ 30.00    │ 6000.00  │      │
-  │  └──────────┴──────────┴──────┴──────────┴──────────┘      │
-  │                                                              │
-  │  Summary Bar (汇总栏):                                      │
-  │  合计小计: ¥11000.00 | 优惠金额: ¥1100.00                 │
-  │  最终成交价: ¥9900.00 [恢复自动计算]                        │
-  └──────────────────────────────────────────────────────────────┘
-
-  价格计算逻辑：
-  ┌─────────────────────────────────────────────────────────────┐
-  │  计算公式                                                    │
-  ├─────────────────────────────────────────────────────────────┤
-  │  subtotal = Σ(item.quantity × item.unitPrice)               │
-  │  discountAmount = subtotal × (discount / 100)              │
-  │  finalPrice = subtotal - discountAmount                     │
-  │                                                             │
-  │  特殊情况：                                                  │
-  │  - 可手动覆盖 finalPrice（标记为 isManualFinalPrice）       │
-  │  - 手动模式时可点击"恢复自动计算"回到自动模式              │
-  └─────────────────────────────────────────────────────────────┘
-
-  视图模式与权限：
-  ┌────────────────┬───────────────────────────────────────────┐
-  │  条件            │  可用操作                                  │
-  ├────────────────┼───────────────────────────────────────────┤
-  │  历史记录页面   │  只读，所有字段 disabled                   │
-  │  待审批 + admin │  编辑、通过、驳回、保存                    │
-  │  已通过         │  只能查看，无审批按钮                      │
-  │  已驳回         │  可编辑并重新提交                          │
-  │  guest          │  只读，无任何编辑/审批按钮                  │
-  └────────────────┴───────────────────────────────────────────┘
-
-  API 调用：
-  - GET /api/quotations/:id → 获取报价单详情
-  - PUT /api/quotations/:id → 保存修改
-  - POST /api/quotations/:id/approve → 通过审批
-  - POST /api/quotations/:id/reject → 驳回（需 comment）
-
-  路由参数：
-  - :id - 报价单 ID（必填）
-  - ?mode=edit - 进入编辑模式
-  - ?mode=view - 查看模式（默认）
-
-  组件特性：
-  - 自动计算行总价（quantity × unitPrice）
-  - 折扣实时影响最终成交价
-  - 支持手动调整成交价（特殊情况处理）
--->
-
 <template>
   <el-card shadow="never" class="card">
     <div class="head">
@@ -112,15 +30,13 @@
         <el-col :span="8">
           <el-form-item label="折扣 (%)">
             <el-input-number :model-value="safeDiscount" :disabled="!editMode || isHistoryRoute" :min="0" :max="100"
-              controls-position="right" style="width: 100%"
-              @change="handleDiscountInput" />
+              controls-position="right" style="width: 100%" @change="handleDiscountInput" />
           </el-form-item>
         </el-col>
         <el-col :span="8">
           <el-form-item label="成交价">
             <el-input-number :model-value="safeFinalPrice" :disabled="!editMode || isHistoryRoute" :min="0"
-              :precision="2" controls-position="right" style="width: 100%"
-              @input="handleFinalPriceInput" />
+              :precision="2" controls-position="right" style="width: 100%" @input="handleFinalPriceInput" />
           </el-form-item>
         </el-col>
       </el-row>
@@ -184,202 +100,41 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
-import { to } from '@/utils/async'
-import { showError, showSuccess, showWarning } from '@/utils/message'
-import approvalApi from '@/api/approval'
-import quotationApi from '@/api/quotation'
-import { useQuotationDraft } from '@/composables/useQuotationDraft'
-import type { QuotationRow } from '@/composables/useQuotationDraft'
-import { useQuotationEditor } from '@/composables/useQuotationEditor'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
-import type { QuotationData } from '@/types'
+import { useApprovalDetail } from '@/composables/useApprovalDetail'
 
-const route = useRoute()
-const router = useRouter()
-const isHistoryRoute = computed(() => String(route.path || '').startsWith('/approval/history/'))
-const editMode = ref(route.query.mode === 'edit' && !isHistoryRoute.value)
-const logs = ref<Array<{ id: number | string; createdAt: string; action: string; operatorName: string; comment?: string }>>([])
-const actionLoading = ref(false)
-
-const meta = reactive({
-  id: null as number | string | null,
-  name: '',
-  companyName: '',
-  ownerName: '',
-  status: 'pending' as string
-})
+defineOptions({ name: 'ApprovalDetail' })
 
 const {
+  isHistoryRoute,
+  editMode,
+  logs,
+  actionLoading,
+  meta,
   companyName,
   remark,
-  discount,
   finalPrice,
   items,
   subtotal,
   discountAmount,
   isManualFinalPrice,
+  safeDiscount,
+  safeFinalPrice,
+  canApprove,
+  approveButtonText,
+  tagType,
+  statusLabel,
+  toNumber,
+  handleDiscountInput,
+  handleFinalPriceInput,
+  handleUnitPriceChange,
   updateRowTotal,
-  setFinalPriceManual,
   restoreAutoFinalPrice,
-  loadRecord,
-  getPayload,
-  originalPayloadStr
-} = useQuotationDraft()
-
-const safeDiscount = computed<number>(() => Number(discount.value || 0) || 0)
-const safeFinalPrice = computed<number>(() => Number(finalPrice.value || 0) || 0)
-const hasUnsavedChanges = computed<boolean>(() => JSON.stringify(getPayload()) !== originalPayloadStr.value)
-const canApprove = computed<boolean>(() => meta.status === 'pending' && !editMode.value && !hasUnsavedChanges.value)
-const approveButtonText = computed<string>(() => (canApprove.value ? '准予通过' : '请先保存修改'))
-
-const tagType = (status: string) => ({
-  draft: 'info', pending: 'warning', approved: 'success', rejected: 'danger', deleted: 'info',
-  submit: 'primary', approve: 'success', reject: 'danger', recall: 'warning'
-}[status] || 'info')
-
-const statusLabel = (status: string) => ({
-  draft: '草稿', pending: '待审批', approved: '已通过', rejected: '已驳回', deleted: '已删除',
-  submit: '提交审批', approve: '审批通过', reject: '审批驳回'
-}[status] || status)
-
-const isViewMode = computed(() => !editMode.value || isHistoryRoute.value)
-
-/**
- * 将值安全转换为数字类型
- * 用于 ElInputNumber 组件，确保传入的是 Number 或 null 而不是字符串
- * @param {*} value - 待转换的值
- * @returns {number|null} 转换后的数字值，无法转换返回 null
- */
-const toNumber = (value: unknown): number | undefined => {
-  if (value === null || value === undefined || value === '') return undefined
-  const num = Number(value)
-  return Number.isFinite(num) ? num : undefined
-}
-
-const {
-  handleManualFinalPriceChange,
-  handleDiscountChange
-} = useQuotationEditor({
-  isViewMode,
-  items,
-  isManualFinalPrice,
-  setFinalPriceManual,
-  restoreAutoFinalPrice
-})
-
-const toInputNumber = (value: unknown): number => {
-  const num = Number(value ?? 0)
-  return Number.isFinite(num) ? num : 0
-}
-
-const handleDiscountInput = (value: number | undefined): void => {
-  discount.value = toInputNumber(value)
-  handleDiscountChange()
-}
-
-const handleFinalPriceInput = (value: number | undefined): void => {
-  const nextValue = toInputNumber(value)
-  finalPrice.value = nextValue
-  handleManualFinalPriceChange(nextValue)
-}
-
-const handleUnitPriceChange = (row: QuotationRow, value: number | undefined): void => {
-  row.unitPrice = value ?? 0
-  updateRowTotal(row)
-}
-
-const goBackToList = () => {
-  router.push(isHistoryRoute.value ? '/approval/history' : '/approval')
-}
-
-async function loadDetail() {
-  const [err, res] = await to(approvalApi.get(String(route.params.id)))
-  if (err) {
-    showError(err, '加载详情失败')
-    return
-  }
-  const q = res.approval || {}
-  meta.id = q.id
-  meta.name = q.name
-  meta.companyName = q.companyName
-  meta.ownerName = q.ownerName
-  meta.status = q.status
-  logs.value = res.logs || []
-  if (isHistoryRoute.value) {
-    editMode.value = false
-  }
-  loadRecord(q, editMode.value && !isHistoryRoute.value ? 'edit' : 'view')
-}
-
-async function save() {
-  if (actionLoading.value) return
-  if (!companyName.value.trim()) return showWarning('公司名称不能为空')
-  const payload = getPayload()
-  actionLoading.value = true
-  const [err] = await to(quotationApi.update(meta.id as number | string, payload as QuotationData))
-  if (err) {
-    showError(err, '保存失败')
-    actionLoading.value = false
-    return
-  }
-  showSuccess('报价单修改成功')
-  editMode.value = false
-  await loadDetail()
-  actionLoading.value = false
-}
-
-async function approve() {
-  if (actionLoading.value) return
-  if (!canApprove.value) {
-    showWarning('请先保存当前修改，再进行准予通过')
-    return
-  }
-  const prevStatus = meta.status
-  actionLoading.value = true
-  meta.status = 'approved'
-  const [err] = await to(quotationApi.approve(meta.id as number | string, '审批通过 (已完成保存后同意)'))
-  if (err) {
-    meta.status = prevStatus
-    showError(err, '操作失败')
-    actionLoading.value = false
-    return
-  }
-  showSuccess('审批已通过')
-  goBackToList()
-}
-
-async function reject() {
-  if (actionLoading.value) return
-  const prevStatus = meta.status
-  const [promptErr, promptRes] = await to(ElMessageBox.prompt('请输入驳回原因', '审批驳回', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消'
-  }))
-  if (promptErr) return
-
-  actionLoading.value = true
-  meta.status = 'rejected'
-  const [apiErr] = await to(quotationApi.reject(meta.id as number | string, promptRes?.value || '拒绝'))
-  if (apiErr) {
-    meta.status = prevStatus
-    actionLoading.value = false
-    return
-  }
-  showSuccess('已驳回')
-  goBackToList()
-}
-
-watch(
-  () => [route.params.id, route.path, route.query.mode],
-  () => {
-    editMode.value = !isHistoryRoute.value && route.query.mode === 'edit'
-    loadDetail()
-  },
-  { immediate: true }
-)
+  goBackToList,
+  save,
+  approve,
+  reject,
+} = useApprovalDetail()
 </script>
 
 <style scoped>

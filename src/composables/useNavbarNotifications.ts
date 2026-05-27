@@ -41,19 +41,12 @@
  * setInterval(fetchUnreadCount, 30000)
  */
 
-import { ref, triggerRef, type Ref, type ComputedRef } from 'vue'
+import { ref, shallowRef, triggerRef, type Ref, type ComputedRef } from 'vue'
 import { ElMessage, ElNotification } from 'element-plus'
 import { to } from '@/utils/async'
 import { notificationApi } from '@/api/notifications'
+import type { NotificationData } from '@/types'
 import type { Router } from 'vue-router'
-
-interface NotificationItem {
-  id: number
-  type: string
-  content: string
-  relatedId: number
-  [key: string]: unknown
-}
 
 interface NavbarNotificationsDeps {
   request: unknown
@@ -63,20 +56,20 @@ interface NavbarNotificationsDeps {
 
 interface NavbarNotificationsReturn {
   unreadApprovalCount: Ref<number>
-  noticeList: Ref<NotificationItem[]>
+  noticeList: Ref<NotificationData[]>
   deletingIds: Ref<Set<number>>
   isBellRinging: Ref<boolean>
   fetchUnreadCount: () => Promise<void>
-  handleNoticeClick: (notice: NotificationItem) => Promise<void>
+  handleNoticeClick: (notice: NotificationData) => Promise<void>
   markAllAsRead: (e?: Event) => Promise<void>
-  deleteNotification: (notice: NotificationItem, e?: Event) => Promise<void>
+  deleteNotification: (notice: NotificationData, e?: Event) => Promise<void>
   goNoticePage: () => void
 }
 
 export const useNavbarNotifications = ({ request: _request, router, isAdmin }: NavbarNotificationsDeps): NavbarNotificationsReturn => {
   const unreadApprovalCount = ref(0)
 
-  const noticeList = ref<NotificationItem[]>([])
+  const noticeList = shallowRef<NotificationData[]>([])
 
   const deletingIds = ref(new Set<number>())
 
@@ -105,8 +98,7 @@ export const useNavbarNotifications = ({ request: _request, router, isAdmin }: N
       const newCount = (resCount as { count?: number }).count ?? 0
       const oldCount = unreadApprovalCount.value
 
-      const listData = resList as { list?: NotificationItem[] }
-      noticeList.value = (listData.list || []).slice(0, 10)
+      noticeList.value = (resList?.list || []).slice(0, 10)
 
       if (newCount > oldCount) {
         triggerBellRing()
@@ -130,7 +122,7 @@ export const useNavbarNotifications = ({ request: _request, router, isAdmin }: N
     }
   }
 
-  const handleNoticeClick = async (notice: NotificationItem): Promise<void> => {
+  const handleNoticeClick = async (notice: NotificationData): Promise<void> => {
     if (!notice?.id) return
     const [err] = await to(notificationApi.markAsRead(notice.id))
     if (err) return
@@ -159,7 +151,7 @@ export const useNavbarNotifications = ({ request: _request, router, isAdmin }: N
     else router.push('/quotation')
   }
 
-  const deleteNotification = async (notice: NotificationItem, e?: Event): Promise<void> => {
+  const deleteNotification = async (notice: NotificationData, e?: Event): Promise<void> => {
     if (e) {
       e.stopPropagation()
       e.preventDefault()

@@ -180,7 +180,7 @@ async function parseNow() {
 
   loading.value = true
   const [err, result] = await to(quotationStatisticsApi.parse(rawText.value))
-  if (err) {
+  if (err || !result) {
     showError(err, '智能引擎解析失败，请检查文本格式或服务端运行状态。')
     loading.value = false
     return

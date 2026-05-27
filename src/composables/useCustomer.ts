@@ -6,19 +6,13 @@ import { showError, showSuccess } from '@/utils/message'
 import { usePagination } from '@/composables/usePagination'
 import { useFormSubmit } from '@/composables/useFormSubmit'
 import { formatDate, addDays } from '@/utils/date'
-import type { CustomerData, FollowUpData } from '@/types'
+import type { CustomerListItem as ApiCustomerListItem, CustomerCreatePayload, CustomerUpdatePayload, FollowUpData, FollowUpCreatePayload, CustomerDetailData } from '@/types'
 
-export interface CustomerListItem extends CustomerData {
-  latestFollowUp?: FollowUpData
-  followUpCount?: number
-  ownerName?: string
-  hasQuotation?: boolean
-  quotationId?: number | string
-  quotationDate?: string
+export interface CustomerListItem extends ApiCustomerListItem {
   deliveryDate?: string
 }
 
-const INITIAL_FORM: CustomerData = {
+const INITIAL_FORM: CustomerCreatePayload & CustomerUpdatePayload = {
   companyName: '',
   customerName: '',
   contactInfo: '',
@@ -55,7 +49,7 @@ export const useCustomerList = () => {
     const [err, res] = await to(customerApi.list(params))
     if (err) { showError(err, '加载客户列表失败'); loading.value = false; return }
 
-    customerList.value = (res?.customers || []).map((c: CustomerListItem) => ({
+    customerList.value = (res?.list || []).map((c: ApiCustomerListItem) => ({
       ...c,
       deliveryDate: c.deliveryDays && c.deliveryDays > 0
         ? formatDate(addDays(c.deliveryDays))
@@ -75,11 +69,11 @@ export const useCustomerList = () => {
     loadList()
   }
 
-  const removeLocalItem = (id: number | string) => {
+  const removeLocalItem = (id: number) => {
     customerList.value = customerList.value.filter(c => c.id !== id)
   }
 
-  const updateLocalItem = (id: number | string, data: Partial<CustomerListItem>) => {
+  const updateLocalItem = (id: number, data: Partial<CustomerListItem>) => {
     const idx = customerList.value.findIndex(c => c.id === id)
     if (idx !== -1) {
       const list = [...customerList.value]
@@ -107,8 +101,8 @@ export const useCustomerList = () => {
 
 export const useCustomerForm = () => {
   const dialogVisible = ref(false)
-  const editingId = ref<number | string | null>(null)
-  const formData = reactive<CustomerData>({ ...INITIAL_FORM })
+  const editingId = ref<number | null>(null)
+  const formData = reactive<CustomerCreatePayload & CustomerUpdatePayload>({ ...INITIAL_FORM })
   const { withSubmitLock } = useFormSubmit()
 
   const resetForm = () => {
@@ -147,16 +141,16 @@ export const useCustomerForm = () => {
 
 export const useFollowUp = () => {
   const detailVisible = ref(false)
-  const currentCustomer = ref<CustomerListItem | null>(null)
+  const currentCustomer = ref<CustomerDetailData | null>(null)
   const followUpDialogVisible = ref(false)
-  const followUpFormData = reactive({ content: '', nextTime: '' })
+  const followUpFormData = reactive<FollowUpCreatePayload>({ content: '', nextTime: '' })
   const { withSubmitLock } = useFormSubmit()
 
   const handleViewDetail = async (row: CustomerListItem) => {
     currentCustomer.value = null
     detailVisible.value = true
     try {
-      const res = await customerApi.getDetail(row.id!)
+      const res = await customerApi.getDetail(row.id)
       currentCustomer.value = res?.customer || null
     } catch (err) {
       showError(err, '加载客户详情失败')
@@ -172,14 +166,14 @@ export const useFollowUp = () => {
     followUpDialogVisible.value = true
   }
 
-  const handleFollowUpSubmit = async (data: FollowUpData, onSuccess: () => void) => {
+  const handleFollowUpSubmit = async (data: FollowUpCreatePayload, onSuccess: () => void) => {
     await withSubmitLock(async () => {
-      const [err] = await to(customerApi.addFollowUp(currentCustomer.value!.id!, { ...data }))
+      const [err] = await to(customerApi.addFollowUp(currentCustomer.value!.id, data))
       if (err) { showError(err, '添加跟进记录失败'); throw err }
       showSuccess('跟进记录添加成功')
       followUpDialogVisible.value = false
 
-      const [, res] = await to(customerApi.getDetail(currentCustomer.value!.id!))
+      const [, res] = await to(customerApi.getDetail(currentCustomer.value!.id))
       if (res?.customer) currentCustomer.value = res.customer
       onSuccess()
     })
@@ -192,11 +186,11 @@ export const useFollowUp = () => {
     ))
     if (confirmErr) return
 
-    const [err] = await to(customerApi.deleteFollowUp(item.id as number | string))
+    const [err] = await to(customerApi.deleteFollowUp(item.id))
     if (err) { showError(err, '删除跟进记录失败'); return }
     showSuccess('跟进记录删除成功')
 
-    const customerId = currentCustomer.value!.id!
+    const customerId = currentCustomer.value!.id
     const [, res] = await to(customerApi.getDetail(customerId))
     if (res?.customer) currentCustomer.value = res.customer
     onSuccess()

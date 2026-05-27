@@ -223,16 +223,17 @@ import { ElMessage } from 'element-plus'
 import { formatMoney } from '@/utils/number'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 import { quotationNameRule as quotationNameBaseRule, companyNameRule as companyNameBaseRule } from '@/utils/formRules'
-import type { QuotationData, QuotationItem } from '@/types'
+import type { QuotationCreatePayload, QuotationItem } from '@/types'
 import { quotationApi } from '@/api/quotation'
+import { to } from '@/utils/async'
 
 const props = defineProps({
   isViewMode: Boolean,
   rulesDisabled: Boolean,
   hideActionColumn: Boolean,
-  editingHistoryId: { type: Number, default: null },
+  editingHistoryId: { type: [Number, null] as PropType<number | null>, default: null },
   formModel: {
-    type: Object as PropType<QuotationData>,
+    type: Object as PropType<Pick<QuotationCreatePayload, 'name' | 'companyName'>>,
     required: true
   },
   remark: String,
@@ -292,11 +293,11 @@ const handleNameBlur = async () => {
   if (nameCheckTimer) clearTimeout(nameCheckTimer)
   nameCheckTimer = setTimeout(async () => {
     try {
-      const [err, res] = await quotationApi.suggestName(currentName, currentCompany || undefined, props.editingHistoryId ?? undefined)
-      if (err || !res?.suggestedName) return
-      if (res.suggestedName !== currentName) {
-        ElMessage.warning(`名称「${currentName}」在该公司下已存在，已自动修改为「${res.suggestedName}」`)
-        emit('update:formModel', { ...props.formModel, name: res.suggestedName })
+      const result = await to(quotationApi.suggestName(currentName, currentCompany || undefined, props.editingHistoryId ?? undefined))
+      if (result[0] || !result[1]?.suggestedName) return
+      if (result[1].suggestedName !== currentName) {
+        ElMessage.warning(`名称「${currentName}」在该公司下已存在，已自动修改为「${result[1].suggestedName}」`)
+        emit('update:formModel', { ...props.formModel, name: result[1].suggestedName })
       }
     } catch (_e) {
       // ignore

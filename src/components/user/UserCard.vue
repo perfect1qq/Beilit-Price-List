@@ -56,10 +56,10 @@ import type { PropType } from 'vue'
 import { Lock, Delete, Edit } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/date'
 import { ROLES } from '@/types'
-import type { UserInfo } from '@/types'
+import type { EditableUserInfo } from '@/types'
 
 const props = defineProps({
-  user: { type: Object as PropType<UserInfo>, required: true },
+  user: { type: Object as PropType<EditableUserInfo>, required: true },
   currentUserId: { type: Number, default: null }
 })
 

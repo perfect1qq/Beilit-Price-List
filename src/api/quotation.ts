@@ -1,47 +1,62 @@
 import request from '../utils/request'
 import { unwrap } from '../utils/unwrap'
-import type { PaginationParams, QuotationData } from '@/types'
+import type { PaginationParams, QuotationCreatePayload, QuotationData, QuotationItem, QuotationListResult, QuotationLogData } from '@/types'
 
-const list = (params?: PaginationParams) => request.get('/api/quotations', { params })
+interface QuotationParseResult {
+  items: QuotationItem[]
+  columns: string[]
+  subtotal: number
+  warnings?: string[]
+}
 
-const create = (data: QuotationData) => request.post('/api/quotations', data)
+interface QuotationStatisticsResult {
+  parts: { name: string; spec?: string; qty?: number | string; unit?: string; [key: string]: unknown }[]
+  errors: string[]
+  warnings: string[]
+  [key: string]: unknown
+}
 
-const update = (id: number | string, data: QuotationData) =>
-  request.put(`/api/quotations/${id}`, data)
+const list = (params?: PaginationParams) =>
+  request.get<QuotationListResult>('/api/quotations', { params })
 
-const remove = (id: number | string) => request.delete(`/api/quotations/${id}`)
+const create = (data: QuotationCreatePayload) =>
+  request.post<{ quotation: QuotationData }>('/api/quotations', data)
 
-const get = (id: number | string) => request.get(`/api/quotations/${id}`)
+const update = (id: number | string, data: QuotationCreatePayload) =>
+  request.put<{ quotation: QuotationData }>(`/api/quotations/${id}`, data)
+
+const remove = (id: number | string) =>
+  request.delete<null>(`/api/quotations/${id}`)
+
+const get = (id: number | string) =>
+  request.get<{ quotation: QuotationData; logs: QuotationLogData[] }>(`/api/quotations/${id}`)
 
 const getStatistics = () =>
-  request.get('/api/quotations/stats')
+  request.get<QuotationStatisticsResult>('/api/quotations/stats')
 
 const parseText = (text: string) =>
-  request.post('/api/tools/quotation-parse', { text })
+  request.post<QuotationParseResult>('/api/tools/quotation-parse', { text })
 
 const approve = (id: number | string, comment?: string) =>
-  request.post(`/api/quotations/${id}/approve`, { comment })
+  request.post<{ quotation: QuotationData }>(`/api/quotations/${id}/approve`, { comment })
 
 const reject = (id: number | string, comment?: string) =>
-  request.post(`/api/quotations/${id}/reject`, { comment })
+  request.post<{ quotation: QuotationData }>(`/api/quotations/${id}/reject`, { comment })
 
 const copy = (id: number | string) =>
-  request.post(`/api/quotations/${id}/copy`)
+  request.post<{ quotation: QuotationData }>(`/api/quotations/${id}/copy`)
 
 const checkCompanyName = (companyName: string, excludeId?: number | string) =>
-  request.get('/api/quotations/check-company', { params: { companyName, excludeId } })
+  request.get<{ exists: boolean; quotation?: QuotationData }>('/api/quotations/check-company', { params: { companyName, excludeId } })
 
 const checkName = (name: string, excludeId?: number | string) =>
-  request.get('/api/quotations/check-name', { params: { name, excludeId } })
+  request.get<{ exists: boolean; quotation?: QuotationData }>('/api/quotations/check-name', { params: { name, excludeId } })
 
 const suggestName = (name: string, companyName?: string, excludeId?: number | string) =>
-  request.get('/api/quotations/suggest-name', { params: { name, companyName, excludeId } })
+  request.get<{ suggestedName: string }>('/api/quotations/suggest-name', { params: { name, companyName, excludeId } })
 
 const parseStatistics = (rawText: string) =>
-  request.post('/api/tools/calculate', {
-    text: rawText,
-    type: 'statistics',
-  })
+  request.post<QuotationStatisticsResult>('/api/tools/calculate', { text: rawText, type: 'statistics' })
 
 const quotationApi = {
   list: unwrap(list),

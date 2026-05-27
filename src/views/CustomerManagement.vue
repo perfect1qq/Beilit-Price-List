@@ -133,7 +133,7 @@
       @delete-follow-up="(item: FollowUpData) => handleDeleteFollowUp(item, loadList)" />
 
     <FollowUpFormDialog v-model="followUpDialogVisible" :form-data="followUpFormData"
-      @submit="(data: FollowUpData) => handleFollowUpSubmit(data, loadList)" append-to-body />
+      @submit="(data: FollowUpCreatePayload) => handleFollowUpSubmit(data, loadList)" append-to-body />
   </div>
 </template>
 
@@ -148,7 +148,7 @@ import { formatDate } from '@/utils/date'
 import { showError, showSuccess } from '@/utils/message'
 import { usePermissions } from '@/composables/usePermissions'
 import { useCustomerList, useCustomerForm, useFollowUp } from '@/composables/useCustomer'
-import type { CustomerData, FollowUpData } from '@/types'
+import type { CustomerCreatePayload, CustomerUpdatePayload, FollowUpData, FollowUpCreatePayload } from '@/types'
 import type { CustomerListItem } from '@/composables/useCustomer'
 
 import SearchBar from '@/components/common/SearchBar.vue'
@@ -176,7 +176,7 @@ const {
   handleFollowUpSubmit, handleDeleteFollowUp
 } = useFollowUp()
 
-const handleFormSubmit = async (data: CustomerData) => {
+const handleFormSubmit = async (data: CustomerCreatePayload & CustomerUpdatePayload) => {
   await withSubmitLock(async () => {
     if (editingId.value) {
       const [err, res] = await to(customerApi.update(editingId.value, { ...data }))
@@ -215,8 +215,8 @@ const getCustomerTypeTagType = (type?: string | null) => {
   return map[type || ''] || 'info'
 }
 
-const handleGoToQuotation = (item: { quotationId?: number | string }) => {
-  if (item.quotationId) {
+const handleGoToQuotation = (item: { quotationId?: number | string | null }) => {
+  if (item.quotationId != null) {
     router.push({ path: '/quotation/history', query: { id: String(item.quotationId), mode: 'view' } as Record<string, string> })
   }
 }

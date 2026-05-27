@@ -41,7 +41,7 @@
                   </div>
                   <transition-group name="staggered-list" tag="div">
                     <div v-for="(item, index) in noticeList" :key="item.id" class="notice-item"
-                      :class="{ 'is-read': item.isRead }" :style="{ '--delay': index * 0.05 + 's' }"
+                      :class="{ 'is-read': item.read }" :style="{ '--delay': index * 0.05 + 's' }"
                       @click="handleNoticeClick(item)">
                       <div class="notice-item-icon" :class="item.type">
                         <el-icon>
@@ -56,7 +56,7 @@
                         }}</div>
                       </div>
                       <div class="notice-meta">
-                        <el-tag v-if="!item.isRead" size="small" type="danger" effect="plain" round>未读</el-tag>
+                        <el-tag v-if="!item.read" size="small" type="danger" effect="plain" round>未读</el-tag>
                         <el-icon class="notice-arrow">
                           <ArrowRight />
                         </el-icon>
@@ -223,8 +223,10 @@ const NOTIFICATION_POLL_INTERVAL = 30000
 let notificationTimer: ReturnType<typeof setInterval> | null = null
 
 onMounted(() => {
-  fetchUnreadCount()
-  notificationTimer = setInterval(fetchUnreadCount, NOTIFICATION_POLL_INTERVAL)
+  if (userStore.isLoggedIn) fetchUnreadCount()
+  notificationTimer = setInterval(() => {
+    if (userStore.isLoggedIn) fetchUnreadCount()
+  }, NOTIFICATION_POLL_INTERVAL)
 })
 
 onUnmounted(() => {

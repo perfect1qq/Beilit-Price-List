@@ -141,11 +141,11 @@
         </div>
 
         <QuotationEditor ref="formRef" :is-view-mode="isViewMode" :rules-disabled="rulesDisabled"
-          :editing-history-id="editingHistoryId"
-          :form-model="formModel" v-model:remark="remark" v-model:discount="discount" v-model:final-price="finalPrice"
-          v-model:raw-text="rawText" :subtotal="subtotal" :discount-amount="discountAmount"
-          :auto-final-price="autoFinalPrice" :is-manual-final-price="isManualFinalPrice" :items="items"
-          :visible-columns="visibleColumns" :hide-action-column="isGuest" @handle-discount-change="handleDiscountChange"
+          :editing-history-id="editingHistoryId" :form-model="formModel" v-model:remark="remark"
+          v-model:discount="discount" v-model:final-price="finalPrice" v-model:raw-text="rawText" :subtotal="subtotal"
+          :discount-amount="discountAmount" :auto-final-price="autoFinalPrice"
+          :is-manual-final-price="isManualFinalPrice" :items="items" :visible-columns="visibleColumns"
+          :hide-action-column="isGuest" @handle-discount-change="handleDiscountChange"
           @handle-manual-final-price-change="handleManualFinalPriceChange"
           @restore-auto-final-price="restoreAutoFinalPrice" @update-row-total="updateRowTotal"
           @remove-row="removeRow" />
@@ -155,37 +155,25 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, reactive } from 'vue'
+import { computed } from 'vue'
 defineOptions({ name: 'QuotationHistory' })
-import { useRoute } from 'vue-router'
 import { DocumentAdd, Plus, Refresh } from '@element-plus/icons-vue'
-import quotationApi from '@/api/quotation'
-import { useQuotationDraft } from '@/composables/useQuotationDraft'
-import { useQuotationHistory } from '@/composables/useQuotationHistory'
-import { useQuotationEditor } from '@/composables/useQuotationEditor'
 import { usePermissions } from '@/composables/usePermissions'
 import { formatMoney } from '@/utils/number'
-import { showError } from '@/utils/message'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 import QuotationEditor from '@/components/quotation/QuotationEditor.vue'
+import { useQuotationHistoryPage } from '@/composables/useQuotationHistoryPage'
 
-const route = useRoute()
 const { isAdmin, isGuest } = usePermissions()
-const parsing = ref(false)
-const isSubmitting = ref(false)
-const rulesDisabled = ref(false)
-const viewState = ref('list')
-const activePanels = ref([])
-
-const formRef = ref(null)
-const formModel = reactive({
-  name: '',
-  companyName: ''
-})
 
 const {
-  name,
-  companyName,
+  parsing,
+  isSubmitting,
+  rulesDisabled,
+  viewState,
+  activePanels,
+  formRef,
+  formModel,
   remark,
   discount,
   finalPrice,
@@ -198,20 +186,11 @@ const {
   subtotal,
   autoFinalPrice,
   discountAmount,
-  resetDraft,
-  setRows,
   addRow,
   removeRow,
   clearRows,
   updateRowTotal,
-  setFinalPriceManual,
   restoreAutoFinalPrice,
-  loadRecord,
-  getPayload,
-  originalPayloadStr
-} = useQuotationDraft()
-
-const {
   groupedHistoryList,
   pagedHistoryGroups,
   searchKeyword,
@@ -220,105 +199,20 @@ const {
   total,
   loading,
   isActionLoading,
-  loadHistoryList,
   onKeywordInput,
   handleCurrentChange,
   handleSizeChange,
-  saveQuotation,
   copyQuotation,
-  deleteHistory
-} = useQuotationHistory({
-  api: quotationApi,
-  loadToEditor: (record, mode) => loadRecord(record, mode)
-})
-
-const totalRecords = computed(() => groupedHistoryList.value.reduce((sum, group) => sum + group.count, 0))
-
-watch(
-  [() => page.value, () => pageSize.value],
-  () => {
-    activePanels.value = []
-  }
-)
-
-const {
+  deleteHistory,
   handleManualFinalPriceChange,
   handleDiscountChange,
   handleParseText,
-  handleSubmit
-} = useQuotationEditor({
-  isViewMode,
-  parsing,
-  isSubmitting,
-  rawText,
-  items,
-  name,
-  companyName,
-  formRef,
-  formModel,
-  editingHistoryId,
-  originalPayloadStr,
-  isManualFinalPrice,
-  setFinalPriceManual,
-  restoreAutoFinalPrice,
-  setRows,
-  getPayload,
-  saveQuotation,
-  parseTextFn: quotationApi.parseText.bind(quotationApi),
-  onSaveSuccess: async () => {
-    rulesDisabled.value = true
-    await backToList()
-  }
-})
+  handleSubmit,
+  openDetail,
+  backToList,
+} = useQuotationHistoryPage()
 
-const fetchQuotationRecord = async (id: number | string) => {
-  const result = await quotationApi.get(id)
-  return result?.quotation || result?.record || result
-}
-
-const openDetail = async (record: Record<string, unknown>, mode = 'view') => {
-  if (!record?.id) return
-  resetDraft()
-  if (mode === 'edit') {
-    rulesDisabled.value = false
-  }
-  const detail = (Array.isArray(record.items) && record.items.length > 0) ? record : await fetchQuotationRecord(record.id as string | number)
-  loadRecord(detail, mode)
-  formModel.name = name.value
-  formModel.companyName = companyName.value
-  viewState.value = 'detail'
-}
-
-const backToList = async () => {
-  viewState.value = 'list'
-  resetDraft()
-  await loadHistoryList()
-}
-
-onMounted(async () => {
-  try {
-    await loadHistoryList()
-
-    const queryId = route.query.id
-    const queryMode = String(route.query.mode || 'view')
-    if (queryId) {
-      const detail = await fetchQuotationRecord(Number(queryId))
-      if (detail) {
-        if (queryMode === 'edit') {
-          rulesDisabled.value = false
-        } else {
-          rulesDisabled.value = true
-        }
-        loadRecord(detail, queryMode)
-        formModel.name = name.value
-        formModel.companyName = companyName.value
-        viewState.value = 'detail'
-      }
-    }
-  } catch (error) {
-    showError(error, '历史记录加载失败')
-  }
-})
+const totalRecords = computed(() => groupedHistoryList.value.reduce((sum, group) => sum + group.count, 0))
 </script>
 
 <style scoped>

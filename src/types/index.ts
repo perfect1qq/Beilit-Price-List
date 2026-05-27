@@ -4,7 +4,22 @@ export const ROLES = {
   GUEST: 'guest',
 } as const
 
+export const QUOTATION_STATUS = {
+  DRAFT: 'draft',
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+  DELETED: 'deleted',
+} as const
+
+export const MESSAGE_STATUS = {
+  PENDING: 'pending',
+  ASSIGNED: 'assigned',
+} as const
+
 export type UserRole = typeof ROLES[keyof typeof ROLES]
+export type QuotationStatus = typeof QUOTATION_STATUS[keyof typeof QUOTATION_STATUS]
+export type MessageStatus = typeof MESSAGE_STATUS[keyof typeof MESSAGE_STATUS]
 
 export interface UserInfo {
   id: number
@@ -13,6 +28,9 @@ export interface UserInfo {
   role: UserRole
   avatar?: string
   createdAt?: string
+}
+
+export interface EditableUserInfo extends UserInfo {
   _editingName?: boolean
   _editNameValue?: string
 }
@@ -22,16 +40,6 @@ export interface MenuItem {
   path: string
   icon?: string
   children?: MenuItem[]
-}
-
-export interface GuestUser {
-  role: 'guest'
-}
-
-export interface SessionPayload {
-  user?: UserInfo | null
-  permissions?: string[]
-  menu?: MenuItem[]
 }
 
 export interface LoginCredentials {
@@ -52,6 +60,13 @@ export interface PaginationParams {
   keyword?: string
 }
 
+export interface PaginatedResult<T = unknown> {
+  list: T[]
+  total: number
+  page: number
+  pageSize: number
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean
   data: T
@@ -60,26 +75,66 @@ export interface ApiResponse<T = unknown> {
 }
 
 export interface QuotationItem {
-  id?: number
   name: string
-  specification?: string
-  quantity?: string | number
-  unitPrice?: string | number
-  totalPrice?: string | number
+  spec?: string
+  unit?: string
+  quantity?: number | string
+  price?: number | string
+  amount?: number | string
+  unitPrice?: number | string
+  totalPrice?: number | string
+  category?: string
+  remark?: string
 }
 
 export interface QuotationData {
-  id?: number
-  name?: string
+  id: number
+  quotationNo: string
+  name: string
+  companyName: string
+  ownerId: number
+  ownerName: string
+  status: QuotationStatus
+  items: QuotationItem[]
+  remark: string
+  discount: number
+  subtotal: number
+  autoFinalPrice: number
+  finalPrice: number
+  isManual: boolean
+  reviewComment: string
+  rejectReason: string
+  createDate: string
+  submittedAt: string | null
+  approvedAt: string | null
+  rejectedAt: string | null
+  recalledAt: string | null
+  deletedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface QuotationCreatePayload {
+  name: string
   companyName: string
   items?: QuotationItem[]
   discount?: number
   finalPrice?: number
   isManual?: boolean
-  status?: string
+  status?: QuotationStatus
   remark?: string
-  createdAt?: string
-  updatedAt?: string
+}
+
+export type QuotationListResult = PaginatedResult<QuotationData>
+
+export interface QuotationLogData {
+  id: number
+  quotationId: number
+  action: string
+  comment: string | null
+  operatorId: number
+  operatorName: string
+  createdAt: string
 }
 
 export interface BeamQuotationItem {
@@ -97,17 +152,19 @@ export interface BeamQuotationData {
   items?: BeamQuotationItem[]
 }
 
-export interface ApprovalData {
-  id: number
-  quotationId?: number
-  status: string
-  comment?: string
-  createdAt?: string
+export interface CustomerCreatePayload {
+  companyName: string
+  customerName: string
+  contactInfo?: string
+  cooperationStatus?: string
+  customerType?: string
+  deliveryDays?: number | null
+  shelfType?: string
+  remark?: string
 }
 
-export interface CustomerData {
-  id?: number
-  companyName: string
+export interface CustomerUpdatePayload {
+  companyName?: string
   customerName?: string
   contactInfo?: string
   cooperationStatus?: string
@@ -115,92 +172,228 @@ export interface CustomerData {
   deliveryDays?: number | null
   shelfType?: string
   remark?: string
-  ownerName?: string
-  createdAt?: string
-  updatedAt?: string
-  followUps?: FollowUpData[]
+}
+
+export interface CustomerData {
+  id: number
+  companyName: string
+  customerName: string
+  contactInfo: string
+  ownerId: number
+  ownerName: string
+  remark: string
+  cooperationStatus: string
+  customerType: string
+  deliveryDays: number | null
+  shelfType: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CustomerListItem extends CustomerData {
+  hasQuotation: boolean
+  quotationDate: string | null
+  quotationStatus: QuotationStatus | null
+  quotationId: number | null
+  followUpCount: number
+  latestFollowUp: FollowUpData | null
+}
+
+export type CustomerListResult = PaginatedResult<CustomerListItem>
+
+export interface CustomerDetailData extends CustomerData {
+  followUps: FollowUpData[]
+}
+
+export interface FollowUpCreatePayload {
+  content: string
+  nextTime?: string
 }
 
 export interface FollowUpData {
-  id?: number
+  id: number
   customerId: number
   content: string
-  followType?: string
-  nextTime?: string
-  operatorId?: number
-  operatorName?: string
-  createdAt?: string
+  followType: string | null
+  nextTime: string | null
+  operatorId: number
+  operatorName: string
+  createdAt: string
 }
 
-export interface MemoData {
-  id?: number
+export interface MemoCreatePayload {
   title: string
-  content?: string
+  content: string
   label?: string
   color?: string
   pinned?: boolean
   completed?: boolean
-  remindAt?: string
-  status?: string
-  createdAt?: string
-  updatedAt?: string
+  remindAt?: string | null
+}
+
+export interface MemoUpdatePayload extends Partial<MemoCreatePayload> {}
+
+export interface MemoData {
+  id: number
+  title: string
+  content: string
+  label: string
+  color: string
+  pinned: boolean
+  completed: boolean
+  completedAt: string | null
+  ownerId: number
+  ownerName: string
+  isDeleted: boolean
+  remindAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface MemoListResult extends PaginatedResult<MemoData> {
+  todoTotal: number
+  doneTotal: number
+  pinnedTotal: number
+  scope: string
+  calendarDate: string | null
+  timeZone: string | null
+  calendarMode: string
+  createdOnFilter: string | null
+}
+
+export interface MemoHistoryItem {
+  id: number
+  memoId: number
+  action: string
+  title: string
+  content: string
+  operatorId: number
+  operatorName: string
+  createdAt: string
+}
+
+export type MemoHistoryListResult = PaginatedResult<MemoHistoryItem>
+
+export interface MessageCreatePayload {
+  contactInfo: string
+  content: string
+}
+
+export interface MessageAssignPayload {
+  assignedTo: number
+}
+
+export interface MessageRemarkPayload {
+  remark: string
+}
+
+export interface MessageAssignee {
+  id: number
+  username: string
+  name: string | null
 }
 
 export interface MessageData {
-  id?: number | string
-  contactInfo?: string
-  content?: string
-  remark?: string
-  status?: string
-  assignedTo?: number | string | null
-  hiddenByAssignee?: boolean
-  assignee?: { id?: number | string; name?: string; username?: string } | null
-  createdAt?: string
-  updatedAt?: string
+  id: number
+  contactInfo: string
+  content: string
+  status: MessageStatus
+  assignedTo: number | null
+  remark: string
+  hiddenByAssignee: boolean
+  assignee: MessageAssignee | null
+  createdAt: string
+  updatedAt: string
 }
+
+export type MessageListResult = PaginatedResult<MessageData>
 
 export interface NotificationData {
   id: number
-  type?: string
-  content?: string
-  read?: boolean
-  createdAt?: string
+  type: string
+  content: string
+  relatedId: number
+  read: boolean
+  createdAt: string
 }
 
 export interface MediumShelfWeightData {
-  title?: string
-  payload?: {
-    summaryRows?: unknown[]
-    detailRows?: unknown[]
+  id: number
+  key: string
+  title: string
+  config: Record<string, unknown>
+  payload: {
+    summaryRows?: Record<string, unknown>[]
+    detailRows?: Record<string, unknown>[]
   }
-  summaryRows?: unknown[]
-  detailRows?: unknown[]
+  createdAt: string
+  updatedAt: string
 }
 
-export interface NotepadData {
-  id?: number
+export interface MediumShelfWeightSavePayload {
+  title: string
+  payload: {
+    summaryRows?: Record<string, unknown>[]
+    detailRows?: Record<string, unknown>[]
+  }
+}
+
+export interface NotepadCreatePayload {
   title?: string
   content?: string
   folder?: string
   pinned?: boolean
-  ownerId?: number
-  ownerName?: string
-  createdAt?: string
-  updatedAt?: string
 }
+
+export interface NotepadUpdatePayload extends Partial<NotepadCreatePayload> {}
+
+export interface NotepadData {
+  id: number
+  title: string
+  content: string
+  folder: string
+  pinned: boolean
+  ownerId: number
+  ownerName: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type NotepadListResult = PaginatedResult<NotepadData>
 
 export interface NotepadHistoryData {
-  id?: number
-  notepadId?: number
-  action?: string
-  title?: string
-  content?: string
-  operatorId?: number
-  operatorName?: string
-  createdAt?: string
+  id: number
+  notepadId: number
+  action: string
+  title: string
+  content: string
+  operatorId: number
+  operatorName: string
+  createdAt: string
 }
 
-export type AsyncResult<T = unknown> = [Error | null, T | null]
+export type NotepadHistoryListResult = PaginatedResult<NotepadHistoryData>
+
+export interface ApprovalListParams extends PaginationParams {
+  status?: QuotationStatus | QuotationStatus[]
+}
+
+export type ApprovalListResult = PaginatedResult<QuotationData>
+
+export interface ApprovalDetailData {
+  approval: QuotationData
+  logs: QuotationLogData[]
+}
+
+export interface GuestUser {
+  role: 'guest'
+}
+
+export interface SessionPayload {
+  user: UserInfo
+  menu: MenuItem[]
+  permissions: string[]
+}
 
 export interface MemoStatsData {
   total: number
@@ -210,21 +403,15 @@ export interface MemoStatsData {
 }
 
 export interface MemoScopeStatData {
-  mode?: string
-  totalLabel?: string
-  totalTip?: string
-  todoTip?: string
-  doneTip?: string
-  pinnedTip?: string
+  mode: 'history' | 'today'
+  totalLabel: string
+  totalTip: string
+  todoTip: string
+  doneTip: string
+  pinnedTip: string
 }
 
-export interface MemoHistoryItem {
-  id?: number
-  action?: string
-  operatorName?: string
-  content?: string
-  createdAt?: string
-}
+export type AsyncResult<T = unknown> = [Error | null, T | null]
 
 export interface FormRules {
   [key: string]: unknown

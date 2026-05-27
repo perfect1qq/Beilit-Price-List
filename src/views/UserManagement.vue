@@ -116,200 +116,47 @@
       </div>
       <template #footer="{ loading }">
         <el-button @click="resetDialog.visible = false">取消</el-button>
-        <el-button type="primary" :loading="loading" @click="confirmReset">确认重置</el-button>
+        <el-button type="primary" :loading="loading" @click="onConfirmReset">确认重置</el-button>
       </template>
     </AsyncDialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { ref } from 'vue'
 import { Refresh } from '@element-plus/icons-vue'
-import { useUserStore } from '@/stores/user'
-import userApi from '@/api/user'
-import { to } from '@/utils/async'
-import { showError, showSuccess, showWarning } from '@/utils/message'
-import { useClipboard } from '@/composables/useClipboard'
 import SearchBar from '@/components/common/SearchBar.vue'
 import CardList from '@/components/common/CardList.vue'
 import AsyncDialog from '@/components/common/AsyncDialog.vue'
 import InviteCodeCard from '@/components/user/InviteCodeCard.vue'
 import UserCard from '@/components/user/UserCard.vue'
-import type { UserInfo } from '@/types'
+import { useUserManagement } from '@/composables/useUserManagement'
 
-const loading = ref(false)
-const users = ref<UserInfo[]>([])
-const search = ref('')
-const userStore = useUserStore()
-const currentUser = computed(() => userStore.user || { id: 0, username: '', name: '', role: 'guest' as const })
-const { copy } = useClipboard()
+defineOptions({ name: 'UserManagement' })
 
-// 邀请码相关
-const inviteCode = ref('')
-const refreshingCode = ref(false)
-
-const fetchInviteCode = async () => {
-  const [err, data] = await to(userApi.getInviteCode())
-  if (!err && data?.inviteCode) {
-    inviteCode.value = data.inviteCode
-  }
-}
-
-const copyInviteCode = async () => {
-  if (!inviteCode.value) return
-  await copy(inviteCode.value, '邀请码已复制到剪贴板')
-}
-
-const handleRefreshCode = async () => {
-  refreshingCode.value = true
-  const [err, data] = await to(userApi.refreshInviteCode())
-  if (err) {
-    showError(err, '刷新邀请码失败')
-  } else if (data?.inviteCode) {
-    inviteCode.value = data.inviteCode
-    showSuccess('邀请码已刷新，旧邀请码立即失效')
-  }
-  refreshingCode.value = false
-}
-
-// 重置密码弹窗的状态管理
-const resetDialog = reactive({
-  visible: false,
-  userId: null as number | null,
-  username: '',
-  password: ''
-})
-
-/** 重置密码对话框引用 */
 const resetDialogRef = ref<InstanceType<typeof AsyncDialog> | null>(null)
 
-/**
- * 实时过滤用户列表
- */
-const filteredUsers = computed(() => {
-  const kw = search.value.trim().toLowerCase()
-  if (!kw) return users.value
-  return users.value.filter(u => u.username.toLowerCase().includes(kw))
-})
+const {
+  loading,
+  search,
+  currentUser,
+  inviteCode,
+  refreshingCode,
+  resetDialog,
+  filteredUsers,
+  fetchUsers,
+  copyInviteCode,
+  handleRefreshCode,
+  handleResetClick,
+  confirmReset,
+  handleDelete,
+  handleRoleChange,
+  startEditName,
+  handleNameBlur,
+  confirmNameChange,
+} = useUserManagement()
 
-const fetchUsers = async () => {
-  loading.value = true
-  const [err, data] = await to(userApi.list())
-  if (err) {
-    showError('无法获取用户列表')
-    loading.value = false
-    return
-  }
-  users.value = data.users || []
-  loading.value = false
-}
-
-const handleResetClick = (row: UserInfo) => {
-  resetDialog.userId = row.id
-  resetDialog.username = row.username
-  resetDialog.password = ''
-  resetDialog.visible = true
-}
-
-// 执行重置密码请求
-const confirmReset = async () => {
-  if (!resetDialog.password) {
-    return showWarning('请输入新密码')
-  }
-  if (resetDialog.password.length < 6) {
-    return showWarning('密码长度至少为 6 位')
-  }
-
-  try {
-    await resetDialogRef.value?.load(() =>
-      userApi.resetPassword(resetDialog.userId as number | string, resetDialog.password)
-    )
-    showSuccess(`用户 ${resetDialog.username} 的密码已成功重置`)
-    resetDialog.visible = false
-  } catch (err) {
-    showError(err, '重置失败')
-  }
-}
-
-const handleDelete = async (row: UserInfo) => {
-  const [confirmErr] = await to(ElMessageBox.confirm(`确定要删除用户 "${row.name || row.username}" 吗？此操作不可恢复！`, '删除确认', {
-    type: 'warning',
-    confirmButtonText: '删除',
-    cancelButtonText: '取消'
-  }))
-  if (confirmErr) return
-
-  const [err] = await to(userApi.remove(row.id))
-  if (err) {
-    showError(err, '删除用户失败')
-    return
-  }
-  showSuccess('用户已成功删除')
-  fetchUsers()
-}
-
-const handleRoleChange = async (row: UserInfo, newRole: string) => {
-  const oldRole = row.role
-  const roleLabels: Record<string, string> = { admin: '管理员', user: '业务员', guest: '游客(只读)' }
-  const [confirmErr] = await to(ElMessageBox.confirm(`确定要将用户 ${row.username} 的权限修改为 "${roleLabels[newRole] || newRole}" 吗？`, '权限变更确认', {
-    type: 'warning',
-    confirmButtonText: '确定变更',
-    cancelButtonText: '取消'
-  }))
-  if (confirmErr) {
-    row.role = oldRole
-    return
-  }
-
-  const [err] = await to(userApi.updateRole(row.id, newRole))
-  if (err) {
-    showError(err, '更新权限失败')
-    row.role = oldRole
-    fetchUsers()
-    return
-  }
-  row.role = newRole as 'admin' | 'user' | 'guest'
-  showSuccess('用户权限更新成功')
-}
-
-const startEditName = (row: UserInfo) => {
-  row._editingName = true
-  row._editNameValue = row.name || ''
-}
-
-const handleNameBlur = (row: UserInfo) => {
-  if (!row._editingName) return
-  confirmNameChange(row)
-}
-
-const confirmNameChange = async (row: UserInfo) => {
-  const newName = (row._editNameValue || '').trim()
-  if (!newName) {
-    row._editingName = false
-    return showWarning('姓名不能为空')
-  }
-  if (newName === row.name) {
-    row._editingName = false
-    return
-  }
-  const [err] = await to(userApi.updateName(row.id, newName))
-  if (err) {
-    showError(err, '修改姓名失败')
-    row._editingName = false
-    return
-  }
-  row.name = newName
-  row._editingName = false
-  if (currentUser.value.id === row.id) {
-    userStore.refreshProfile()
-  }
-  showSuccess('姓名已更新')
-}
-
-onMounted(() => {
-  Promise.all([fetchUsers(), fetchInviteCode()])
-})
+const onConfirmReset = () => confirmReset(resetDialogRef.value)
 </script>
 
 <style scoped>
