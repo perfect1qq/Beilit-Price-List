@@ -8,6 +8,11 @@
         <el-descriptions-item label="联系方式">{{ customer.contactInfo || '—' }}</el-descriptions-item>
         <el-descriptions-item label="负责人">{{ customer.ownerName || '—' }}</el-descriptions-item>
         <el-descriptions-item label="货架类型">{{ customer.shelfType || '—' }}</el-descriptions-item>
+        <el-descriptions-item label="结款状态">
+          <el-tag :type="customer.paymentStatus === '已结款' ? 'success' : customer.paymentStatus === '待催款' ? 'danger' : 'info'" size="small">
+            {{ customer.paymentStatus || '未有款项' }}
+          </el-tag>
+        </el-descriptions-item>
         <el-descriptions-item label="工期">
           <template v-if="customer.deliveryDays && customer.deliveryDays > 0">
             {{ customer.deliveryDays }}天

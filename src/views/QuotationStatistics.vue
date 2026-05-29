@@ -1,9 +1,10 @@
 <!--
   @file views/QuotationStatistics.vue
-  @description 报价单统计 / 重型货架部件智能汇总工具
+  @description 报价单统计 / 货架部件智能汇总工具
 
   功能说明：
-  - AI 智能解析重型货架报价文本
+  - 智能解析重型货架报价文本（格式一：L*W*H + N主架 M副架）
+  - 智能解析中型/层板/重型货架报价文本（格式二：L*W*H*N层板（载重）套 N）
   - 自动提取部件信息（名称、规格、数量、单位）
   - 统计数据可视化展示
   - 错误和警告提示
@@ -91,13 +92,11 @@
   * - 统计数据可视化展示 -->
 
 
-  <!-- 重型货架解析汇总页面 -->
   <div class="page">
     <section class="panel editor">
-      <h1>重型货架部件智能汇总</h1>
+      <h1>货架部件智能汇总</h1>
 
-      <!-- 文本解析区 -->
-      <textarea v-model="rawText" placeholder="把货架报价单内的文本内容直接粘贴到这里，点击生成汇总即可自动计算..." />
+      <textarea v-model="rawText" placeholder="支持重型货架「L*W*H + N主架 M副架」格式，以及中型/层板/重型货架「L*W*H*N层板（载重）套 N」格式。粘贴后点击生成汇总即可自动计算..." />
 
       <div class="toolbar">
         <button type="button" class="primary" @click="parseNow" :disabled="loading">
@@ -128,20 +127,16 @@
         <table>
           <thead>
             <tr>
-              <th style="width: 60px;">#</th>
               <th>名称</th>
               <th>规格</th>
               <th>数量</th>
-              <th>单位</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(p, index) in parts" :key="index">
-              <td>{{ index + 1 }}</td>
               <td>{{ p.name }}</td>
               <td>{{ p.spec }}</td>
-              <td>{{ p.qty }}</td>
-              <td>{{ p.unit }}</td>
+              <td>{{ p.qty }}{{ p.unit }}</td>
             </tr>
           </tbody>
         </table>

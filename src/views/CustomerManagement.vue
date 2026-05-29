@@ -26,6 +26,12 @@
             <el-option label="待确认" value="待确认" />
           </el-select>
 
+          <el-select v-model="filterPaymentStatus" placeholder="结款状态" clearable style="width: 130px">
+            <el-option label="未有款项" value="未有款项" />
+            <el-option label="待催款" value="待催款" />
+            <el-option label="已结款" value="已结款" />
+          </el-select>
+
           <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
           <el-button @click="handleResetFilter">清空</el-button>
         </div>
@@ -44,6 +50,9 @@
                 </el-tag>
                 <el-tag :type="getCustomerTypeTagType(item.customerType)" size="small">
                   {{ item.customerType || '终端' }}
+                </el-tag>
+                <el-tag :type="item.paymentStatus === '已结款' ? 'success' : item.paymentStatus === '待催款' ? 'danger' : 'info'" size="small">
+                  {{ item.paymentStatus || '未有款项' }}
                 </el-tag>
               </div>
             </div>
@@ -162,7 +171,7 @@ const router = useRouter()
 const { isGuest, canCreate, canEdit, canDelete } = usePermissions()
 
 const {
-  loading, customerList, searchKeyword, filterCooperationStatus, filterCustomerType,
+  loading, customerList, searchKeyword, filterCooperationStatus, filterCustomerType, filterPaymentStatus,
   page, pageSize, total, loadList, handleSearch, handleResetFilter, updateLocalItem
 } = useCustomerList()
 

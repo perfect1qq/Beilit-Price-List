@@ -5,6 +5,7 @@ import type { PaginationParams, CustomerCreatePayload, CustomerUpdatePayload, Cu
 interface CustomerListParams extends PaginationParams {
   cooperationStatus?: string
   customerType?: string
+  paymentStatus?: string
 }
 
 const list = (params?: CustomerListParams) =>

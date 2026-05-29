@@ -20,7 +20,8 @@ const INITIAL_FORM: CustomerCreatePayload & CustomerUpdatePayload = {
   customerType: '终端',
   deliveryDays: null,
   shelfType: '',
-  remark: ''
+  remark: '',
+  paymentStatus: '未有款项'
 }
 
 export const useCustomerList = () => {
@@ -29,6 +30,7 @@ export const useCustomerList = () => {
   const searchKeyword = ref('')
   const filterCooperationStatus = ref('')
   const filterCustomerType = ref('')
+  const filterPaymentStatus = ref('')
 
   const { page, pageSize, total, resetToFirstPage } = usePagination({
     defaultPage: 1,
@@ -45,6 +47,7 @@ export const useCustomerList = () => {
     }
     if (filterCooperationStatus.value?.trim()) params.cooperationStatus = filterCooperationStatus.value.trim()
     if (filterCustomerType.value?.trim()) params.customerType = filterCustomerType.value.trim()
+    if (filterPaymentStatus.value?.trim()) params.paymentStatus = filterPaymentStatus.value.trim()
 
     const [err, res] = await to(customerApi.list(params))
     if (err) { showError(err, '加载客户列表失败'); loading.value = false; return }
@@ -65,6 +68,7 @@ export const useCustomerList = () => {
     searchKeyword.value = ''
     filterCooperationStatus.value = ''
     filterCustomerType.value = ''
+    filterPaymentStatus.value = ''
     resetToFirstPage()
     loadList()
   }
@@ -88,6 +92,7 @@ export const useCustomerList = () => {
     searchKeyword,
     filterCooperationStatus,
     filterCustomerType,
+    filterPaymentStatus,
     page,
     pageSize,
     total,
@@ -123,7 +128,8 @@ export const useCustomerForm = () => {
       customerType: row.customerType || '终端',
       deliveryDays: row.deliveryDays ?? null,
       shelfType: row.shelfType || '',
-      remark: row.remark
+      remark: row.remark,
+      paymentStatus: row.paymentStatus || '未有款项'
     })
     dialogVisible.value = true
   }

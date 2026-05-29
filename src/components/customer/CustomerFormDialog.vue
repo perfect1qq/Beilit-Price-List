@@ -24,6 +24,13 @@
         <el-option label="待确认" value="待确认" />
       </el-select>
     </el-form-item>
+    <el-form-item label="结款状态" prop="paymentStatus">
+      <el-select v-model="localData.paymentStatus" placeholder="选择结款状态" style="width: 100%">
+        <el-option label="未有款项" value="未有款项" />
+        <el-option label="待催款" value="待催款" />
+        <el-option label="已结款" value="已结款" />
+      </el-select>
+    </el-form-item>
     <el-form-item label="工期" prop="deliveryDays">
       <div class="delivery-input-row">
         <el-input-number v-model="localData.deliveryDays" :min="1" :max="365" controls-position="right" placeholder="天数"
