@@ -18,17 +18,32 @@
       </div>
 
       <div v-else class="avatar-crop-area">
-        <div class="crop-container" ref="cropContainerRef"
-          @wheel.prevent="onWheel">
+        <div class="crop-container" ref="cropContainerRef" @wheel.prevent="onWheel">
           <img :src="previewUrl" :style="imageStyle" draggable="false" @load="onImageLoad"
             @mousedown.prevent="onImgPointerDown" @touchstart.prevent="onImgTouchStart" alt="" />
           <div class="crop-overlay"></div>
-          <div class="crop-box" :style="cropBoxStyle"
-            @mousedown.prevent="onCropBoxPointerDown" @touchstart.prevent="onCropBoxTouchStart">
+          <div class="crop-box" :style="cropBoxStyle" @mousedown.prevent="onCropBoxPointerDown"
+            @touchstart.prevent="onCropBoxTouchStart">
             <span class="crop-grid grid-h"></span>
             <span class="crop-grid grid-v"></span>
             <span class="crop-grid grid-h-2"></span>
             <span class="crop-grid grid-v-2"></span>
+            <span class="resize-handle handle-nw" data-dir="nw" @mousedown.stop.prevent="onResizeStart($event, 'nw')"
+              @touchstart.stop.prevent="onResizeTouchStart($event, 'nw')"></span>
+            <span class="resize-handle handle-ne" data-dir="ne" @mousedown.stop.prevent="onResizeStart($event, 'ne')"
+              @touchstart.stop.prevent="onResizeTouchStart($event, 'ne')"></span>
+            <span class="resize-handle handle-sw" data-dir="sw" @mousedown.stop.prevent="onResizeStart($event, 'sw')"
+              @touchstart.stop.prevent="onResizeTouchStart($event, 'sw')"></span>
+            <span class="resize-handle handle-se" data-dir="se" @mousedown.stop.prevent="onResizeStart($event, 'se')"
+              @touchstart.stop.prevent="onResizeTouchStart($event, 'se')"></span>
+            <span class="resize-handle handle-n" data-dir="n" @mousedown.stop.prevent="onResizeStart($event, 'n')"
+              @touchstart.stop.prevent="onResizeTouchStart($event, 'n')"></span>
+            <span class="resize-handle handle-s" data-dir="s" @mousedown.stop.prevent="onResizeStart($event, 's')"
+              @touchstart.stop.prevent="onResizeTouchStart($event, 's')"></span>
+            <span class="resize-handle handle-w" data-dir="w" @mousedown.stop.prevent="onResizeStart($event, 'w')"
+              @touchstart.stop.prevent="onResizeTouchStart($event, 'w')"></span>
+            <span class="resize-handle handle-e" data-dir="e" @mousedown.stop.prevent="onResizeStart($event, 'e')"
+              @touchstart.stop.prevent="onResizeTouchStart($event, 'e')"></span>
           </div>
         </div>
         <div class="crop-preview-wrapper">
@@ -97,7 +112,9 @@ const uploading = ref(false)
 const cropContainerRef = ref<HTMLDivElement | null>(null)
 
 const CONTAINER_SIZE = 280
-const CROP_BOX_SIZE = 150
+const CROP_BOX_MIN = 60
+const CROP_BOX_MAX = 280
+const CROP_BOX_DEFAULT = 150
 const MIN_SCALE = 0.5
 const MAX_SCALE = 5
 const ZOOM_STEP = 0.1
@@ -110,14 +127,18 @@ const imageState = ref({
   y: 0,
 })
 
-const cropBoxPos = ref({ x: (CONTAINER_SIZE - CROP_BOX_SIZE) / 2, y: (CONTAINER_SIZE - CROP_BOX_SIZE) / 2 })
+const cropBoxPos = ref({ x: (CONTAINER_SIZE - CROP_BOX_DEFAULT) / 2, y: (CONTAINER_SIZE - CROP_BOX_DEFAULT) / 2 })
+const cropBoxSize = ref(CROP_BOX_DEFAULT)
 
-type DragTarget = 'image' | 'cropbox' | null
+type DragTarget = 'image' | 'cropbox' | 'resize' | null
 const dragTarget = ref<DragTarget>(null)
 let dragStartX = 0
 let dragStartY = 0
 let dragStartValX = 0
 let dragStartValY = 0
+let dragStartW = 0
+let dragStartH = 0
+let resizeDir = ''
 
 const getAvatarFromResponse = (res: UploadResponse): string | undefined =>
   res?.data?.avatar || res?.avatar || res?.data?.data?.avatar
@@ -137,7 +158,8 @@ const clearSelection = () => {
 
 const resetState = () => {
   imageState.value = { naturalWidth: 0, naturalHeight: 0, scale: 1, x: 0, y: 0 }
-  cropBoxPos.value = { x: (CONTAINER_SIZE - CROP_BOX_SIZE) / 2, y: (CONTAINER_SIZE - CROP_BOX_SIZE) / 2 }
+  cropBoxPos.value = { x: (CONTAINER_SIZE - CROP_BOX_DEFAULT) / 2, y: (CONTAINER_SIZE - CROP_BOX_DEFAULT) / 2 }
+  cropBoxSize.value = CROP_BOX_DEFAULT
 }
 
 const visible = computed({
@@ -171,8 +193,8 @@ const imageStyle = computed(() => {
 })
 
 const cropBoxStyle = computed(() => ({
-  width: `${CROP_BOX_SIZE}px`,
-  height: `${CROP_BOX_SIZE}px`,
+  width: `${cropBoxSize.value}px`,
+  height: `${cropBoxSize.value}px`,
   left: `${cropBoxPos.value.x}px`,
   top: `${cropBoxPos.value.y}px`,
   cursor: dragTarget.value === 'cropbox' ? 'grabbing' : 'move',
@@ -183,13 +205,14 @@ const previewImgStyle = computed(() => {
   if (!s.naturalWidth || !s.naturalHeight || !previewUrl.value) return { display: 'none' }
 
   const cb = cropBoxPos.value
+  const boxSize = cropBoxSize.value
   const imgLeftInContainer = s.x
   const imgTopInContainer = s.y
   const imgDisplayW = s.naturalWidth * s.scale
   const imgDisplayH = s.naturalHeight * s.scale
 
   const previewSize = 100
-  const ratio = previewSize / CROP_BOX_SIZE
+  const ratio = previewSize / boxSize
 
   const offsetX = (imgLeftInContainer - cb.x) * ratio
   const offsetY = (imgTopInContainer - cb.y) * ratio
@@ -215,7 +238,7 @@ const resetCrop = () => {
   clearSelection()
 }
 
-const onDialogOpen = () => {}
+const onDialogOpen = () => { }
 
 const handleFileChange = (file: UploadFile) => {
   const isImage = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.raw.type)
@@ -232,10 +255,10 @@ const handleFileChange = (file: UploadFile) => {
   previewUrl.value = URL.createObjectURL(file.raw)
 }
 
-const clampCropBox = (x: number, y: number): [number, number] => {
+const clampCropBox = (x: number, y: number, w: number = cropBoxSize.value): [number, number] => {
   return [
-    Math.max(0, Math.min(x, CONTAINER_SIZE - CROP_BOX_SIZE)),
-    Math.max(0, Math.min(y, CONTAINER_SIZE - CROP_BOX_SIZE)),
+    Math.max(0, Math.min(x, CONTAINER_SIZE - w)),
+    Math.max(0, Math.min(y, CONTAINER_SIZE - w)),
   ]
 }
 
@@ -265,7 +288,8 @@ const onImageLoad = (e: Event) => {
   const y = (CONTAINER_SIZE - displayH) / 2
 
   imageState.value = { naturalWidth: naturalW, naturalHeight: naturalH, scale, x, y }
-  cropBoxPos.value = { x: (CONTAINER_SIZE - CROP_BOX_SIZE) / 2, y: (CONTAINER_SIZE - CROP_BOX_SIZE) / 2 }
+  cropBoxPos.value = { x: (CONTAINER_SIZE - CROP_BOX_DEFAULT) / 2, y: (CONTAINER_SIZE - CROP_BOX_DEFAULT) / 2 }
+  cropBoxSize.value = CROP_BOX_DEFAULT
 }
 
 function startDrag(target: DragTarget, clientX: number, clientY: number) {
@@ -317,6 +341,33 @@ const applyDrag = (dx: number, dy: number) => {
   } else if (dragTarget.value === 'cropbox') {
     const [newX, newY] = clampCropBox(dragStartValX + dx, dragStartValY + dy)
     cropBoxPos.value = { x: newX, y: newY }
+  } else if (dragTarget.value === 'resize') {
+    let nx = dragStartValX
+    let ny = dragStartValY
+    let nw = dragStartW
+    let nh = dragStartH
+
+    const d = resizeDir
+    if (d.includes('e')) nw = Math.max(CROP_BOX_MIN, Math.min(CROP_BOX_MAX, dragStartW + dx))
+    if (d.includes('w')) {
+      nw = Math.max(CROP_BOX_MIN, Math.min(CROP_BOX_MAX, dragStartW - dx))
+      nx = dragStartValX + dragStartW - nw
+    }
+    if (d.includes('s')) nh = Math.max(CROP_BOX_MIN, Math.min(CROP_BOX_MAX, dragStartH + dy))
+    if (d.includes('n')) {
+      nh = Math.max(CROP_BOX_MIN, Math.min(CROP_BOX_MAX, dragStartH - dy))
+      ny = dragStartValY + dragStartH - nh
+    }
+
+    const size = Math.max(nw, nh)
+    if (size !== cropBoxSize.value) {
+      cropBoxSize.value = size
+      if (nw < size) nx -= (size - nw) / 2
+      if (nh < size) ny -= (size - nh) / 2
+    }
+
+    const [cx, cy] = clampCropBox(nx, ny, size)
+    cropBoxPos.value = { x: cx, y: cy }
   }
 }
 
@@ -329,6 +380,29 @@ const endDrag = () => {
   document.removeEventListener('mouseup', onGlobalUp)
   document.removeEventListener('touchmove', onGlobalTouchMove)
   document.removeEventListener('touchend', onGlobalTouchEnd)
+}
+
+const onResizeStart = (e: MouseEvent, dir: string) => {
+  startResize(dir, e.clientX, e.clientY)
+}
+
+const onResizeTouchStart = (e: TouchEvent, dir: string) => {
+  if (e.touches.length === 1) startResize(dir, e.touches[0].clientX, e.touches[0].clientY)
+}
+
+const startResize = (dir: string, clientX: number, clientY: number) => {
+  dragTarget.value = 'resize'
+  resizeDir = dir
+  dragStartX = clientX
+  dragStartY = clientY
+  dragStartValX = cropBoxPos.value.x
+  dragStartValY = cropBoxPos.value.y
+  dragStartW = cropBoxSize.value
+  dragStartH = cropBoxSize.value
+  document.addEventListener('mousemove', onGlobalMove)
+  document.addEventListener('mouseup', onGlobalUp)
+  document.addEventListener('touchmove', onGlobalTouchMove, { passive: false })
+  document.addEventListener('touchend', onGlobalTouchEnd)
 }
 
 const onWheel = (e: WheelEvent) => {
@@ -362,8 +436,9 @@ const createCroppedBlob = (): Promise<Blob> => {
     img.crossOrigin = 'anonymous'
     img.onload = () => {
       const canvas = document.createElement('canvas')
-      canvas.width = CROP_BOX_SIZE
-      canvas.height = CROP_BOX_SIZE
+      const outputSize = cropBoxSize.value
+      canvas.width = outputSize
+      canvas.height = outputSize
       const ctx = canvas.getContext('2d')
 
       if (!ctx) {
@@ -373,13 +448,14 @@ const createCroppedBlob = (): Promise<Blob> => {
 
       const s = imageState.value
       const cb = cropBoxPos.value
+      const boxS = cropBoxSize.value
 
       const sx = (cb.x - s.x) / s.scale
       const sy = (cb.y - s.y) / s.scale
-      const sw = CROP_BOX_SIZE / s.scale
-      const sh = CROP_BOX_SIZE / s.scale
+      const sw = boxS / s.scale
+      const sh = boxS / s.scale
 
-      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, CROP_BOX_SIZE, CROP_BOX_SIZE)
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outputSize, outputSize)
       canvas.toBlob(
         (blob) => {
           if (blob) resolve(blob)
@@ -499,6 +575,68 @@ const handleUpload = async () => {
   z-index: 2;
   box-sizing: border-box;
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+}
+
+.resize-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border-radius: 50%;
+  z-index: 3;
+  cursor: pointer;
+}
+
+.handle-nw {
+  top: -5px;
+  left: -5px;
+  cursor: nwse-resize;
+}
+
+.handle-ne {
+  top: -5px;
+  right: -5px;
+  cursor: nesw-resize;
+}
+
+.handle-sw {
+  bottom: -5px;
+  left: -5px;
+  cursor: nesw-resize;
+}
+
+.handle-se {
+  bottom: -5px;
+  right: -5px;
+  cursor: nwse-resize;
+}
+
+.handle-n {
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.handle-s {
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.handle-w {
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.handle-e {
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: ew-resize;
 }
 
 .crop-grid {
