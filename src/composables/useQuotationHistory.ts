@@ -190,7 +190,7 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
 
   const { isActionLoading, withActionLock, removeById } = useInstantListActions(historyList)
 
-  const { page, pageSize, keyword: searchKeyword, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
+  const { page, pageSize, keyword: searchKeyword, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 15, keyword: '' })
 
   const loading = ref(false)
 
