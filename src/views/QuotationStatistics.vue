@@ -96,7 +96,27 @@
     <section class="panel editor">
       <h1>货架部件智能汇总</h1>
 
-      <textarea v-model="rawText" placeholder="支持重型货架「L*W*H + N主架 M副架」格式，以及中型/层板/重型货架「L*W*H*N层板（载重）套 N」格式。粘贴后点击生成汇总即可自动计算..." />
+      <div class="extra-inputs">
+        <div class="input-item">
+          <label>横斜撑总数</label>
+          <input type="number" v-model.number="crossBraceCount" min="0" placeholder="0" />
+        </div>
+        <div class="input-item">
+          <label>连接杆</label>
+          <input type="number" v-model.number="connectorCount" min="0" placeholder="0" />
+        </div>
+        <div class="input-item">
+          <label>防撞护栏</label>
+          <input type="number" v-model.number="guardrailCount" min="0" placeholder="0" />
+        </div>
+        <div class="input-item">
+          <label>防撞护脚</label>
+          <input type="number" v-model.number="protectorCount" min="0" placeholder="0" />
+        </div>
+      </div>
+
+      <textarea v-model="rawText"
+        placeholder="支持重型货架「L*W*H + N主架 M副架」格式，以及中型/层板/重型货架「L*W*H*N层板（载重）套 N」格式。粘贴后点击生成汇总即可自动计算..." />
 
       <div class="toolbar">
         <button type="button" class="primary" @click="parseNow" :disabled="loading">
@@ -142,6 +162,13 @@
         </table>
       </div>
     </section>
+
+    <section v-if="remarks.length" class="panel remark-box">
+      <h2>备注</h2>
+      <ul>
+        <li v-for="(item, index) in remarks" :key="'r-' + index">{{ item }}</li>
+      </ul>
+    </section>
   </div>
 </template>
 
@@ -160,9 +187,14 @@ interface PartItem {
 }
 
 const rawText = ref('')
+const crossBraceCount = ref(0)
+const connectorCount = ref(0)
+const guardrailCount = ref(0)
+const protectorCount = ref(0)
 const parts = ref<PartItem[]>([])
 const errors = ref<string[]>([])
 const warnings = ref<string[]>([])
+const remarks = ref<string[]>([])
 const loading = ref(false)
 
 /**
@@ -174,7 +206,12 @@ async function parseNow() {
   }
 
   loading.value = true
-  const [err, result] = await to(quotationStatisticsApi.parse(rawText.value))
+  const [err, result] = await to(quotationStatisticsApi.parse(rawText.value, {
+    crossBraceCount: crossBraceCount.value,
+    connectorCount: connectorCount.value,
+    guardrailCount: guardrailCount.value,
+    protectorCount: protectorCount.value,
+  }))
   if (err || !result) {
     showError(err, '智能引擎解析失败，请检查文本格式或服务端运行状态。')
     loading.value = false
@@ -183,6 +220,7 @@ async function parseNow() {
   parts.value = result.parts || []
   errors.value = result.errors || []
   warnings.value = result.warnings || []
+  remarks.value = result.remarks || []
 
   if (errors.value.length) {
     showWarning('文本存在无法精准识别的内容区块，请检查页面"错误"反馈。')
@@ -195,14 +233,57 @@ async function parseNow() {
 /** 清空当前分析状态 */
 function clearText() {
   rawText.value = ''
+  crossBraceCount.value = 0
+  connectorCount.value = 0
+  guardrailCount.value = 0
+  protectorCount.value = 0
   parts.value = []
   errors.value = []
   warnings.value = []
+  remarks.value = []
 }
 
 </script>
 
 <style scoped>
+.extra-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.input-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 120px;
+}
+
+.input-item label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.input-item input {
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  background: #f8fafc;
+  transition: all 0.3s;
+  box-sizing: border-box;
+}
+
+.input-item input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  background: #fff;
+}
+
 .page {
   min-height: 100%;
   padding: 0px;
@@ -311,8 +392,15 @@ button.ghost {
   color: #92400e;
 }
 
+.remark-box {
+  border: 1px solid #c7d2fe;
+  background: #eef2ff;
+  color: #3730a3;
+}
+
 .error-box ul,
-.warn-box ul {
+.warn-box ul,
+.remark-box ul {
   margin: 0;
   padding-left: 21px;
 }

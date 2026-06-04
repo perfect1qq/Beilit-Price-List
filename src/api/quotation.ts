@@ -13,6 +13,7 @@ interface QuotationStatisticsResult {
   parts: { name: string; spec?: string; qty?: number | string; unit?: string; [key: string]: unknown }[]
   errors: string[]
   warnings: string[]
+  remarks?: string[]
   [key: string]: unknown
 }
 
@@ -55,8 +56,15 @@ const checkName = (name: string, excludeId?: number | string) =>
 const suggestName = (name: string, companyName?: string, excludeId?: number | string) =>
   request.get<{ suggestedName: string }>('/api/quotations/suggest-name', { params: { name, companyName, excludeId } })
 
-const parseStatistics = (rawText: string) =>
-  request.post<QuotationStatisticsResult>('/api/tools/calculate', { text: rawText, type: 'statistics' })
+interface ExtraCounts {
+  crossBraceCount?: number
+  connectorCount?: number
+  guardrailCount?: number
+  protectorCount?: number
+}
+
+const parseStatistics = (rawText: string, extra?: ExtraCounts) =>
+  request.post<QuotationStatisticsResult>('/api/tools/calculate', { text: rawText, type: 'statistics', ...extra })
 
 const quotationApi = {
   list: unwrap(list),
