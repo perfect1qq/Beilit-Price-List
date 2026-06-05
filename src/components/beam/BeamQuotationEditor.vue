@@ -64,11 +64,18 @@ import { computed } from 'vue'
 import { Plus, Delete } from '@element-plus/icons-vue'
 import { beamNameRule, recordNameRule, positiveDecimalRule, noSpaceRawValidator } from '@/utils/formRules'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
-import type { BeamQuotationData, BeamQuotationItem } from '@/types'
+import type { BeamQuotationItem } from '@/types'
+
+interface BeamFormModel {
+  recordName: string
+  editingItems: BeamQuotationItem[]
+  items?: BeamQuotationItem[]
+  [key: string]: unknown
+}
 
 const props = defineProps({
   mode: { type: String, required: true },
-  formModel: { type: Object as PropType<BeamQuotationData>, required: true },
+  formModel: { type: Object as PropType<BeamFormModel>, required: true },
   items: { type: Array as PropType<BeamQuotationItem[]>, required: true }
 })
 

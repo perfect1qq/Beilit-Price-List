@@ -73,7 +73,19 @@ const visible = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
-const localData = reactive<CustomerCreatePayload & CustomerUpdatePayload>({ ...props.formData })
+const INITIAL_LOCAL: CustomerCreatePayload & CustomerUpdatePayload = {
+  companyName: '',
+  customerName: '',
+  contactInfo: '',
+  cooperationStatus: '未合作',
+  customerType: '终端',
+  deliveryDays: null,
+  shelfType: '',
+  remark: '',
+  paymentStatus: '未有款项'
+}
+
+const localData = reactive<CustomerCreatePayload & CustomerUpdatePayload>({ ...INITIAL_LOCAL })
 
 watch(() => props.formData, (newVal) => {
   Object.assign(localData, newVal)
@@ -82,6 +94,12 @@ watch(() => props.formData, (newVal) => {
 watch(() => localData.cooperationStatus, (val) => {
   if (val === '未合作') {
     localData.paymentStatus = '未有款项'
+  }
+})
+
+watch(visible, (val) => {
+  if (!val) {
+    Object.assign(localData, INITIAL_LOCAL)
   }
 })
 

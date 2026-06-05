@@ -51,7 +51,9 @@
                 <el-tag :type="getCustomerTypeTagType(item.customerType)" size="small">
                   {{ item.customerType || '终端' }}
                 </el-tag>
-                <el-tag :type="item.paymentStatus === '已结款' ? 'success' : item.paymentStatus === '待催款' ? 'danger' : 'info'" size="small">
+                <el-tag
+                  :type="item.paymentStatus === '已结款' ? 'success' : item.paymentStatus === '待催款' ? 'danger' : 'info'"
+                  size="small">
                   {{ item.paymentStatus || '未有款项' }}
                 </el-tag>
               </div>
@@ -176,7 +178,7 @@ const {
 } = useCustomerList()
 
 const {
-  dialogVisible, editingId, formData, handleAdd, handleEdit, withSubmitLock
+  dialogVisible, editingId, formData, handleAdd, handleEdit, withSubmitLock, resetForm
 } = useCustomerForm()
 
 const {
@@ -203,6 +205,7 @@ const handleFormSubmit = async (data: CustomerCreatePayload & CustomerUpdatePayl
       loadList()
     }
     dialogVisible.value = false
+    resetForm()
   })
 }
 

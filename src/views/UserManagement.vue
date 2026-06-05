@@ -115,7 +115,7 @@
         </el-form>
       </div>
       <template #footer="{ loading }">
-        <el-button @click="resetDialog.visible = false">取消</el-button>
+        <el-button @click="resetDialog.password = ''; resetDialog.visible = false">取消</el-button>
         <el-button type="primary" :loading="loading" @click="onConfirmReset">确认重置</el-button>
       </template>
     </AsyncDialog>

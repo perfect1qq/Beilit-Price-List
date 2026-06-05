@@ -23,7 +23,6 @@ interface ListResult {
   total?: number
   page?: number
   pageSize?: number
-  [key: string]: unknown
 }
 
 interface HistoryViewOptions {

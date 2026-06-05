@@ -177,14 +177,7 @@ import { ref } from 'vue'
 import { quotationStatisticsApi } from '../api/quotation'
 import { to } from '@/utils/async'
 import { showWarning, showError, showSuccess } from '@/utils/message'
-
-interface PartItem {
-  name: string
-  spec?: string
-  qty?: number | string
-  unit?: string
-  [key: string]: unknown
-}
+import type { PartItem } from '@/types'
 
 const rawText = ref('')
 const crossBraceCount = ref(0)

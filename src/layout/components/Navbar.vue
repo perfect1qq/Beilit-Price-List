@@ -125,7 +125,7 @@
         </el-form-item>
       </el-form>
       <template #footer="{ loading }">
-        <el-button @click="changePassDialog.visible = false">取消</el-button>
+        <el-button @click="changePassDialog.form = { oldPassword: '', newPassword: '', confirmPassword: '' }; changePassDialog.visible = false">取消</el-button>
         <el-button type="primary" :loading="loading" @click="confirmChangePass">提交</el-button>
       </template>
     </AsyncDialog>
@@ -171,7 +171,6 @@ const {
 } = useNavbarNotifications({ request, router, isAdmin })
 
 const { changePassDialog, confirmChangePass } = useNavbarPasswordDialog({
-  request,
   onSuccess: () => logout(),
   dialogRef: changePassDialogRef
 })

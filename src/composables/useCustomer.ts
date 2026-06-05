@@ -174,12 +174,14 @@ export const useFollowUp = () => {
 
   const handleFollowUpSubmit = async (data: FollowUpCreatePayload, onSuccess: () => void) => {
     await withSubmitLock(async () => {
-      const [err] = await to(customerApi.addFollowUp(currentCustomer.value!.id, data))
+      const customerId = currentCustomer.value?.id
+      if (!customerId) { showError('客户信息不存在', '添加跟进记录失败'); return }
+      const [err] = await to(customerApi.addFollowUp(customerId, data))
       if (err) { showError(err, '添加跟进记录失败'); throw err }
       showSuccess('跟进记录添加成功')
       followUpDialogVisible.value = false
 
-      const [, res] = await to(customerApi.getDetail(currentCustomer.value!.id))
+      const [, res] = await to(customerApi.getDetail(customerId))
       if (res?.customer) currentCustomer.value = res.customer
       onSuccess()
     })
@@ -196,7 +198,8 @@ export const useFollowUp = () => {
     if (err) { showError(err, '删除跟进记录失败'); return }
     showSuccess('跟进记录删除成功')
 
-    const customerId = currentCustomer.value!.id
+    const customerId = currentCustomer.value?.id
+    if (!customerId) { showError('客户信息不存在', '刷新跟进记录失败'); return }
     const [, res] = await to(customerApi.getDetail(customerId))
     if (res?.customer) currentCustomer.value = res.customer
     onSuccess()

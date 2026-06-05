@@ -6,6 +6,14 @@ import type { RequestConfig } from '@/types'
 
 let refreshPromise: Promise<void> | null = null
 
+let errorHandler: (message: string) => void = (message: string) => {
+  ElMessage.error(message)
+}
+
+export const setRequestErrorHandler = (handler: (message: string) => void): void => {
+  errorHandler = handler
+}
+
 const buildApiUrl = (path: string): string => {
   const baseURL = String(http.defaults.baseURL || '').replace(/\/+$/, '')
   const apiPath = String(path || '').startsWith('/') ? path : `/${path}`
@@ -246,7 +254,7 @@ service.interceptors.response.use(
     const errorMessage = getErrorMessage(error)
 
     if (errorMessage && !config?.silent) {
-      ElMessage.error(errorMessage)
+      errorHandler(errorMessage)
     }
 
     return Promise.reject(error)

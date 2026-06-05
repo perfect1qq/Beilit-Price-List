@@ -1,14 +1,8 @@
 import request from '../utils/request'
 import { unwrap } from '../utils/unwrap'
-import type { PaginationParams, BeamQuotationData } from '@/types'
+import type { PaginationParams, BeamQuotationData, PaginatedResult } from '@/types'
 
-interface BeamListResult {
-  list: BeamQuotationData[]
-  total: number
-  page: number
-  pageSize: number
-  [key: string]: unknown
-}
+type BeamListResult = PaginatedResult<BeamQuotationData>
 
 const list = (params?: PaginationParams) =>
   request.get<BeamListResult>('/api/beam-quotations', { params })

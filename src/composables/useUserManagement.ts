@@ -88,6 +88,9 @@ export function useUserManagement() {
       )
       showSuccess(`用户 ${resetDialog.username} 的密码已成功重置`)
       resetDialog.visible = false
+      resetDialog.password = ''
+      resetDialog.userId = null
+      resetDialog.username = ''
     } catch (err) {
       showError(err, '重置失败')
     }

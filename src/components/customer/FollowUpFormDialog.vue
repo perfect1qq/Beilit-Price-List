@@ -37,11 +37,19 @@ const visible = computed({
   set: (val) => emit('update:modelValue', val)
 })
 
-const localData = reactive<FollowUpFormData>({ ...props.formData })
+const INITIAL_LOCAL: FollowUpFormData = { content: '', nextTime: '' }
+
+const localData = reactive<FollowUpFormData>({ ...INITIAL_LOCAL })
 
 watch(() => props.formData, (newVal) => {
   Object.assign(localData, newVal)
 }, { deep: true })
+
+watch(visible, (val) => {
+  if (!val) {
+    Object.assign(localData, INITIAL_LOCAL)
+  }
+})
 
 const formRules = {
   content: [

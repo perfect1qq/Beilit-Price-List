@@ -18,12 +18,11 @@ interface AsyncDialogRef {
 }
 
 interface NavbarPasswordDialogDeps {
-  request: unknown
   onSuccess?: () => void
   dialogRef?: { value: AsyncDialogRef | null }
 }
 
-export const useNavbarPasswordDialog = ({ request: _request, onSuccess, dialogRef }: NavbarPasswordDialogDeps) => {
+export const useNavbarPasswordDialog = ({ onSuccess, dialogRef }: NavbarPasswordDialogDeps) => {
   const changePassDialog = reactive<PasswordDialogState>({
     visible: false,
     form: { oldPassword: '', newPassword: '', confirmPassword: '' }
@@ -42,6 +41,7 @@ export const useNavbarPasswordDialog = ({ request: _request, onSuccess, dialogRe
       )
       ElMessage.success('密码修改成功，请重新登录')
       changePassDialog.visible = false
+      changePassDialog.form = { oldPassword: '', newPassword: '', confirmPassword: '' }
       onSuccess?.()
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }

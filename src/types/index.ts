@@ -74,6 +74,14 @@ export interface ApiResponse<T = unknown> {
   code?: string
 }
 
+export interface PartItem {
+  name: string
+  spec?: string
+  qty?: number | string
+  unit?: string
+  [key: string]: unknown
+}
+
 export interface QuotationItem {
   name: string
   spec?: string
@@ -145,11 +153,13 @@ export interface BeamQuotationItem {
 }
 
 export interface BeamQuotationData {
-  id?: number
-  name?: string
-  recordName?: string
-  editingItems?: BeamQuotationItem[]
-  items?: BeamQuotationItem[]
+  id: number
+  name: string
+  items: BeamQuotationItem[] | string
+  ownerId: number
+  ownerName: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface CustomerCreatePayload {
@@ -433,4 +443,12 @@ export type RequestConfig = Record<string, unknown> & {
   url?: string
   method?: string
   data?: unknown
+}
+
+export interface ApiError {
+  status: number
+  code: string
+  message: string
+  details?: unknown
+  requestId?: string
 }

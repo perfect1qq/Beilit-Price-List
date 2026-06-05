@@ -8,7 +8,7 @@
 
     <template #footer="{ loading }">
       <slot name="footer" :loading="loading" :validate="handleValidate" :submit="handleSubmit">
-        <el-button :disabled="loading" @click="visible = false">取消</el-button>
+        <el-button :disabled="loading" @click="handleCancel">取消</el-button>
         <el-button type="primary" :loading="loading" @click="handleSubmit">
           {{ submitText }}
         </el-button>
@@ -64,7 +64,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['update:modelValue', 'open', 'submit', 'validate-success', 'validate-error'])
+const emit = defineEmits(['update:modelValue', 'open', 'submit', 'cancel', 'validate-success', 'validate-error'])
 
 const visible = ref(false)
 const dialogRef = ref<InstanceType<typeof AsyncDialog> | null>(null)
@@ -79,6 +79,12 @@ watch(() => props.modelValue, (val) => {
 watch(visible, (val) => {
   emit('update:modelValue', val)
 })
+
+const handleCancel = () => {
+  formRef.value?.resetFields()
+  emit('cancel')
+  visible.value = false
+}
 
 const handleOpen = async () => {
   emit('open')
