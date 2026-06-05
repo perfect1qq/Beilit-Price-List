@@ -124,7 +124,7 @@ const normalizeRow = (row: Record<string, unknown> = {}): QuotationRow => {
   return {
     name: String(row.name ?? '').trim(),
     spec: String(row.spec ?? '').trim(),
-    quantity: quantity === null ? String(row.quantity ?? '').trim() : quantity,
+    quantity: String(row.quantity ?? '').trim(),
     unitPrice:
       unitPrice === null
         ? String(row.unitPrice ?? '').trim()

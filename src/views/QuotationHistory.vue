@@ -132,8 +132,6 @@
       <el-card shadow="never" class="card">
         <div class="toolbar">
           <el-button @click="backToList">返回列表</el-button>
-          <el-button v-if="!isViewMode" type="primary" :icon="DocumentAdd" @click="handleParseText"
-            :loading="parsing">智能解析粘贴内容</el-button>
           <el-button type="primary" plain :icon="Plus" @click="addRow" :disabled="isViewMode">手动添加一行</el-button>
           <el-button :icon="Refresh" @click="clearRows" :disabled="isViewMode">清空当前表格</el-button>
           <el-button type="success" :icon="DocumentAdd" @click="handleSubmit" :loading="isSubmitting"
@@ -147,8 +145,12 @@
           :is-manual-final-price="isManualFinalPrice" :items="items" :visible-columns="visibleColumns"
           :hide-action-column="isGuest" @handle-discount-change="handleDiscountChange"
           @handle-manual-final-price-change="handleManualFinalPriceChange"
-          @restore-auto-final-price="restoreAutoFinalPrice" @update-row-total="updateRowTotal"
-          @remove-row="removeRow" />
+          @restore-auto-final-price="restoreAutoFinalPrice" @update-row-total="updateRowTotal" @remove-row="removeRow">
+          <template #parse-action>
+            <el-button v-if="!isViewMode" type="primary" :icon="DocumentAdd" @click="handleParseText"
+              :loading="parsing">智能解析粘贴内容</el-button>
+          </template>
+        </QuotationEditor>
       </el-card>
     </div>
   </div>
