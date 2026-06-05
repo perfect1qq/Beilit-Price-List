@@ -123,7 +123,6 @@
 
             <template v-else>
               <el-button :icon="Plus" @click="addSummaryRow">新增中型货架重量表</el-button>
-              <el-button :icon="Plus" @click="addDetailRow">新增层数规格明细</el-button>
               <el-button :loading="saving" type="success" @click="saveData">保存</el-button>
               <el-button @click="cancelEdit">取消</el-button>
             </template>
@@ -221,7 +220,10 @@
         <!-- ================= 区块 2: 层数规格明细表（带单元格合并功能） ================= -->
         <el-card shadow="never" class="section-card">
           <template #header>
-            <div class="section-title">层数规格明细</div>
+            <div style="display:flex; align-items:center; justify-content:space-between">
+              <div class="section-title">层数规格明细</div>
+              <el-button v-if="editMode" :icon="Plus" @click="addDetailRow">新增层数规格明细</el-button>
+            </div>
           </template>
 
           <el-table :data="displayDetailRows" border stripe class="table smart-table"
