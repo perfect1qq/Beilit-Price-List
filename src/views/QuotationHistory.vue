@@ -267,7 +267,7 @@ const totalRecords = computed(() => groupedHistoryList.value.reduce((sum, group)
   font-size: 15px;
   font-weight: 700;
   color: #1e293b;
-  border-left: 4px solid #6366f1;
+  border-left: 4px solid #3b82f6;
   padding-left: 10px;
   line-height: 1;
   margin-bottom: 4px;

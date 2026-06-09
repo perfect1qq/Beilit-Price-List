@@ -330,13 +330,13 @@ onMounted(() => loadList())
 }
 
 .delivery-days-value {
-  color: #409eff;
+  color: #3b82f6;
   font-weight: 600;
   font-size: 13px;
 }
 
 .delivery-arrow {
-  color: #409eff;
+  color: #3b82f6;
   font-weight: bold;
 }
 

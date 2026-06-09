@@ -57,8 +57,7 @@
   - 通过 Vue Router 的嵌套路由实现
 -->
 <template>
-  <div class="app-wrapper"
-    :class="{ mobile: isMobile, mobileSidebarOpen: mobileSidebarOpen }">
+  <div class="app-wrapper" :class="{ mobile: isMobile, mobileSidebarOpen: mobileSidebarOpen }">
     <div v-if="isMobile && mobileSidebarOpen" class="sidebar-mask" @click="closeMobileSidebar"></div>
     <Sidebar class="sidebar-container" />
     <div class="main-container">
@@ -69,15 +68,17 @@
         <AppMain />
       </ErrorBoundary>
     </div>
-    <button v-if="isMobile && !mobileSidebarOpen" class="mobile-menu-btn" type="button" aria-label="打开菜单"
-      @click="toggleMobileSidebar">
-      ☰
-    </button>
+    <el-button v-if="isMobile && !mobileSidebarOpen" class="mobile-menu-btn" circle @click="toggleMobileSidebar">
+      <el-icon>
+        <Menu />
+      </el-icon>
+    </el-button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
+import { Menu } from '@element-plus/icons-vue'
 import Sidebar from './components/Sidebar.vue'
 import Navbar from './components/Navbar.vue'
 import AppMain from './components/AppMain.vue'
@@ -174,7 +175,7 @@ onUnmounted(() => {
   height: 42px;
   border: none;
   border-radius: 999px;
-  background: #2563eb;
+  background: #3b82f6;
   color: #fff;
   font-size: 21px;
   line-height: 1;

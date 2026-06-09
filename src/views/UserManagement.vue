@@ -185,7 +185,7 @@ const onConfirmReset = () => confirmReset(resetDialogRef.value)
   font-size: 18px;
   font-weight: 800;
   color: #1e293b;
-  border-left: 4px solid #6366f1;
+  border-left: 4px solid #3b82f6;
   padding-left: 10px;
   line-height: 1;
 }
@@ -214,7 +214,7 @@ const onConfirmReset = () => confirmReset(resetDialogRef.value)
 }
 
 .dialog-tip strong {
-  color: #6366f1;
+  color: #3b82f6;
 }
 
 @media (max-width: 768px) {

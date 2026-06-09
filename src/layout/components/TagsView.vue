@@ -2,10 +2,12 @@
   <div class="tags-view-wrapper">
     <div class="tags-left-tools">
       <el-dropdown trigger="click" @command="handleCommand">
-        <button class="tags-op-btn" type="button">
-          <el-icon><MoreFilled /></el-icon>
+        <el-button class="tags-op-btn" size="small" round>
+          <el-icon>
+            <MoreFilled />
+          </el-icon>
           <span>页面操作</span>
-        </button>
+        </el-button>
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="closeOthers">关闭其他</el-dropdown-item>
@@ -19,21 +21,14 @@
 
     <el-scrollbar class="tags-view-scrollbar">
       <div class="tags-view-list">
-        <div
-          v-for="item in visitedViews"
-          :key="item.fullPath"
+        <div v-for="item in visitedViews" :key="item.fullPath"
           :class="['tags-view-item', { active: item.fullPath === activeFullPath, home: item.path === '/home' }]"
-          @click="goView(item)"
-        >
+          @click="goView(item)">
           <el-icon v-if="item.path === '/home'" class="tag-home-icon">
             <House />
           </el-icon>
           <span class="tag-title">{{ item.title }}</span>
-          <el-icon
-            v-if="item.path !== '/home'"
-            class="tag-close"
-            @click.stop="closeView(item)"
-          >
+          <el-icon v-if="item.path !== '/home'" class="tag-close" @click.stop="closeView(item)">
             <Close />
           </el-icon>
         </div>
@@ -104,7 +99,7 @@ const handleCommand = async (command: string) => {
 }
 
 .tags-op-btn:hover {
-  color: #2563eb;
+  color: #3b82f6;
   border-color: #bfdbfe;
   background: #eff6ff;
 }
@@ -152,13 +147,13 @@ const handleCommand = async (command: string) => {
 }
 
 .tags-view-item:hover {
-  color: #2563eb;
+  color: #3b82f6;
   border-color: #bfdbfe;
   background: #eff6ff;
 }
 
 .tags-view-item.active {
-  color: #2563eb;
+  color: #3b82f6;
   border-color: #93c5fd;
   background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
   box-shadow: 0 3px 10px rgba(59, 130, 246, 0.12);

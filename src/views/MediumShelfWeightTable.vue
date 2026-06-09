@@ -420,7 +420,7 @@ onMounted(() => {
   font-size: 15px;
   font-weight: bold;
   color: #1e293b;
-  border-left: 4px solid #6366f1;
+  border-left: 4px solid #3b82f6;
   /* 使用统一的靛蓝色调 */
   padding-left: 10px;
   line-height: 1;

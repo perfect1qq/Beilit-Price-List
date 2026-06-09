@@ -1,11 +1,7 @@
 <template>
   <div class="navbar-shell">
     <div class="navbar-top">
-      <button class="mobile-nav-trigger" type="button" @click="emit('toggle-mobile-sidebar')">
-        <el-icon>
-          <Menu />
-        </el-icon>
-      </button>
+      <el-button class="mobile-nav-trigger" :icon="Menu" circle size="small" @click="emit('toggle-mobile-sidebar')" />
       <div class="brand-area">
         <div class="brand-mark">BT</div>
         <div class="brand-copy">
@@ -125,7 +121,8 @@
         </el-form-item>
       </el-form>
       <template #footer="{ loading }">
-        <el-button @click="changePassDialog.form = { oldPassword: '', newPassword: '', confirmPassword: '' }; changePassDialog.visible = false">取消</el-button>
+        <el-button
+          @click="changePassDialog.form = { oldPassword: '', newPassword: '', confirmPassword: '' }; changePassDialog.visible = false">取消</el-button>
         <el-button type="primary" :loading="loading" @click="confirmChangePass">提交</el-button>
       </template>
     </AsyncDialog>
@@ -352,7 +349,7 @@ onUnmounted(() => {
 }
 
 .notice-box:hover .notice-icon {
-  color: #2563eb;
+  color: #3b82f6;
   transform: scale(1.08);
 }
 
@@ -509,7 +506,7 @@ onUnmounted(() => {
 }
 
 .notice-item-icon.memo_reminder {
-  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
 }
 
 .notice-item-icon.default {

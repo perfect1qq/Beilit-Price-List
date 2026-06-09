@@ -62,7 +62,7 @@ defineEmits(['copy', 'refresh'])
 }
 
 .invite-icon {
-  color: #6366f1;
+  color: #3b82f6;
   font-size: 20px;
 }
 

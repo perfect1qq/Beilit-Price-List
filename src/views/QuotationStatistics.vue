@@ -1,97 +1,4 @@
-<!--
-  @file views/QuotationStatistics.vue
-  @description 报价单统计 / 货架部件智能汇总工具
-
-  功能说明：
-  - 智能解析重型货架报价文本（格式一：L*W*H + N主架 M副架）
-  - 智能解析中型/层板/重型货架报价文本（格式二：L*W*H*N层板（载重）套 N）
-  - 自动提取部件信息（名称、规格、数量、单位）
-  - 统计数据可视化展示
-  - 错误和警告提示
-
-  页面布局：
-  ┌──────────────────────────────────────────────────────────────┐
-  │  QuotationStatistics (重型货架部件智能汇总)                    │
-  │                                                              │
-  │  ┌────────────────────────────────────────────────────────┐  │
-  │  │ Editor Panel (文本解析区)                               │  │
-  │  │                                                        │  │
-  │  │  重型货架部件智能汇总                                   │  │
-  │  │  ┌──────────────────────────────────────────────────┐  │  │
-  │  │  │ 把货架报价单内的文本内容直接粘贴到这里...         │  │  │
-  │  │  │                                                  │  │  │
-  │  │  │                                                  │  │  │
-  │  │  └──────────────────────────────────────────────────┘  │  │
-  │  │                                                        │  │
-  │  │  [生成汇总分析] [清空面板]                             │  │
-  │  └────────────────────────────────────────────────────────┘  │
-  │                                                              │
-  │  Error Panel (如有错误)                                      │
-  │  ┌────────────────────────────────────────────────────────┐  │
-  │  │ 错误                                                    │  │
-  │  │ • 无法识别的格式: ...                                   │  │
-  │  │ • 数量字段缺失: ...                                     │  │
-  │  └────────────────────────────────────────────────────────┘  │
-  │                                                              │
-  │  Warning Panel (如有提示)                                    │
-  │  ┌────────────────────────────────────────────────────────┐  │
-  │  │ 提示                                                    │  │
-  │  │ • 规格字段可能不完整: ...                               │  │
-  │  └────────────────────────────────────────────────────────┘  │
-  │                                                              │
-  │  Result Panel (解析结果)                                     │
-  │  ┌────────────────────────────────────────────────────────┐  │
-  │  │ 部件汇总                                                │  │
-  │  │ ┌────┬──────────┬────────┬──────┬────┐                │  │
-  │  │ │ #  │ 名称      │ 规格   │ 数量 │ 单位│               │  │
-  │  │ ├────┼──────────┼────────┼──────┼────┤               │  │
-  │  │ │ 1  │ 立柱      │ 80×60  │ 100  │ 根 │               │  │
-  │  │ │ 2  │ 横梁      │ 2.4m   │ 200  │ 根 │               │  │
-  │  │ └────┴──────────┴────────┴──────┴────┘               │  │
-  │  └────────────────────────────────────────────────────────┘  │
-  └──────────────────────────────────────────────────────────────┘
-
-  使用场景：
-  - 收到供应商的货架报价单文本
-  - 将文本粘贴到输入框
-  - 点击"生成汇总分析"
-  - 自动提取所有部件及其数量
-  - 快速统计成本和数量
-
-  数据模型：
-  ┌─────────────────────────────────────────────────────────────┐
-  │  Part (部件)                                                 │
-  ├─────────────────────────────────────────────────────────────┤
-  │  name: string   - 部件名称（立柱、横梁、层板等）              │
-  │  spec: string   - 规格型号（80×60、2.4m 等）                 │
-  │  qty: number     │  数量                                    │
-  │  unit: string    - 单位（根、块、个等）                       │
-  └─────────────────────────────────────────────────────────────┘
-
-  API 调用：
-  - POST /api/quotation/statistics/parse { text }
-    输入: 原始报价文本
-    输出: { parts: [], errors: [], warnings: [] }
-
-  解析能力：
-  - 识别常见货架部件名称
-  - 提取规格参数（尺寸、材质等）
-  - 解析数量和单位
-  - 处理多种文本格式
-  - 给出错误提示和建议
--->
-
 <template>
-
-  <!-- * @module views/QuotationStatistics
-  * @description 报价单统计页面
-  *
-  * 功能：
-  * - 重型货架解析汇总
-  * - AI 智能解析报价文本
-  * - 统计数据可视化展示 -->
-
-
   <div class="page">
     <section class="panel editor">
       <h1>货架部件智能汇总</h1>
@@ -99,38 +6,52 @@
       <div class="extra-inputs">
         <div class="input-item">
           <label>横斜撑总数</label>
-          <input type="number" v-model.number="crossBraceCount" min="0" placeholder="0" />
+          <el-input-number v-model="crossBraceCount" :min="0" :controls="false" placeholder="0" />
         </div>
         <div class="input-item">
           <label>龙门梁</label>
-          <input type="number" v-model.number="gateBeamClampCount" min="0" placeholder="0" />
+          <el-input-number v-model="gateBeamClampCount" :min="0" :controls="false" placeholder="0" />
         </div>
         <div class="input-item">
           <label>连接杆</label>
-          <input type="number" v-model.number="connectorCount" min="0" placeholder="0" />
+          <el-input-number v-model="connectorCount" :min="0" :controls="false" placeholder="0" />
         </div>
-        <div class="input-item">
+        <div class="input-item guardrail-item">
           <label>防撞护栏</label>
-          <input type="number" v-model.number="guardrailCount" min="0" placeholder="0" />
+          <div class="guardrail-inputs">
+            <el-input-number v-model="guardrailCount" :min="0" :controls="false" placeholder="0" />
+            <el-select v-model="guardrailType" placeholder="类型">
+              <el-option label="一横两竖" value="2" />
+              <el-option label="一横三竖" value="3" />
+            </el-select>
+          </div>
         </div>
         <div class="input-item">
           <label>防撞护脚</label>
-          <input type="number" v-model.number="protectorCount" min="0" placeholder="0" />
+          <el-input-number v-model="protectorCount" :min="0" :controls="false" placeholder="0" />
         </div>
         <div class="input-item">
           <label>拣货层层数</label>
-          <input type="number" v-model.number="pickingLayerCount" min="0" placeholder="0" />
+          <el-input-number v-model="pickingLayerCount" :min="0" :controls="false" placeholder="0" />
         </div>
       </div>
 
-      <textarea v-model="rawText"
+      <el-input v-model="rawText" type="textarea" :rows="8"
         placeholder="支持重型货架「L*W*H + N主架 M副架」格式，以及中型/层板/重型货架「L*W*H*N层板（载重）套 N」格式。粘贴后点击生成汇总即可自动计算..." />
 
       <div class="toolbar">
-        <button type="button" class="primary" @click="parseNow" :disabled="loading">
-          {{ loading ? '解析中...' : '生成汇总分析' }}
-        </button>
-        <button type="button" class="ghost" @click="clearText" :disabled="loading">清空面板</button>
+        <el-button type="primary" @click="parseNow" :loading="loading" size="large">
+          <template #icon><el-icon>
+              <Promotion />
+            </el-icon></template>
+          {{ loading ? '解析中' : '生成汇总分析' }}
+        </el-button>
+        <el-button @click="clearText" :disabled="loading" size="large">
+          <template #icon><el-icon>
+              <RefreshLeft />
+            </el-icon></template>
+          清空面板
+        </el-button>
       </div>
     </section>
 
@@ -182,6 +103,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { Promotion, RefreshLeft } from '@element-plus/icons-vue'
 import { quotationStatisticsApi } from '../api/quotation'
 import { to } from '@/utils/async'
 import { showWarning, showError, showSuccess } from '@/utils/message'
@@ -192,19 +114,22 @@ const crossBraceCount = ref(0)
 const gateBeamClampCount = ref(0)
 const connectorCount = ref(0)
 const guardrailCount = ref(0)
+const guardrailType = ref('2')
 const protectorCount = ref(0)
 const pickingLayerCount = ref(0)
 const parts = ref<PartItem[]>([])
 const errors = ref<string[]>([])
 const warnings = ref<string[]>([])
-const remarks = ref<string[]>([
+const DEFAULT_REMARKS = [
   '脚板：立柱片的数量×2',
   '黑色垫圈：立柱片的数量×2',
   '螺丝（M10*70）：横斜撑总数+1 × 立柱片的数量',
   '螺丝（M10*20）：脚板×2 + 连接杆×4 + 龙门梁卡扣×4',
-  '膨胀螺丝（M10*70）：脚板×2 + 防撞护脚×4 + 防撞护栏×8',
+  '膨胀螺丝（M10*70）：脚板×2 + 防撞护脚×4 + 防撞护栏（一横两竖×8 / 一横三竖×12）',
   '安全销：（横梁 + P型横梁）×2',
-])
+]
+
+const remarks = ref<string[]>([...DEFAULT_REMARKS])
 const loading = ref(false)
 
 /** 执行解析 */
@@ -218,6 +143,7 @@ async function doParse() {
     gateBeamClampCount: gateBeamClampCount.value,
     connectorCount: connectorCount.value,
     guardrailCount: guardrailCount.value,
+    guardrailType: guardrailType.value,
     protectorCount: protectorCount.value,
     pickingLayerCount: pickingLayerCount.value,
   }))
@@ -255,19 +181,13 @@ function clearText() {
   gateBeamClampCount.value = 0
   connectorCount.value = 0
   guardrailCount.value = 0
+  guardrailType.value = '2'
   protectorCount.value = 0
   pickingLayerCount.value = 0
   parts.value = []
   errors.value = []
   warnings.value = []
-  remarks.value = [
-    '脚板：立柱片的数量×2',
-    '黑色垫圈：立柱片的数量×2',
-    '螺丝（M10*70）：横斜撑总数+1 × 立柱片的数量',
-    '螺丝（M10*20）：脚板×2 + 连接杆×4 + 龙门梁卡扣×4',
-    '膨胀螺丝（M10*70）：脚板×2 + 防撞护脚×4 + 防撞护栏×8',
-    '安全销：（横梁 + P型横梁）×2',
-  ]
+  remarks.value = [...DEFAULT_REMARKS]
 }
 
 </script>
@@ -288,27 +208,31 @@ function clearText() {
   min-width: 120px;
 }
 
+.input-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .input-item label {
   font-size: 13px;
   font-weight: 600;
   color: #475569;
 }
 
-.input-item input {
-  padding: 8px 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 14px;
-  outline: none;
-  background: #f8fafc;
-  transition: all 0.3s;
-  box-sizing: border-box;
+.guardrail-item {
+  grid-column: span 1;
 }
 
-.input-item input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-  background: #fff;
+.guardrail-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.guardrail-inputs .el-input-number,
+.guardrail-inputs .el-select {
+  width: 100%;
 }
 
 .page {
@@ -342,69 +266,18 @@ h2 {
   margin: 0 0 12px;
   font-size: 16px;
   font-weight: bold;
-  border-left: 4px solid #6366f1;
+  border-left: 4px solid #3b82f6;
   padding-left: 10px;
   line-height: 1.1;
 }
 
-textarea {
-  width: 100%;
-  min-height: 240px;
-  resize: vertical;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  padding: 14px;
-  font-size: 14px;
-  line-height: 1.6;
-  outline: none;
-  box-sizing: border-box;
-  background: #f8fafc;
-  transition: all 0.3s;
-}
-
-textarea:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-  background: #fff;
-}
-
 .toolbar {
   display: flex;
-  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 12px;
-  margin-top: 16px;
-}
-
-button {
-  border: 0;
-  border-radius: 6px;
-  padding: 10px 18px;
-  cursor: pointer;
-  background: #e2e8f0;
-  color: #0f172a;
-  font-weight: 500;
-  transition: all 0.2s;
-  font-size: 14px;
-}
-
-button:hover {
-  filter: brightness(0.95);
-  transform: translateY(-1px);
-}
-
-button.primary {
-  background: #6366f1;
-  color: #fff;
-  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.3);
-}
-
-button.primary:hover {
-  background: #4f46e5;
-}
-
-button.ghost {
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f1f3;
 }
 
 .error-box {
@@ -497,6 +370,7 @@ th {
   th,
   td {
     padding: 10px;
+    padding: 8px 10px;
     font-size: 13px;
   }
 }

@@ -452,11 +452,11 @@ const handleCopy = (e: ClipboardEvent): void => {
 .card-item:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-  border-color: #409eff;
+  border-color: #3b82f6;
 }
 
 .card-item.is-selected {
-  border-color: #409eff;
+  border-color: #3b82f6;
   background-color: #ecf5ff;
   box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
 }

@@ -61,6 +61,7 @@ interface ExtraCounts {
   gateBeamClampCount?: number
   connectorCount?: number
   guardrailCount?: number
+  guardrailType?: string
   protectorCount?: number
   pickingLayerCount?: number
 }

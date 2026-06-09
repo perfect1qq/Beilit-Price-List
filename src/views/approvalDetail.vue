@@ -160,7 +160,7 @@ const {
   color: #1e293b;
   margin: 0;
   line-height: 1;
-  border-left: 4px solid #6366f1;
+  border-left: 4px solid #3b82f6;
   padding-left: 10px;
 }
 
@@ -227,7 +227,7 @@ const {
   color: #1e293b;
   margin-top: 28px;
   margin-bottom: 20px;
-  border-left: 4px solid #6366f1;
+  border-left: 4px solid #3b82f6;
   padding-left: 10px;
   line-height: 1;
 }

@@ -75,7 +75,7 @@
     <!-- 动态背景装饰圆球 -->
     <div class="login-decor decor-1"></div>
     <div class="login-decor decor-2"></div>
-    
+
     <!-- 主卡片区 -->
     <div class="login-wrap">
       <!-- 左侧品牌展示面板 -->
@@ -144,7 +144,7 @@ defineProps({
   height: 300px;
   top: -100px;
   left: -100px;
-  background: #6366f1;
+  background: #3b82f6;
 }
 
 .decor-2 {
@@ -187,7 +187,7 @@ defineProps({
   color: #fff;
   font-size: 24px;
   font-weight: 800;
-  background: linear-gradient(135deg, #6366f1, #818cf8);
+  background: linear-gradient(135deg, #3b82f6, #818cf8);
   box-shadow: 0 8px 20px rgba(99, 102, 241, .4);
 }
 
@@ -277,7 +277,7 @@ defineProps({
 }
 
 :deep(.form .el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px #6366f1 inset;
+  box-shadow: 0 0 0 1px #3b82f6 inset;
   background: #fff;
 }
 
@@ -293,7 +293,7 @@ defineProps({
   font-size: 16px;
   font-weight: 600;
   margin-top: 10px;
-  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
   border: none;
   box-shadow: 0 8px 16px rgba(99, 102, 241, .25);
   transition: all 0.3s;
@@ -317,7 +317,7 @@ defineProps({
 
 :deep(.footer-links .el-link) {
   font-weight: 600;
-  color: #6366f1;
+  color: #3b82f6;
   display: inline-flex;
   align-items: center;
 }

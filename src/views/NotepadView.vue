@@ -275,12 +275,12 @@ onMounted(() => {
 
 .folder-item:hover {
   background: #ecf5ff;
-  color: #409eff;
+  color: #3b82f6;
 }
 
 .folder-item.active {
   background: #ecf5ff;
-  color: #409eff;
+  color: #3b82f6;
   font-weight: 500;
 }
 

@@ -222,7 +222,7 @@ onMounted(() => loadList(1))
   font-size: 16px;
   font-weight: 700;
   color: #0f172a;
-  border-left: 4px solid #2563eb;
+  border-left: 4px solid #3b82f6;
   padding-left: 10px;
   margin: 0;
   line-height: 1;
