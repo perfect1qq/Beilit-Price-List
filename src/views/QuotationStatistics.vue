@@ -229,17 +229,7 @@ async function doParse() {
   parts.value = result.parts || []
   errors.value = result.errors || []
   warnings.value = result.warnings || []
-  // 默认公式 + 动态计算备注
-  const dynamicRemarks = result.remarks || []
-  remarks.value = [
-    '脚板：立柱片的数量×2',
-    '黑色垫圈：立柱片的数量×2',
-    '螺丝（M10*70）：横斜撑总数+1 × 立柱片的数量',
-    '螺丝（M10*20）：脚板×2 + 连接杆×4 + 龙门梁卡扣×4',
-    '膨胀螺丝（M10*70）：脚板×2 + 防撞护脚×4 + 防撞护栏×8',
-    '安全销：（横梁 + P型横梁）×2',
-    ...dynamicRemarks,
-  ]
+  // 备注始终只显示固定公式，不追加动态计算结果
   loading.value = false
 }
 
