@@ -102,6 +102,10 @@
           <input type="number" v-model.number="crossBraceCount" min="0" placeholder="0" />
         </div>
         <div class="input-item">
+          <label>龙门梁</label>
+          <input type="number" v-model.number="gateBeamClampCount" min="0" placeholder="0" />
+        </div>
+        <div class="input-item">
           <label>连接杆</label>
           <input type="number" v-model.number="connectorCount" min="0" placeholder="0" />
         </div>
@@ -112,6 +116,10 @@
         <div class="input-item">
           <label>防撞护脚</label>
           <input type="number" v-model.number="protectorCount" min="0" placeholder="0" />
+        </div>
+        <div class="input-item">
+          <label>拣货层层数</label>
+          <input type="number" v-model.number="pickingLayerCount" min="0" placeholder="0" />
         </div>
       </div>
 
@@ -163,7 +171,7 @@
       </div>
     </section>
 
-    <section v-if="remarks.length" class="panel remark-box">
+    <section class="panel remark-box">
       <h2>备注</h2>
       <ul>
         <li v-for="(item, index) in remarks" :key="'r-' + index">{{ item }}</li>
@@ -181,59 +189,95 @@ import type { PartItem } from '@/types'
 
 const rawText = ref('')
 const crossBraceCount = ref(0)
+const gateBeamClampCount = ref(0)
 const connectorCount = ref(0)
 const guardrailCount = ref(0)
 const protectorCount = ref(0)
+const pickingLayerCount = ref(0)
 const parts = ref<PartItem[]>([])
 const errors = ref<string[]>([])
 const warnings = ref<string[]>([])
-const remarks = ref<string[]>([])
+const remarks = ref<string[]>([
+  '脚板：立柱片的数量×2',
+  '黑色垫圈：立柱片的数量×2',
+  '螺丝（M10*70）：横斜撑总数+1 × 立柱片的数量',
+  '螺丝（M10*20）：脚板×2 + 连接杆×4 + 龙门梁卡扣×4',
+  '膨胀螺丝（M10*70）：脚板×2 + 防撞护脚×4 + 防撞护栏×8',
+  '安全销：（横梁 + P型横梁）×2',
+])
 const loading = ref(false)
 
-/**
- * 触发后端解析文本接口
- */
-async function parseNow() {
-  if (!rawText.value.trim()) {
-    return showWarning('请先提供完整的货架报价文本用于解析。')
-  }
+/** 执行解析 */
+async function doParse() {
+  if (!rawText.value.trim()) return
 
   loading.value = true
+
   const [err, result] = await to(quotationStatisticsApi.parse(rawText.value, {
     crossBraceCount: crossBraceCount.value,
+    gateBeamClampCount: gateBeamClampCount.value,
     connectorCount: connectorCount.value,
     guardrailCount: guardrailCount.value,
     protectorCount: protectorCount.value,
+    pickingLayerCount: pickingLayerCount.value,
   }))
   if (err || !result) {
-    showError(err, '智能引擎解析失败，请检查文本格式或服务端运行状态。')
+    showError(err, '智能引擎解析失败')
     loading.value = false
     return
   }
   parts.value = result.parts || []
   errors.value = result.errors || []
   warnings.value = result.warnings || []
-  remarks.value = result.remarks || []
+  // 默认公式 + 动态计算备注
+  const dynamicRemarks = result.remarks || []
+  remarks.value = [
+    '脚板：立柱片的数量×2',
+    '黑色垫圈：立柱片的数量×2',
+    '螺丝（M10*70）：横斜撑总数+1 × 立柱片的数量',
+    '螺丝（M10*20）：脚板×2 + 连接杆×4 + 龙门梁卡扣×4',
+    '膨胀螺丝（M10*70）：脚板×2 + 防撞护脚×4 + 防撞护栏×8',
+    '安全销：（横梁 + P型横梁）×2',
+    ...dynamicRemarks,
+  ]
+  loading.value = false
+}
 
+/**
+ * 触发后端解析文本接口（手动按钮）
+ */
+async function parseNow() {
+  if (!rawText.value.trim()) {
+    return showWarning('请先提供完整的货架报价文本用于解析。')
+  }
+  await doParse()
   if (errors.value.length) {
     showWarning('文本存在无法精准识别的内容区块，请检查页面"错误"反馈。')
   } else {
     showSuccess('文本解析及计算转换成功')
   }
-  loading.value = false
 }
 
 /** 清空当前分析状态 */
 function clearText() {
   rawText.value = ''
   crossBraceCount.value = 0
+  gateBeamClampCount.value = 0
   connectorCount.value = 0
   guardrailCount.value = 0
   protectorCount.value = 0
+  pickingLayerCount.value = 0
   parts.value = []
   errors.value = []
   warnings.value = []
-  remarks.value = []
+  remarks.value = [
+    '脚板：立柱片的数量×2',
+    '黑色垫圈：立柱片的数量×2',
+    '螺丝（M10*70）：横斜撑总数+1 × 立柱片的数量',
+    '螺丝（M10*20）：脚板×2 + 连接杆×4 + 龙门梁卡扣×4',
+    '膨胀螺丝（M10*70）：脚板×2 + 防撞护脚×4 + 防撞护栏×8',
+    '安全销：（横梁 + P型横梁）×2',
+  ]
 }
 
 </script>

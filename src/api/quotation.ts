@@ -58,9 +58,11 @@ const suggestName = (name: string, companyName?: string, excludeId?: number | st
 
 interface ExtraCounts {
   crossBraceCount?: number
+  gateBeamClampCount?: number
   connectorCount?: number
   guardrailCount?: number
   protectorCount?: number
+  pickingLayerCount?: number
 }
 
 const parseStatistics = (rawText: string, extra?: ExtraCounts) =>
