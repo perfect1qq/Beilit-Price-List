@@ -13,6 +13,7 @@ export function useQuotationHistoryPage() {
   const rulesDisabled = ref(false)
   const viewState = ref('list')
   const activePanels = ref([])
+  const activeCompanyPanels = ref([])
   const formRef = ref(null)
   const formModel = reactive({
     name: '',
@@ -62,7 +63,10 @@ export function useQuotationHistoryPage() {
     handleSizeChange,
     saveQuotation,
     copyQuotation,
-    deleteHistory
+    deleteHistory,
+    addCustomYear,
+    removeCustomYear,
+    moveToYear
   } = useQuotationHistory({
     api: quotationApi,
     loadToEditor: (record, mode) => loadRecord(record, mode)
@@ -126,6 +130,7 @@ export function useQuotationHistoryPage() {
     [() => page.value, () => pageSize.value],
     () => {
       activePanels.value = []
+      activeCompanyPanels.value = []
     }
   )
 
@@ -160,6 +165,7 @@ export function useQuotationHistoryPage() {
     rulesDisabled,
     viewState,
     activePanels,
+    activeCompanyPanels,
     formRef,
     formModel,
     name,
@@ -202,6 +208,9 @@ export function useQuotationHistoryPage() {
     saveQuotation,
     copyQuotation,
     deleteHistory,
+    addCustomYear,
+    removeCustomYear,
+    moveToYear,
     handleManualFinalPriceChange,
     handleDiscountChange,
     handleParseText,

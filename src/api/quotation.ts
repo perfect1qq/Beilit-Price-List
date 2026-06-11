@@ -47,6 +47,9 @@ const reject = (id: number | string, comment?: string) =>
 const copy = (id: number | string) =>
   request.post<{ quotation: QuotationData }>(`/api/quotations/${id}/copy`)
 
+const moveYear = (id: number | string, targetYear: number) =>
+  request.put<{ quotation: QuotationData }>(`/api/quotations/${id}/move-year`, { targetYear })
+
 const checkCompanyName = (companyName: string, excludeId?: number | string) =>
   request.get<{ exists: boolean; quotation?: QuotationData }>('/api/quotations/check-company', { params: { companyName, excludeId } })
 
@@ -57,6 +60,7 @@ const suggestName = (name: string, companyName?: string, excludeId?: number | st
   request.get<{ suggestedName: string }>('/api/quotations/suggest-name', { params: { name, companyName, excludeId } })
 
 interface ExtraCounts {
+  shelfType?: string
   crossBraceCount?: number
   gateBeamClampCount?: number
   connectorCount?: number
@@ -64,6 +68,7 @@ interface ExtraCounts {
   guardrailType?: string
   protectorCount?: number
   pickingLayerCount?: number
+  embraceColumnCount?: number
 }
 
 const parseStatistics = (rawText: string, extra?: ExtraCounts) =>
@@ -80,6 +85,7 @@ const quotationApi = {
   approve: unwrap(approve),
   reject: unwrap(reject),
   copy: unwrap(copy),
+  moveYear: unwrap(moveYear),
   parse: unwrap(parseStatistics),
   checkCompanyName: unwrap(checkCompanyName),
   checkName: unwrap(checkName),

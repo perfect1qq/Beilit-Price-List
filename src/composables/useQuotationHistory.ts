@@ -51,6 +51,8 @@ import type { QuotationData, QuotationCreatePayload, QuotationListResult, Pagina
 
 type HistoryRecord = QuotationData
 
+export type { HistoryRecord }
+
 interface CompanyGroup {
   companyName: string
   count: number
@@ -59,12 +61,20 @@ interface CompanyGroup {
   records: HistoryRecord[]
 }
 
+interface YearGroup {
+  year: number
+  count: number
+  latestDate: string
+  companyGroups: CompanyGroup[]
+}
+
 interface QuotationHistoryApi {
   list: (params?: PaginationParams) => Promise<QuotationListResult>
   create: (data: QuotationCreatePayload) => Promise<{ quotation: QuotationData }>
   update: (id: number | string, data: QuotationCreatePayload) => Promise<{ quotation: QuotationData }>
   remove: (id: number | string) => Promise<null>
   copy?: (id: number | string) => Promise<{ quotation: QuotationData }>
+  moveYear?: (id: number | string, targetYear: number) => Promise<{ quotation: QuotationData }>
   [key: string]: unknown
 }
 
@@ -75,8 +85,8 @@ interface QuotationHistoryOptions {
 
 interface QuotationHistoryReturn {
   historyList: ShallowRef<HistoryRecord[]>
-  groupedHistoryList: ComputedRef<CompanyGroup[]>
-  pagedHistoryGroups: ComputedRef<CompanyGroup[]>
+  groupedHistoryList: ComputedRef<YearGroup[]>
+  pagedHistoryGroups: ComputedRef<YearGroup[]>
   searchKeyword: Ref<string>
   page: Ref<number>
   pageSize: Ref<number>
@@ -92,6 +102,9 @@ interface QuotationHistoryReturn {
   deleteHistory: (record: HistoryRecord) => Promise<void>
   viewHistory: (record: HistoryRecord) => void
   editHistory: (record: HistoryRecord) => void
+  addCustomYear: (year: number) => void
+  removeCustomYear: (year: number) => void
+  moveToYear: (record: HistoryRecord, targetYear: number) => Promise<boolean>
 }
 
 const clone = <T>(value: T): T => (value === null || value === undefined ? value : JSON.parse(JSON.stringify(value)))
@@ -144,6 +157,46 @@ const groupByCompany = (records: HistoryRecord[] = []): CompanyGroup[] => {
   return groups
 }
 
+/** 按年份分组，每组内再按公司分组 */
+const groupByYearAndCompany = (records: HistoryRecord[] = []): YearGroup[] => {
+  const yearMap = new Map<number, HistoryRecord[]>()
+
+  for (const record of records) {
+    const date = new Date(record.createdAt || record.updatedAt || '')
+    if (!Number.isNaN(date.getTime())) {
+      const year = date.getFullYear()
+      if (!yearMap.has(year)) yearMap.set(year, [])
+      yearMap.get(year)!.push(record)
+    }
+  }
+
+  const yearGroups: YearGroup[] = []
+
+  for (const [year, yearRecords] of yearMap) {
+    const companyGroups = groupByCompany(yearRecords)
+    const totalRecords = companyGroups.reduce((sum, g) => sum + g.count, 0)
+    // 取所有公司中最新的一条记录的日期作为该年最新日期
+    let latestDate = ''
+    for (const cg of companyGroups) {
+      if (!latestDate || cg.latestTime > latestDate) {
+        latestDate = cg.latestDate
+      }
+    }
+
+    yearGroups.push({
+      year,
+      count: totalRecords,
+      latestDate,
+      companyGroups,
+    })
+  }
+
+  // 按年份倒序排列（最新的在前）
+  yearGroups.sort((a, b) => b.year - a.year)
+
+  return yearGroups
+}
+
 const fetchAllRecords = async (api: QuotationHistoryOptions['api'], keyword = ''): Promise<HistoryRecord[]> => {
   const pageSize = 100
   const seenIds = new Set<number | string>()
@@ -186,7 +239,25 @@ const fetchAllRecords = async (api: QuotationHistoryOptions['api'], keyword = ''
 export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptions): QuotationHistoryReturn {
   const historyList = shallowRef<HistoryRecord[]>([])
 
-  const groupedHistoryList = computed(() => groupByCompany(historyList.value))
+  // 自定义年份持久化到 localStorage
+  const CUSTOM_YEARS_KEY = 'quotation_custom_years'
+  const savedCustomYears = (() => { try { return JSON.parse(localStorage.getItem(CUSTOM_YEARS_KEY) || '[]') } catch { return [] } })()
+  const customYears = ref<number[]>(savedCustomYears)
+
+  const saveCustomYears = () => {
+    localStorage.setItem(CUSTOM_YEARS_KEY, JSON.stringify(customYears.value))
+  }
+
+  const groupedHistoryList = computed(() => {
+    const groups = groupByYearAndCompany(historyList.value)
+    for (const year of customYears.value) {
+      if (!groups.some(g => g.year === year)) {
+        groups.push({ year, count: 0, latestDate: '', companyGroups: [] })
+      }
+    }
+    groups.sort((a, b) => b.year - a.year)
+    return groups
+  })
 
   const { isActionLoading, withActionLock, removeById } = useInstantListActions(historyList)
 
@@ -286,6 +357,18 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
 
   const editHistory = (record: HistoryRecord): void => loadToEditor(record, 'edit')
 
+  const addCustomYear = (year: number): void => {
+    if (!customYears.value.includes(year)) {
+      customYears.value.push(year)
+      saveCustomYears()
+    }
+  }
+
+  const removeCustomYear = (year: number): void => {
+    customYears.value = customYears.value.filter(y => y !== year)
+    saveCustomYears()
+  }
+
   const copyQuotation = async (record: HistoryRecord): Promise<HistoryRecord | null> => {
     const [confirmErr] = await to(ElMessageBox.confirm(
       `确定要复制「${record.name || record.companyName || '-'}」这条报价单吗？\n复制后名称将自动添加「-副本」后缀`,
@@ -303,6 +386,21 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
     }
 
     return newRecord ?? null
+  }
+
+  /** 将报价单移动到目标年份 */
+  const moveToYear = async (record: HistoryRecord, targetYear: number): Promise<boolean> => {
+    const [err, result] = await to(api.moveYear!(record.id, targetYear))
+
+    if (err || !result) {
+      ElMessage.error((err as { message?: string })?.message || '移动失败')
+      return false
+    }
+
+    // 刷新列表
+    await loadHistoryList()
+    ElMessage.success(`已将报价单移动到 ${targetYear} 年`)
+    return true
   }
 
   return {
@@ -323,6 +421,9 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
     deleteHistory,
     copyQuotation,
     viewHistory,
-    editHistory
+    editHistory,
+    addCustomYear,
+    removeCustomYear,
+    moveToYear
   }
 }

@@ -3,7 +3,15 @@
     <section class="panel editor">
       <h1>货架部件智能汇总</h1>
 
-      <div class="extra-inputs">
+      <div class="shelf-type-selector">
+        <label>货架类型</label>
+        <el-select v-model="shelfType" placeholder="选择货架类型">
+          <el-option label="重型/中型货架" value="standard" />
+          <el-option label="货架平台" value="platform" />
+        </el-select>
+      </div>
+
+      <div class="extra-inputs" v-if="shelfType === 'standard'">
         <div class="input-item">
           <label>横斜撑总数</label>
           <el-input-number v-model="crossBraceCount" :min="0" :controls="false" placeholder="0" />
@@ -34,10 +42,15 @@
           <label>拣货层层数</label>
           <el-input-number v-model="pickingLayerCount" :min="0" :controls="false" placeholder="0" />
         </div>
+        <div class="input-item">
+          <label>合抱立柱</label>
+          <el-input-number v-model="embraceColumnCount" :min="0" :controls="false" placeholder="0" />
+        </div>
       </div>
 
-      <el-input v-model="rawText" type="textarea" :rows="8"
-        placeholder="支持重型货架「L*W*H + N主架 M副架」格式，以及中型/层板/重型货架「L*W*H*N层板（载重）套 N」格式。粘贴后点击生成汇总即可自动计算..." />
+      <el-input v-model="rawText" type="textarea" :rows="8" :placeholder="shelfType === 'standard'
+        ? '支持重型货架「L*W*H + N主架 M副架」格式，以及中型/层板/重型货架「L*W*H*N层板（载重）套 N」格式。粘贴后点击生成汇总即可自动计算...'
+        : '请粘贴货架平台的配件信息，系统将自动识别并汇总部件...'" />
 
       <div class="toolbar">
         <el-button type="primary" @click="parseNow" :loading="loading" size="large">
@@ -110,6 +123,7 @@ import { showWarning, showError, showSuccess } from '@/utils/message'
 import type { PartItem } from '@/types'
 
 const rawText = ref('')
+const shelfType = ref('standard')
 const crossBraceCount = ref(0)
 const gateBeamClampCount = ref(0)
 const connectorCount = ref(0)
@@ -117,6 +131,7 @@ const guardrailCount = ref(0)
 const guardrailType = ref('2')
 const protectorCount = ref(0)
 const pickingLayerCount = ref(0)
+const embraceColumnCount = ref(0)
 const parts = ref<PartItem[]>([])
 const errors = ref<string[]>([])
 const warnings = ref<string[]>([])
@@ -139,6 +154,7 @@ async function doParse() {
   loading.value = true
 
   const [err, result] = await to(quotationStatisticsApi.parse(rawText.value, {
+    shelfType: shelfType.value,
     crossBraceCount: crossBraceCount.value,
     gateBeamClampCount: gateBeamClampCount.value,
     connectorCount: connectorCount.value,
@@ -146,6 +162,7 @@ async function doParse() {
     guardrailType: guardrailType.value,
     protectorCount: protectorCount.value,
     pickingLayerCount: pickingLayerCount.value,
+    embraceColumnCount: embraceColumnCount.value,
   }))
   if (err || !result) {
     showError(err, '智能引擎解析失败')
@@ -177,6 +194,7 @@ async function parseNow() {
 /** 清空当前分析状态 */
 function clearText() {
   rawText.value = ''
+  shelfType.value = 'standard'
   crossBraceCount.value = 0
   gateBeamClampCount.value = 0
   connectorCount.value = 0
@@ -184,6 +202,7 @@ function clearText() {
   guardrailType.value = '2'
   protectorCount.value = 0
   pickingLayerCount.value = 0
+  embraceColumnCount.value = 0
   parts.value = []
   errors.value = []
   warnings.value = []
@@ -193,6 +212,24 @@ function clearText() {
 </script>
 
 <style scoped>
+.shelf-type-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.shelf-type-selector label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.shelf-type-selector .el-select {
+  width: 200px;
+}
+
 .extra-inputs {
   display: flex;
   flex-wrap: wrap;
