@@ -143,28 +143,28 @@
 
                     <el-table :data="group.records" stripe border :header-cell-style="TABLE_HEADER_STYLE"
                       class="smart-table" style="width: 100%">
-                      <el-table-column label="名称" min-width="140" show-overflow-tooltip align="center">
+                      <el-table-column label="名称" min-width="120" show-overflow-tooltip align="center">
                         <template #default="{ row }">
                           {{ row.name || row.companyName || '-' }}
                         </template>
                       </el-table-column>
-                      <el-table-column prop="ownerName" label="提交人" min-width="90" align="center" v-if="isAdmin" />
-                      <el-table-column prop="finalPrice" label="成交价" min-width="110" align="center">
+                      <el-table-column prop="ownerName" label="提交人" min-width="80" align="center" v-if="isAdmin" />
+                      <el-table-column prop="finalPrice" label="成交价" min-width="90" align="center">
                         <template #default="{ row }">¥ {{ formatMoney(row.finalPrice) }}</template>
                       </el-table-column>
-                      <el-table-column prop="createDate" label="创建时间" width="110" align="center" />
-                      <el-table-column label="操作" fixed="right" :width="isGuest ? 80 : 220" align="center">
+                      <el-table-column prop="createDate" label="创建时间" min-width="100" align="center" />
+                      <el-table-column label="操作" fixed="right" min-width="180" align="center">
                         <template #default="{ row }">
                           <div class="action-btns">
                             <template v-if="!isGuest">
-                              <el-button type="warning" size="small" plain :loading="isActionLoading(row.id)"
+                              <el-button type="warning" size="small" text :loading="isActionLoading(row.id)"
                                 @click="openDetail(row, 'edit')">
                                 修改
                               </el-button>
-                              <el-button type="success" size="small" plain @click="openMoveYearDialog(row)">
+                              <el-button type="success" size="small" text @click="openMoveYearDialog(row)">
                                 移动年份
                               </el-button>
-                              <el-button type="danger" size="small" plain :loading="isActionLoading(row.id)"
+                              <el-button type="danger" size="small" text :loading="isActionLoading(row.id)"
                                 @click="deleteHistory(row)">
                                 删除
                               </el-button>
@@ -587,14 +587,13 @@ watch(
 
 .action-btns {
   display: flex;
-  gap: 6px;
+  gap: 2px;
   justify-content: center;
   align-items: center;
 }
 
 .action-btns .el-button {
-  padding: 5px 12px;
-  border-radius: 16px;
+  padding: 0 6px;
   font-size: 13px;
 }
 
@@ -663,12 +662,8 @@ watch(
     white-space: normal;
   }
 
-  .action-btns {
-    gap: 4px;
-  }
-
   .action-btns .el-button {
-    padding: 4px 8px;
+    padding: 0 4px;
     font-size: 12px;
   }
 }
