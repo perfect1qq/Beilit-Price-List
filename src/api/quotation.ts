@@ -44,9 +44,6 @@ const approve = (id: number | string, comment?: string) =>
 const reject = (id: number | string, comment?: string) =>
   request.post<{ quotation: QuotationData }>(`/api/quotations/${id}/reject`, { comment })
 
-const copy = (id: number | string) =>
-  request.post<{ quotation: QuotationData }>(`/api/quotations/${id}/copy`)
-
 const moveYear = (id: number | string, targetYear: number) =>
   request.put<{ quotation: QuotationData }>(`/api/quotations/${id}/move-year`, { targetYear })
 
@@ -84,7 +81,6 @@ const quotationApi = {
   parseText: unwrap(parseText),
   approve: unwrap(approve),
   reject: unwrap(reject),
-  copy: unwrap(copy),
   moveYear: unwrap(moveYear),
   parse: unwrap(parseStatistics),
   checkCompanyName: unwrap(checkCompanyName),

@@ -98,7 +98,6 @@ interface QuotationHistoryReturn {
   handleCurrentChange: (val: number) => void
   handleSizeChange: (val: number) => void
   saveQuotation: (payload: QuotationCreatePayload, editingId?: number | string | null) => Promise<HistoryRecord | null>
-  copyQuotation: (record: HistoryRecord) => Promise<HistoryRecord | null>
   deleteHistory: (record: HistoryRecord) => Promise<void>
   viewHistory: (record: HistoryRecord) => void
   editHistory: (record: HistoryRecord) => void
@@ -369,25 +368,6 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
     saveCustomYears()
   }
 
-  const copyQuotation = async (record: HistoryRecord): Promise<HistoryRecord | null> => {
-    const [confirmErr] = await to(ElMessageBox.confirm(
-      `确定要复制「${record.name || record.companyName || '-'}」这条报价单吗？\n复制后名称将自动添加「-副本」后缀`,
-      '提示',
-      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'info' }
-    ))
-    if (confirmErr) return null
-
-    const result = api.copy ? await api.copy(record.id) : undefined
-    const newRecord = result?.quotation
-
-    if (newRecord) {
-      await loadHistoryList()
-      ElMessage.success(`复制成功，新名称：「${newRecord.name || newRecord.companyName || '-'}」`)
-    }
-
-    return newRecord ?? null
-  }
-
   /** 将报价单移动到目标年份 */
   const moveToYear = async (record: HistoryRecord, targetYear: number): Promise<boolean> => {
     const [err, result] = await to(api.moveYear!(record.id, targetYear))
@@ -419,7 +399,6 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
     handleSizeChange,
     saveQuotation,
     deleteHistory,
-    copyQuotation,
     viewHistory,
     editHistory,
     addCustomYear,

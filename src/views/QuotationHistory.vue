@@ -153,14 +153,10 @@
                         <template #default="{ row }">¥ {{ formatMoney(row.finalPrice) }}</template>
                       </el-table-column>
                       <el-table-column prop="createDate" label="创建时间" width="110" align="center" />
-                      <el-table-column label="操作" fixed="right" :width="isGuest ? 80 : 280" align="center">
+                      <el-table-column label="操作" fixed="right" :width="isGuest ? 80 : 220" align="center">
                         <template #default="{ row }">
                           <div class="action-btns">
                             <template v-if="!isGuest">
-                              <el-button type="info" size="small" plain :loading="isActionLoading(row.id)"
-                                @click="copyQuotation(row)">
-                                复制
-                              </el-button>
                               <el-button type="warning" size="small" plain :loading="isActionLoading(row.id)"
                                 @click="openDetail(row, 'edit')">
                                 修改
@@ -271,7 +267,6 @@ const {
   onKeywordInput,
   handleCurrentChange,
   handleSizeChange,
-  copyQuotation,
   deleteHistory,
   addCustomYear,
   removeCustomYear,
