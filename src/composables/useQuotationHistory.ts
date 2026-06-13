@@ -86,17 +86,18 @@ interface QuotationHistoryOptions {
 interface QuotationHistoryReturn {
   historyList: ShallowRef<HistoryRecord[]>
   groupedHistoryList: ComputedRef<YearGroup[]>
-  pagedHistoryGroups: ComputedRef<YearGroup[]>
   searchKeyword: Ref<string>
-  page: Ref<number>
-  pageSize: Ref<number>
-  total: ComputedRef<number>
   loading: Ref<boolean>
+  DEFAULT_PAGE_SIZE: number
+  yearPages: Ref<Record<number, number>>
+  getYearPage: (year: number) => number
+  setYearPage: (year: number, page: number) => void
+  getPagedCompanies: (yearGroup: { year: number; companyGroups: CompanyGroup[] }, pageSize?: number) => CompanyGroup[]
+  getYearTotalPages: (companyCount: number, pageSize?: number) => number
+  handleYearPageChange: (year: number, page: number) => void
   isActionLoading: (id: number | string) => boolean
   loadHistoryList: () => Promise<HistoryRecord[]>
   onKeywordInput: () => void
-  handleCurrentChange: (val: number) => void
-  handleSizeChange: (val: number) => void
   saveQuotation: (payload: QuotationCreatePayload, editingId?: number | string | null) => Promise<HistoryRecord | null>
   deleteHistory: (record: HistoryRecord) => Promise<void>
   viewHistory: (record: HistoryRecord) => void
@@ -260,16 +261,35 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
 
   const { isActionLoading, withActionLock, removeById } = useInstantListActions(historyList)
 
-  const { page, pageSize, keyword: searchKeyword, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 15, keyword: '' })
+  const { keyword: searchKeyword, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 15, keyword: '' })
+
+  /** 默认每页公司组数量 */
+  const DEFAULT_PAGE_SIZE = 15
+
+  /** 每个年份的分页状态：year -> currentPage */
+  const yearPages = ref<Record<number, number>>({})
+
+  /** 获取某年份的当前页 */
+  const getYearPage = (year: number): number => yearPages.value[year] || 1
+
+  /** 设置某年份的页码 */
+  const setYearPage = (year: number, page: number): void => {
+    yearPages.value = { ...yearPages.value, [year]: page }
+  }
+
+  /** 获取某年份分页后的公司组 */
+  const getPagedCompanies = (yearGroup: { year: number; companyGroups: CompanyGroup[] }, pageSize = DEFAULT_PAGE_SIZE) => {
+    const page = getYearPage(yearGroup.year)
+    const start = (page - 1) * pageSize
+    return yearGroup.companyGroups.slice(start, start + pageSize)
+  }
+
+  /** 获取某年份的总页数 */
+  const getYearTotalPages = (companyCount: number, pageSize = DEFAULT_PAGE_SIZE): number => {
+    return Math.max(1, Math.ceil(companyCount / pageSize))
+  }
 
   const loading = ref(false)
-
-  const total = computed(() => groupedHistoryList.value.length)
-
-  const pagedHistoryGroups = computed(() => {
-    const start = (page.value - 1) * pageSize.value
-    return groupedHistoryList.value.slice(start, start + pageSize.value)
-  })
 
   const loadHistoryList = async (): Promise<HistoryRecord[]> => {
     loading.value = true
@@ -282,9 +302,8 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
 
     historyList.value = records ?? []
 
-    const maxPage = Math.max(1, Math.ceil(groupedHistoryList.value.length / pageSize.value) || 1)
-    if (page.value > maxPage) page.value = maxPage
-    if (page.value < 1) page.value = 1
+    // 重置所有年份分页到第1页
+    yearPages.value = {}
 
     loading.value = false
     return historyList.value
@@ -300,14 +319,9 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
   /** 搜索输入事件处理 */
   const onKeywordInput = () => triggerSearch()
 
-  /** 页码变化处理 */
-  const handleCurrentChange = (val: number): void => { page.value = Number(val || 1) }
-
-  const handleSizeChange = async (val: number): Promise<void> => {
-    pageSize.value = Number(val || 5)
-    resetToFirstPage()
-    const [sizeErr] = await to(loadHistoryList())
-    if (sizeErr) ElMessage.error((sizeErr as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (sizeErr as { message?: string })?.message || '历史记录加载失败')
+  /** 年份内页码变化处理 */
+  const handleYearPageChange = (year: number, page: number): void => {
+    setYearPage(year, page)
   }
 
   const saveQuotation = async (payload: QuotationCreatePayload, editingId?: number | string | null): Promise<HistoryRecord | null> => {
@@ -386,23 +400,25 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
   return {
     historyList,
     groupedHistoryList,
-    pagedHistoryGroups,
     searchKeyword,
-    page,
-    pageSize,
-    total,
     loading,
+    DEFAULT_PAGE_SIZE,
+    yearPages,
+    getYearPage,
+    setYearPage,
+    getPagedCompanies,
+    getYearTotalPages,
+    handleYearPageChange,
     isActionLoading,
     loadHistoryList,
     onKeywordInput,
-    handleCurrentChange,
-    handleSizeChange,
     saveQuotation,
     deleteHistory,
     viewHistory,
     editHistory,
     addCustomYear,
     removeCustomYear,
+    customYears,
     moveToYear
   }
 }

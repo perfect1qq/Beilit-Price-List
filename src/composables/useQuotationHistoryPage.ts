@@ -2,7 +2,7 @@ import { onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import quotationApi from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
-import { useQuotationHistory } from '@/composables/useQuotationHistory'
+import { useQuotationHistory, type HistoryRecord } from '@/composables/useQuotationHistory'
 import { useQuotationEditor } from '@/composables/useQuotationEditor'
 import { showError } from '@/utils/message'
 
@@ -11,9 +11,9 @@ export function useQuotationHistoryPage() {
   const parsing = ref(false)
   const isSubmitting = ref(false)
   const rulesDisabled = ref(false)
-  const viewState = ref('list')
-  const activePanels = ref([])
-  const activeCompanyPanels = ref([])
+  const viewState = ref<string>('list')
+  const activePanels = ref<string[]>([])
+  const activeCompanyPanels = ref<string[]>([])
   const formRef = ref(null)
   const formModel = reactive({
     name: '',
@@ -50,21 +50,23 @@ export function useQuotationHistoryPage() {
 
   const {
     groupedHistoryList,
-    pagedHistoryGroups,
     searchKeyword,
-    page,
-    pageSize,
-    total,
     loading,
+    DEFAULT_PAGE_SIZE,
+    yearPages,
+    getYearPage,
+    setYearPage,
+    getPagedCompanies,
+    getYearTotalPages,
+    handleYearPageChange,
     isActionLoading,
     loadHistoryList,
     onKeywordInput,
-    handleCurrentChange,
-    handleSizeChange,
     saveQuotation,
     deleteHistory,
     addCustomYear,
     removeCustomYear,
+    customYears,
     moveToYear
   } = useQuotationHistory({
     api: quotationApi,
@@ -106,13 +108,13 @@ export function useQuotationHistoryPage() {
     return result?.quotation
   }
 
-  const openDetail = async (record: Record<string, unknown>, mode = 'view') => {
+  const openDetail = async (record: HistoryRecord, mode = 'view') => {
     if (!record?.id) return
     resetDraft()
     if (mode === 'edit') {
       rulesDisabled.value = false
     }
-    const detail = (Array.isArray(record.items) && record.items.length > 0) ? record : await fetchQuotationRecord(record.id as string | number)
+    const detail = (Array.isArray(record.items) && record.items.length > 0) ? record : await fetchQuotationRecord(record.id)
     loadRecord(detail, mode)
     formModel.name = name.value
     formModel.companyName = companyName.value
@@ -124,14 +126,6 @@ export function useQuotationHistoryPage() {
     resetDraft()
     await loadHistoryList()
   }
-
-  watch(
-    [() => page.value, () => pageSize.value],
-    () => {
-      activePanels.value = []
-      activeCompanyPanels.value = []
-    }
-  )
 
   onMounted(async () => {
     try {
@@ -193,21 +187,23 @@ export function useQuotationHistoryPage() {
     getPayload,
     originalPayloadStr,
     groupedHistoryList,
-    pagedHistoryGroups,
     searchKeyword,
-    page,
-    pageSize,
-    total,
     loading,
+    DEFAULT_PAGE_SIZE,
+    yearPages,
+    getYearPage,
+    setYearPage,
+    getPagedCompanies,
+    getYearTotalPages,
+    handleYearPageChange,
     isActionLoading,
     loadHistoryList,
     onKeywordInput,
-    handleCurrentChange,
-    handleSizeChange,
     saveQuotation,
     deleteHistory,
     addCustomYear,
     removeCustomYear,
+    customYears,
     moveToYear,
     handleManualFinalPriceChange,
     handleDiscountChange,

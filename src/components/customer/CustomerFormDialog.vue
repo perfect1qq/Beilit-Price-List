@@ -63,7 +63,8 @@ import type { CustomerCreatePayload, CustomerUpdatePayload } from '@/types'
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   formData: { type: Object as PropType<CustomerCreatePayload & CustomerUpdatePayload>, required: true },
-  isEdit: { type: Boolean, default: false }
+  isEdit: { type: Boolean, default: false },
+  deliveryStartDate: { type: String, default: '' }
 })
 
 const emit = defineEmits(['update:modelValue', 'submit'])
@@ -123,9 +124,9 @@ const formRules = {
 
 const getDeliveryDate = (days: number): string => {
   if (!days || days <= 0) return ''
-  const tomorrow = new Date()
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const endDate = addDays(days - 1, tomorrow)
+  // 编辑时从 deliveryStartDate 算，新增时从当天算
+  const fromDate = props.isEdit && props.deliveryStartDate ? new Date(props.deliveryStartDate) : new Date()
+  const endDate = addDays(days, fromDate)
   return formatDate(endDate)
 }
 </script>

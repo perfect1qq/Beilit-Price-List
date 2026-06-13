@@ -197,6 +197,7 @@ export interface CustomerData {
   cooperationStatus: string
   customerType: string
   deliveryDays: number | null
+  deliveryStartDate: string | null
   shelfType: string
   paymentStatus: string
   createdAt: string

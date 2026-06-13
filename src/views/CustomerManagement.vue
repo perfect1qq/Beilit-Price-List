@@ -137,7 +137,7 @@
     </el-card>
 
     <CustomerFormDialog v-model="dialogVisible" :form-data="formData" :is-edit="editingId !== null"
-      @submit="handleFormSubmit" append-to-body />
+      :delivery-start-date="editingDeliveryStartDate" @submit="handleFormSubmit" append-to-body />
 
     <CustomerDetailDialog v-model="detailVisible" :customer="currentCustomer" :can-create="canCreate"
       :is-guest="isGuest" append-to-body @open="handleDetailOpen" @add-follow-up="showAddFollowUpDialog"
@@ -178,7 +178,7 @@ const {
 } = useCustomerList()
 
 const {
-  dialogVisible, editingId, formData, handleAdd, handleEdit, withSubmitLock, resetForm
+  dialogVisible, editingId, editingDeliveryStartDate, formData, handleAdd, handleEdit, withSubmitLock, resetForm
 } = useCustomerForm()
 
 const {

@@ -55,7 +55,7 @@ export const useCustomerList = () => {
     customerList.value = (res?.list || []).map((c: ApiCustomerListItem) => ({
       ...c,
       deliveryDate: c.deliveryDays && c.deliveryDays > 0
-        ? formatDate(addDays(c.deliveryDays))
+        ? formatDate(addDays(c.deliveryDays, c.deliveryStartDate || c.createdAt))
         : ''
     }))
     total.value = Number(res?.total ?? 0)
@@ -107,12 +107,14 @@ export const useCustomerList = () => {
 export const useCustomerForm = () => {
   const dialogVisible = ref(false)
   const editingId = ref<number | null>(null)
+  const editingDeliveryStartDate = ref('')
   const formData = reactive<CustomerCreatePayload & CustomerUpdatePayload>({ ...INITIAL_FORM })
   const { withSubmitLock } = useFormSubmit()
 
   const resetForm = () => {
     Object.assign(formData, INITIAL_FORM)
     editingId.value = null
+    editingDeliveryStartDate.value = ''
   }
 
   const handleAdd = () => { resetForm(); dialogVisible.value = true }
@@ -120,6 +122,7 @@ export const useCustomerForm = () => {
   const handleEdit = (row: CustomerListItem) => {
     resetForm()
     editingId.value = row.id ?? null
+    editingDeliveryStartDate.value = row.deliveryStartDate || ''
     Object.assign(formData, {
       companyName: row.companyName,
       customerName: row.customerName,
@@ -137,6 +140,7 @@ export const useCustomerForm = () => {
   return {
     dialogVisible,
     editingId,
+    editingDeliveryStartDate,
     formData,
     resetForm,
     handleAdd,
