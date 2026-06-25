@@ -8,7 +8,22 @@
         <el-select v-model="shelfType" placeholder="选择货架类型">
           <el-option label="重型/中型货架" value="standard" />
           <el-option label="货架平台" value="platform" />
+          <el-option label="配件计算" value="accessory" />
         </el-select>
+      </div>
+
+      <div class="extra-inputs" v-if="shelfType === 'accessory'">
+        <div class="input-item">
+          <label>横斜撑总数</label>
+          <el-input-number v-model="crossBraceCount" :min="0" :controls="false" placeholder="0" />
+        </div>
+        <div class="input-item">
+          <label>防撞护栏类型</label>
+          <el-select v-model="guardrailType" placeholder="选择类型">
+            <el-option label="一横两竖" value="2" />
+            <el-option label="一横三竖" value="3" />
+          </el-select>
+        </div>
       </div>
 
       <div class="extra-inputs" v-if="shelfType === 'standard'">
@@ -50,7 +65,9 @@
 
       <el-input v-model="rawText" type="textarea" :rows="8" :placeholder="shelfType === 'standard'
         ? '支持重型货架「L*W*H + N主架 M副架」格式，以及中型/层板/重型货架「L*W*H*N层板（载重）套 N」格式。粘贴后点击生成汇总即可自动计算...'
-        : '请粘贴货架平台的配件信息，系统将自动识别并汇总部件...'" />
+        : shelfType === 'accessory'
+        ? '请粘贴配件信息，如：\n立柱片 H5700*W1000mm=59片\n横梁1 L2990mm=258根\n连接杆 L400mm=18根\n防撞护栏 L1000*H300mm=20根\n防撞护脚 H300mm=59根\n系统将自动识别并计算螺丝...'
+        : '请粘贴货架平台的配件信息，如：\n合抱立柱1 H4575mm = 10根\n合抱立柱2 H1200mm = 1根\n系统将自动识别并计算膨胀螺丝...'" />
 
       <div class="toolbar">
         <el-button type="primary" @click="parseNow" :loading="loading" size="large">
@@ -153,16 +170,18 @@ async function doParse() {
 
   loading.value = true
 
+  // 配件计算模式：只传横斜撑总数，其余数据从文本解析
+  const isAccessory = shelfType.value === 'accessory'
   const [err, result] = await to(quotationStatisticsApi.parse(rawText.value, {
     shelfType: shelfType.value,
     crossBraceCount: crossBraceCount.value,
-    gateBeamClampCount: gateBeamClampCount.value,
-    connectorCount: connectorCount.value,
-    guardrailCount: guardrailCount.value,
+    gateBeamClampCount: isAccessory ? undefined : gateBeamClampCount.value,
+    connectorCount: isAccessory ? undefined : connectorCount.value,
+    guardrailCount: isAccessory ? undefined : guardrailCount.value,
     guardrailType: guardrailType.value,
-    protectorCount: protectorCount.value,
-    pickingLayerCount: pickingLayerCount.value,
-    embraceColumnCount: embraceColumnCount.value,
+    protectorCount: isAccessory ? undefined : protectorCount.value,
+    pickingLayerCount: isAccessory ? undefined : pickingLayerCount.value,
+    embraceColumnCount: isAccessory ? undefined : embraceColumnCount.value,
   }))
   if (err || !result) {
     showError(err, '智能引擎解析失败')
@@ -172,7 +191,12 @@ async function doParse() {
   parts.value = result.parts || []
   errors.value = result.errors || []
   warnings.value = result.warnings || []
-  // 备注始终只显示固定公式，不追加动态计算结果
+  // 使用后端返回的动态备注（包含膨胀螺丝等计算公式）
+  if (result.remarks && result.remarks.length > 0) {
+    remarks.value = result.remarks
+  } else {
+    remarks.value = [...DEFAULT_REMARKS]
+  }
   loading.value = false
 }
 
