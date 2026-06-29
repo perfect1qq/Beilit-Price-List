@@ -1,13 +1,4 @@
-/**
- * @module composables/useHistoryView
- * @description 通用历史记录视图管理 composable
- *
- * 提供历史记录页面的通用状态管理：
- * - 列表/详情视图切换
- * - 搜索 + 分页
- * - 删除确认 + 乐观更新
- * - 操作锁防重复点击
- */
+
 
 import { ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import { ElMessageBox } from 'element-plus'

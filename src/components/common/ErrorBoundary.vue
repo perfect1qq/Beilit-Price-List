@@ -1,27 +1,11 @@
-/**
-* @module components/common/ErrorBoundary
-* @description 全局错误边界组件
-*
-* 捕获子组件树中的 JavaScript 错误，防止白屏崩溃。
-* 提供友好的错误展示和恢复机制。
-*
-* @example
-* &lt;ErrorBoundary&gt;
-* &lt;YourComponent /&gt;
-* &lt;/ErrorBoundary&gt;
-*
-* @example
-* &lt;ErrorBoundary @error="onGlobalError"&gt;
-* &lt;RouterView /&gt;
-* &lt;/ErrorBoundary&gt;
-*/
+
 
 <template>
   <div class="error-boundary">
-    <!-- 正常渲染子组件 -->
+
     <slot v-if="!hasError" />
 
-    <!-- 错误状态展示 -->
+
     <div v-else class="error-fallback">
       <div class="error-icon">⚠️</div>
       <h2 class="error-title">页面出现异常</h2>
@@ -45,20 +29,18 @@ import { useRouter } from 'vue-router'
 
 const emit = defineEmits(['error'])
 
-/** 是否捕获到错误 */
+
 const hasError = ref(false)
 
-/** 错误信息 */
+
 const errorMessage = ref('未知错误')
 
 const router = useRouter()
 
-/**
- * 捕获子组件错误
- * Vue 的错误生命周期钩子，当子组件抛出未捕获异常时触发
- */
+
+
 onErrorCaptured((err, instance, info) => {
-  // 捕获到组件错误
+
 
   hasError.value = true
   errorMessage.value = err?.message || String(err)
@@ -68,13 +50,13 @@ onErrorCaptured((err, instance, info) => {
   return false
 })
 
-/** 重试：重新渲染子组件 */
+
 const handleRetry = () => {
   hasError.value = false
   errorMessage.value = ''
 }
 
-/** 返回首页 */
+
 const handleGoHome = () => {
   handleRetry()
   router.push('/home')

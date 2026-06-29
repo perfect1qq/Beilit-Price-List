@@ -1,120 +1,26 @@
-<!--
-  @file views/MediumShelfWeightTable.vue
-  @description 中型货架重量计算表配置页面
 
-  功能说明：
-  - 中型货架自重参数配置与管理
-  - 双层表格结构：汇总表 + 明细表
-  - 支持编辑模式和预览模式切换
-  - 载重参数与配件重量分拆计算
-  - 配置数据的 CRUD 操作
-
-  页面布局：
-  ┌──────────────────────────────────────────────────────────────┐
-  │  MediumShelfWeightTable (中型货架重量表)                     │
-  │                                                              │
-  │  Toolbar:                                                    │
-  │  标题: 中型货架重量表                                       │
-  │  副标题: 当前为编辑/预览模式...                             │
-  │  按钮: [编辑] 或 [+新增汇总][新增明细][保存][取消] [刷新]  │
-  │                                                              │
-  │  Error Alert (如有错误)                                      │
-  │  ⚠️ 错误提示信息                                           │
-  │                                                              │
-  │  ┌────────────────────────────────────────────────────────┐  │
-  │  │ 区块1: 中型货架重量表 (汇总表)                         │  │
-  │  │ ┌────┬────────┬────────┬──────┬──────┬────────┬──────┐ │  │
-  │  │ │序号│ 名称   │ 规格   │ 层数  │ 载重  │ 总自重  │ 配件  │ │  │
-  │  │ ├────┼────────┼────────┼──────┼──────┼────────┼──────┤ │  │
-  │  │ │ 1  │ A型    │ 2000×500│ 4层  │ 2t   │ 150kg  │ 立柱..│ │  │
-  │  │ │ 2  │ B型    │ 2500×600│ 5层  │ 3t   │ 200kg  │ 立柱..│ │  │
-  │  │ └────┴────────┴────────┴──────┴──────┴────────┴──────┘ │  │
-  │  └────────────────────────────────────────────────────────┘  │
-  │                                                              │
-  │  ┌────────────────────────────────────────────────────────┐  │
-  │  │ 区块2: 层数规格明细表                                   │  │
-  │  │ ┌────┬────────┬────────┬──────┬──────┬──────┬────────┐ │  │
-  │  │ │序号│ 关联ID  │ 层数   │ 自重  │ 载重  │ 单价   │ 备注  │ │  │
-  │  │ ├────┼────────┼────────┼──────┼──────┼──────┼────────┤ │  │
-  │  │ │ 1  │ #1     │ 4层    │ 120kg│ 500kg│ ¥80   │ 标准  │ │  │
-  │  │ └────┴────────┴────────┴──────┴──────┴──────┴────────┘ │  │
-  │  └────────────────────────────────────────────────────────┘  │
-  └──────────────────────────────────────────────────────────────┘
-
-  双表结构说明：
-  ┌─────────────────────────────────────────────────────────────┐
-  │  SummaryRow (汇总表行) - 中型货架整体参数                    │
-  ├─────────────────────────────────────────────────────────────┤
-  │  index: number         - 序号                                │
-  │  name: string          - 货架名称/型号                       │
-  │  spec: string          - 外形规格                            │
-  │  layers: number/string - 层数                                │
-  │  load: number/string   - 额定载重                            │
-  │  totalWeight: number   - 总自重                              │
-  │  accessoryWeights: Object - 配件重量分拆                    │
-  │  ├── pillarWeight: number  - 立柱片重量                     │
-  │  ├── beamWeight: number    - 横梁重量                       │
-  │  ├── shelfWeight: number   - 层板重量                       │
-  │  └── otherWeight: number   - 其他配件重量                   │
-  └─────────────────────────────────────────────────────────────┘
-
-  ┌─────────────────────────────────────────────────────────────┐
-  │  DetailRow (明细表行) - 各层数的具体规格                    │
-  ├─────────────────────────────────────────────────────────────┤
-  │  index: number         - 序号                                │
-  │  summaryId: number     - 关联的汇总表 ID                    │
-  │  layers: number/string - 具体层数                            │
-  │  weight: number        - 该层数的自重                        │
-  │  loadCapacity: number  │  该层数的载重能力                   │
-  │  unitPrice: number     - 单价                                │
-  │  remark: string        - 备注说明                            │
-  └─────────────────────────────────────────────────────────────┘
-
-  模式切换：
-  - 预览模式（默认）：只读展示，从服务端加载最新配置
-  - 编辑模式：可修改、添加、删除数据，需手动保存
-
-  权限控制：
-  - admin/user: 可进入编辑模式，执行 CRUD 操作
-  - guest: 仅预览模式，无编辑按钮
-
-  API 调用：
-  - GET /api/medium-shelf-weight → 获取当前配置
-  - PUT /api/medium-shelf-weight → 保存更新后的配置
-
-  使用场景：
-  - 工程师配置标准货架的自重参数
-  - 报价系统根据此表自动计算成本
-  - 不同层数组合的价格差异分析
--->
 
 <template>
 
-  <!-- * @module views/MediumShelfWeightTable
- * @description 中型货架重量计算表页面
- * 
- * 功能：
- * - 中型货架自重计算
- * - 载重参数配置
- * - 重量与报价关联计算 -->
+
 
 
 
   <div class="medium-weight-page">
-    <!-- 独立应用卡片外壳，去除圆角增强后台感 -->
+
     <el-card class="page-card" shadow="never" v-loading="loading">
 
-      <!-- 顶部工具栏：包含标题、副标题提示和主要的业务按钮组合 -->
+
       <div class="toolbar">
         <div>
           <div class="page-title">中型货架重量表</div>
           <div class="page-subtitle">
-            <!-- 根据当前的编辑状态显示不同的引导语 -->
+
             {{ editMode ? '当前为编辑模式，可动态修改、添加或删除层级与结构数据' : '当前为实时预览模式，系统将自动从服务端同步配置' }}
           </div>
         </div>
 
-        <!-- 增删改查操作区 -->
+
         <div class="toolbar-actions">
           <template v-if="!isGuest">
             <el-button v-if="!editMode" type="primary" :icon="Edit" @click="startEdit">
@@ -132,12 +38,12 @@
         </div>
       </div>
 
-      <!-- 全局级别的错误展示横幅，用于拦截严重的数据解析异常 -->
+
       <el-alert v-if="errorMsg" class="mb-16" type="error" :title="errorMsg" :closable="false" show-icon />
 
-      <!-- 当存在可显示的数据时，渲染两个数据表格区块；否则显示空状态 -->
+
       <template v-if="summaryRows?.length || detailRows?.length">
-        <!-- ================= 区块 1: 全局汇总表 ================= -->
+
         <el-card shadow="never" class="section-card">
           <template #header>
             <div class="section-title">中型货架重量表</div>
@@ -217,7 +123,7 @@
           </el-table>
         </el-card>
 
-        <!-- ================= 区块 2: 层数规格明细表（带单元格合并功能） ================= -->
+
         <el-card shadow="never" class="section-card">
           <template #header>
             <div style="display:flex; align-items:center; justify-content:space-between">
@@ -313,10 +219,8 @@ const {
   saveData
 } = useMediumShelfWeight()
 
-/**
- * 只对连续相同值的单元格进行合并。
- * 这样“报价 / 实际”相同且连续的行会自动合并。
- */
+
+
 const buildSpanMap = (rows: Record<string, unknown>[], field: string) => {
   if (!Array.isArray(rows) || !rows.length) return {}
   const map: Record<number, number> = {}

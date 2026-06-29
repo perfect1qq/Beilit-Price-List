@@ -1,44 +1,4 @@
-/**
- * @file composables/useQuotationDraft.ts
- * @description 报价单草稿状态管理（核心业务逻辑）
- *
- * 功能说明：
- * - 管理报价单的完整编辑状态（表头、明细行、折扣、成交价）
- * - 实现两种计价模式：
- *   1. **自动模式**：成交价 = 小计 × (1 - 折扣%)
- *   2. **手动模式**：用户直接输入成交价，反向计算折扣
- * - 明细行的增删改及自动计算（数量 × 单价 = 小计）
- * - 支持从历史记录加载并进入编辑/查看模式
- * - 提供深比对快照用于检测是否有修改
- *
- * 数据流架构：
- * ┌─────────────────────────────────────────────────────────────┐
- * │  useQuotationDraft (本模块)                                 │
- * │  ┌──────────────┬────────────────────────────────────────┐  │
- * │  │ 表头状态      │ name, companyName, remark             │  │
- * │  ├──────────────┼────────────────────────────────────────┤  │
- * │  │ 价格计算链    │ items → subtotal → autoFinalPrice     │  │
- * │  │              │                    ↓                  │  │
- * │  │              │          finalPrice (自动/手动)        │  │
- * │  ├──────────────┼────────────────────────────────────────┤  │
- * │  │ 明细行管理    │ addRow / removeRow / updateRowTotal   │  │
- * │  ├──────────────┼────────────────────────────────────────┤  │
- * │  │ 模式控制      │ edit(编辑) / view(查看)               │  │
- * │  ├──────────────┼────────────────────────────────────────┤  │
- * │  │ 历史快照      │ originalPayloadStr (深比对用)         │  │
- * │  └──────────────┴────────────────────────────────────────┘  │
- * └─────────────────────────────────────────────────────────────┘
- *
- * 使用方式：
- * const {
- *   name, companyName, remark,
- *   discount, finalPrice, isManualFinalPrice,
- *   items, subtotal, autoFinalPrice, discountAmount,
- *   addRow, removeRow, updateRowTotal,
- *   setFinalPriceManual, restoreAutoFinalPrice,
- *   loadRecord, getPayload, resetDraft
- * } = useQuotationDraft()
- */
+
 
 import { computed, ref, watch, type Ref, type ComputedRef } from 'vue'
 import type { QuotationCreatePayload, QuotationData } from '@/types'
@@ -196,15 +156,8 @@ export function useQuotationDraft(): QuotationDraftReturn {
     mode.value = 'edit'
   }
 
-  /**
-   * 批量设置明细行数据
-   *
-   * 用于 AI 智能解析后填充结果，
-   * 或从历史记录加载时恢复数据
-   *
-   * @param {Array} [rows=[]] - 行数据数组
-   * @param {string[]} [columns=FIELD_ORDER] - 显示的列名
-   */
+
+
   const setRows = (rows: QuotationRow[] = [], columns: string[] = FIELD_ORDER): void => {
     items.value = rows.length
       ? rows.map(normalizeRow)
@@ -335,7 +288,7 @@ export function useQuotationDraft(): QuotationDraftReturn {
     isViewMode,
     isEditing,
 
-    // 操作方法
+
     resetDraft,
     setRows,
     addRow,
@@ -346,7 +299,7 @@ export function useQuotationDraft(): QuotationDraftReturn {
     setFinalPriceManual,
     restoreAutoFinalPrice,
 
-    // 历史记录方法
+
     loadRecord,
     setMode,
     getPayload,

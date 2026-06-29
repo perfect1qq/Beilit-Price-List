@@ -66,7 +66,7 @@ function persist(): void {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.visitedViews))
   } catch {
-    // ignore
+
   }
 }
 

@@ -80,7 +80,7 @@
                   <span class="label">报价状态：</span>
                   <el-tag v-if="item.hasQuotation" type="success" size="small">已报价</el-tag>
                   <el-tag v-else type="info" size="small" plain>未报价</el-tag>
-                  <!-- <span v-if="item.quotationDate" class="quotation-date">{{ item.quotationDate }}</span> -->
+
                 </div>
               </div>
 

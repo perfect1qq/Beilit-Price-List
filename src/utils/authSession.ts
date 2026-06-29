@@ -37,7 +37,7 @@ const clearTabsMemoryState = async (): Promise<void> => {
     const tagsView = useTagsView()
     tagsView.removeAllViews()
   } catch {
-    // ignore
+
   }
 
   try {
@@ -47,7 +47,7 @@ const clearTabsMemoryState = async (): Promise<void> => {
     const tabs = useBreadcrumbTabs()
     if (tabs.resetAll) tabs.resetAll()
   } catch {
-    // ignore
+
   }
 }
 

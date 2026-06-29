@@ -11,7 +11,7 @@
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="closeOthers">关闭其他</el-dropdown-item>
-            <!-- <el-dropdown-item command="closeLeft">关闭左侧</el-dropdown-item> -->
+
             <el-dropdown-item command="closeRight">关闭右侧</el-dropdown-item>
             <el-dropdown-item command="closeAll" divided>关闭全部</el-dropdown-item>
           </el-dropdown-menu>

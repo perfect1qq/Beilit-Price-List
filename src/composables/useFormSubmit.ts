@@ -1,23 +1,4 @@
-/**
- * @module composables/useFormSubmit
- * @description 表单提交防重复工具
- *
- * 功能：
- * - 防止表单重复提交（锁定机制）
- * - 自动管理加载状态
- * - 统一错误处理
- *
- * 使用示例：
- * ```javascript
- * const { submitLoading, withSubmitLock } = useFormSubmit()
- *
- * const handleSubmit = async () => {
- *   await withSubmitLock(async () => {
- *     // 提交逻辑...
- *   })
- * }
- * ```
- */
+
 
 import { ref, type Ref } from 'vue'
 

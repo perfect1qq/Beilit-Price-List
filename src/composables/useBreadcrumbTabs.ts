@@ -1,67 +1,4 @@
-/**
- * @module composables/useBreadcrumbTabs
- * @description 面包屑标签页管理组合式函数
- *
- * 功能说明：
- * - 管理多标签页浏览状态（类似浏览器标签页）
- * - 支持标签页的增删、切换、关闭其他/左侧/右侧
- * - 按用户账号隔离存储（不同用户看到各自的标签页）
- * - 标签页数据持久化到 localStorage
- * - 支持新标签页会话检测（避免跨标签页串数据）
- * - 路由变化时自动同步当前激活标签
- *
- * 数据隔离策略：
- * ┌─────────────────────────────────────────────────────┐
- * │  localStorage Key 格式：                            │
- * │  beilit.visited-views:{userId}                      │
- * │                                                     │
- * │  示例：                                             │
- * │  - 用户 A (id=1): beilit.visited-views:1            │
- * │  - 用户 B (id=2): beilit.visited-views:2            │
- * │  - 游客:      beilit.visited-views:anonymous        │
- * └─────────────────────────────────────────────────────┘
- *
- * 会话管理：
- * - 使用 sessionStorage 生成唯一 session ID
- * - 新标签页打开时检测到新 session，清除旧缓存
- * - 避免同一用户在多个浏览器标签页间数据冲突
- *
- * 标签页操作：
- * ┌──────────┬─────────────────────────────────────────┐
- * │  操作     │  说明                                   │
- * ├──────────┼─────────────────────────────────────────┤
- * │  addView │  添加新标签（路由跳转时自动触发）         │
- * │  goView  │  切换到指定标签                          │
- * │  closeView   │  关闭单个标签                        │
- * │  closeOthers │  关闭除当前外的所有标签               │
- * │  closeLeft   │  关闭左侧所有标签                    │
- * │  closeRight  │  关闭右侧所有标签                    │
- * │  closeAll    │  关闭所有标签（保留首页）             │
- * │  resetAll    │  重置并清除缓存                      │
- * └──────────┴─────────────────────────────────────────┘
- *
- * @example
- * // 在布局组件中使用
- * const {
- *   visitedViews,
- *   currentView,
- *   activeFullPath,
- *   addView,
- *   closeView,
- *   closeOthers
- * } = useBreadcrumbTabs()
- *
- * // 渲染标签页列表
- * <el-tabs v-model="activeFullPath">
- *   <el-tab-pane
- *     v-for="view in visitedViews"
- *     :key="view.fullPath"
- *     :label="view.title"
- *     :name="view.fullPath"
- *     closable
- *   />
- * </el-tabs>
- */
+
 
 import { computed, reactive, watch, type ComputedRef } from 'vue'
 import { useRoute, useRouter, type RouteLocationNormalized } from 'vue-router'
@@ -93,13 +30,13 @@ interface BreadcrumbTabsReturn {
   resetAll: () => void
 }
 
-/** localStorage 键前缀 */
+
 const STORAGE_PREFIX = 'beilit.visited-views'
 
-/** sessionStorage 中存储的 session ID 键名 */
+
 const SESSION_KEY = 'beilit.tab-session-id'
 
-/** 首页视图常量（不可关闭） */
+
 const HOME_VIEW: TabView = Object.freeze({
   path: '/home',
   fullPath: '/home',
@@ -115,17 +52,11 @@ const state = reactive<{ visitedViews: TabView[]; activeFullPath: string; userKe
   userKey: 'anonymous'
 })
 
-/** 是否已完成初始化 */
+
 let initialized = false
 
-/**
- * 解析当前用户的唯一标识
- *
- * 优先级：id > username > 'anonymous'
- * 用于生成用户专属的 localStorage key
- *
- * @returns {string} 用户唯一标识字符串
- */
+
+
 const resolveUserKey = (): string => {
   const user = readCurrentUser()
   if (user.role === ROLES.GUEST) return 'anonymous'
@@ -193,7 +124,7 @@ const clearStaleTabs = (userKey: string): void => {
   try {
     window.localStorage.removeItem(getStorageKey(userKey))
   } catch {
-    // ignore
+
   }
 }
 
@@ -220,7 +151,7 @@ const persistViews = (): void => {
   try {
     window.localStorage.setItem(getStorageKey(state.userKey), JSON.stringify(state.visitedViews))
   } catch {
-    // ignore storage errors
+
   }
 }
 
@@ -249,12 +180,8 @@ const ensureCurrentExists = (route: RouteLocationNormalized): TabView => {
 const getCurrent = (route: RouteLocationNormalized): TabView =>
   state.visitedViews.find(item => item.fullPath === route.fullPath) || normalizeView(route)
 
-/**
- * 重置面包屑标签状态（退出登录时调用）
- *
- * 清空所有标签页数据并删除 localStorage 缓存
- * 防止下一个登录用户看到上一个用户的标签页
- */
+
+
 export function resetBreadcrumbTabs(): void {
   state.visitedViews = [HOME_VIEW]
   state.activeFullPath = HOME_VIEW.fullPath
@@ -264,7 +191,7 @@ export function resetBreadcrumbTabs(): void {
     try {
       window.localStorage.removeItem(getStorageKey())
     } catch {
-      // ignore
+
     }
   }
 }
@@ -374,7 +301,7 @@ export function useBreadcrumbTabs(): BreadcrumbTabsReturn {
       try {
         window.localStorage.removeItem(getStorageKey(state.userKey))
       } catch {
-        // ignore
+
       }
     }
   }

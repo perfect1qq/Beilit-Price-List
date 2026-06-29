@@ -1,7 +1,4 @@
-<!--
-  @file components/memo/MemoHistoryDrawer.vue
-  @description 备忘录修改历史抽屉组件
--->
+
 
 <template>
   <el-drawer :model-value="visible" @update:model-value="$emit('update:visible', $event)" :title="title" size="420px">

@@ -1,29 +1,4 @@
-/**
- * @file composables/useQuotationEditor.ts
- * @description 报价单编辑器交互逻辑（事件处理层）
- *
- * 功能说明：
- * - 封装报价单编辑器的所有用户交互处理函数
- * - 连接 UI 事件与 useQuotationDraft 状态管理
- * - 处理 AI 智能解析、表单验证、提交保存等操作
- *
- * 架构定位：
- * ┌─────────────────────┐     ┌──────────────────────┐
- * │  QuotationList.vue   │────▶│  useQuotationEditor   │
- * │  (视图层)             │     │  (交互逻辑层)          │
- * └─────────────────────┘     └──────────┬───────────┘
- *                                          │ 调用
- *                                          ▼
- *                                ┌──────────────────────┐
- *                                │  useQuotationDraft    │
- *                                │  (状态管理层)          │
- *                                └──────────────────────┘
- *
- * 设计原则：
- * - 本模块不持有任何响应式状态，只接收依赖注入
- * - 所有业务逻辑通过 deps 参数解耦，便于测试和复用
- * - 错误处理统一使用 showError/showWarning
- */
+
 
 import { to } from '@/utils/async'
 import { showError, showSuccess, showWarning } from '@/utils/message'
@@ -101,7 +76,7 @@ const useQuotationEditor = (deps: Partial<QuotationEditorDeps>): Partial<Quotati
         setFinalPriceManual(value)
       }
     } catch (_error) {
-      // 静默处理异常
+
     }
   }
 
@@ -116,7 +91,7 @@ const useQuotationEditor = (deps: Partial<QuotationEditorDeps>): Partial<Quotati
         restoreAutoFinalPrice()
       }
     } catch (_error) {
-      // 静默处理异常
+
     }
   }
 
@@ -228,7 +203,7 @@ const useQuotationEditor = (deps: Partial<QuotationEditorDeps>): Partial<Quotati
       return showWarning('没有做任何修改，无法保存无用的沉余记录！')
     }
 
-    // 执行保存
+
     isSubmitting.value = true
     const [err, result] = await to(
       saveQuotation(payload, editingHistoryId?.value),
@@ -243,7 +218,7 @@ const useQuotationEditor = (deps: Partial<QuotationEditorDeps>): Partial<Quotati
     if (result) {
       showSuccess(editingHistoryId?.value ? '修改成功' : '成功新增报价单')
 
-      // 执行保存成功回调（如重置草稿）
+
       if (onSaveSuccess) onSaveSuccess(result)
     }
 

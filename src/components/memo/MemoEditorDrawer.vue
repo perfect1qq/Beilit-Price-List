@@ -1,7 +1,4 @@
-<!--
-  @file components/memo/MemoEditorDrawer.vue
-  @description 备忘录编辑抽屉组件
--->
+
 
 <template>
   <el-drawer :model-value="visible" @update:model-value="$emit('update:visible', $event)"

@@ -19,7 +19,7 @@ export const applyAuthGuard = async (to: RouteLocationNormalized): Promise<boole
     try {
       await userStore.restoreSession()
     } catch {
-      // keep public routes accessible when profile probing fails
+
     }
 
     if (userStore.isLoggedIn && (to.path === '/login' || to.path === '/register')) {

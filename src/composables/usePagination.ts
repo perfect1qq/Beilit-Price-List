@@ -1,17 +1,4 @@
-/**
- * @module composables/usePagination
- * @description 分页状态管理组合式函数
- * 
- * 提供通用的分页状态（page、pageSize、total）和分页事件处理。
- * 适用于所有需要分页功能的列表页面。
- * 
- * @example
- * const { page, pageSize, total, handleCurrentChange, handleSizeChange, resetToFirstPage } = usePagination({
- *   defaultPage: 1,
- *   defaultPageSize: 10,
- *   onLoad: (page) => loadList(page)
- * })
- */
+
 
 import { ref, type Ref } from 'vue'
 

@@ -7,7 +7,7 @@
 
 <script setup lang="ts">
 defineProps({
-  /** 页面标题 */
+
   title: {
     type: String,
     required: true

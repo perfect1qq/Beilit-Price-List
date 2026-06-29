@@ -153,5 +153,5 @@ onMounted(() => loadList(1))
   }
 }
 
-/* 审批历史卡片特有样式（通用样式已移至global.css） */
+
 </style>

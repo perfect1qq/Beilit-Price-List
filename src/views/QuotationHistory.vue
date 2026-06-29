@@ -1,55 +1,4 @@
-<!--
-  @file views/QuotationHistory.vue
-  @description 报价单历史记录页面
 
-  功能说明：
-  - 展示所有历史报价单记录（按公司名称分组）
-  - 支持按公司名/提交人搜索
-  - 分页展示（支持 10/20/50/60 条每页）
-  - 查看详情 / 编辑 / 删除操作
-  - 可折叠的分组面板（类似手风琴效果）
-
-  页面布局：
-  ┌──────────────────────────────────────────────────────────────┐
-  │  QuotationHistory (报价单历史)                                │
-  │                                                              │
-  │  Toolbar: [搜索框] [统计标签: X个公司/Y条记录]               │
-  │                                                              │
-  │  Collapse (公司分组)                                         │
-  │  ┌────────────────────────────────────────────────────────┐  │
-  │  │ ▼ 武汉测试公司 (3条) 最新: 2024-01-15                  │  │
-  │  │ ┌───────────────────────────────────────────────────┐  │  │
-  │  │ │ 报价单号 | 提交人 | 成交价 | 创建时间 | 操作      │  │  │
-  │  │ ├───────────────────────────────────────────────────┤  │  │
-  │  │ │ QT001   | 张三  | ¥1000 | 01-10  |[查看][修改]  │  │  │
-  │  │ │ QT002   | 张三  | ¥2000 | 01-12  |[查看][修改]  │  │  │
-  │  │ └───────────────────────────────────────────────────┘  │  │
-  │  └────────────────────────────────────────────────────────┘  │
-  │                                                              │
-  │  Pagination: [共X条] [< 1 2 3 >] [每页: ▼10条]             │
-  └──────────────────────────────────────────────────────────────┘
-
-  数据结构：
-  - 原始数据：扁平的报价单列表
-  - 分组后：按 companyName 聚合，每个分组包含：
-    * companyName: 公司名称
-    * count: 该公司的报价单数量
-    * latestDate: 最新一条的创建时间
-    * records: 该公司的所有报价单数组
-
-  权限控制：
-  - admin/user: 可查看、编辑、删除
-  - guest: 仅可查看（无修改和删除按钮）
-
-  API 调用：
-  - GET /api/quotations/history?keyword=&page=&pageSize= → 获取历史记录
-  - DELETE /api/quotations/:id → 删除指定报价单
-
-  特性说明：
-  - 使用 el-collapse 实现可折叠分组
-  - 支持实时搜索过滤（防抖处理）
-  - 使用 useInstantListActions 实现乐观更新
--->
 
 <template>
   <div class="quotation-history-page">
@@ -74,7 +23,7 @@
           </div>
         </div>
 
-        <!-- 添加年份对话框 -->
+
         <el-dialog
           v-model="showAddYearDialog"
           title="添加年份"
@@ -107,7 +56,7 @@
           </template>
         </el-dialog>
 
-        <!-- 移动到年份对话框 -->
+
         <el-dialog
           v-model="showMoveYearDialog"
           title="移动到其他年份"
@@ -183,7 +132,7 @@
                   </div>
                 </template>
 
-                <!-- 内层：按公司折叠（分页） -->
+
                 <el-empty
                   v-if="!yearGroup.companyGroups.length"
                   description="该年份暂无报价单记录"
@@ -296,7 +245,7 @@
                     </el-collapse-item>
                   </el-collapse>
 
-                  <!-- 年份内分页 -->
+
                   <div
                     class="year-pager-wrap"
                     v-if="getYearTotalPages(yearGroup.companyGroups.length) > 1"
@@ -454,12 +403,12 @@ const totalRecords = computed(() =>
 const showAddYearDialog = ref(false);
 const newYear = ref(new Date().getFullYear() + 1);
 
-// 移动到年份相关状态
+
 const showMoveYearDialog = ref(false);
 const movingRecord = ref<HistoryRecord | null>(null);
 const targetMoveYear = ref<number | null>(null);
 
-// 可选年份列表（仅显示已有的年份）
+
 const availableYears = computed(() => {
   return groupedHistoryList.value.map((g) => g.year).sort((a, b) => b - a);
 });
@@ -470,24 +419,24 @@ function confirmAddYear() {
     ElMessage.warning("请输入有效的年份（2000-2099）");
     return;
   }
-  // 检查年份是否已存在
+
   const exists = groupedHistoryList.value.some((g) => g.year === year);
   if (exists) {
     ElMessage.warning(`${year} 年已存在`);
     return;
   }
-  // 添加空年份分组
+
   addCustomYear(year);
   showAddYearDialog.value = false;
   ElMessage.success(`已添加 ${year} 年`);
 }
 
-/** 判断是否为自定义年份 */
+
 function isCustomYear(year: number): boolean {
   return customYears.value.includes(year);
 }
 
-/** 删除自定义年份 */
+
 function handleRemoveYear(year: number) {
   ElMessageBox.confirm(
     `确定删除 ${year} 年？该年份下的报价单不会被删除，只是移除该年份分组。`,
@@ -501,17 +450,17 @@ function handleRemoveYear(year: number) {
     .catch(() => {});
 }
 
-/** 打开移动年份对话框 */
+
 function openMoveYearDialog(record: HistoryRecord) {
   movingRecord.value = record;
-  // 获取当前记录的年份作为默认值
+
   const currentDate = record.createdAt || record.updatedAt || "";
   const currentYear = new Date(currentDate).getFullYear();
   targetMoveYear.value = Number.isNaN(currentYear) ? null : currentYear;
   showMoveYearDialog.value = true;
 }
 
-/** 确认移动到目标年份 */
+
 async function confirmMoveToYear() {
   if (!movingRecord.value || !targetMoveYear.value) {
     ElMessage.warning("请选择目标年份");
@@ -526,24 +475,24 @@ async function confirmMoveToYear() {
   }
 }
 
-/** 搜索时自动展开匹配的年份和公司面板 */
+
 watch(
   () => [groupedHistoryList.value, searchKeyword.value] as const,
   ([groups, keyword]) => {
     if (!keyword?.trim()) {
-      // 如果搜索关键词为空，不自动展开
+
       return;
     }
 
-    // 自动展开匹配的年份面板
+
     const matchedYears: string[] = [];
     const matchedCompanies: string[] = [];
 
     for (const group of groups) {
-      // 检查该年份下是否有匹配的记录
+
       let yearMatched = false;
       for (const companyGroup of group.companyGroups) {
-        // 检查公司名称是否匹配
+
         const companyMatched = companyGroup.companyName
           .toLowerCase()
           .includes(keyword.toLowerCase().trim());
@@ -553,7 +502,7 @@ watch(
           continue;
         }
 
-        // 检查记录名称是否匹配
+
         for (const record of companyGroup.records) {
           const name = (record.name || record.companyName || "").toLowerCase();
           if (name.includes(keyword.toLowerCase().trim())) {
@@ -570,7 +519,7 @@ watch(
       }
     }
 
-    // 如果有匹配结果，自动展开对应的面板
+
     if (matchedYears.length > 0) {
       activePanels.value = matchedYears;
       activeCompanyPanels.value =

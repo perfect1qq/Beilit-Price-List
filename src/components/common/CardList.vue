@@ -1,80 +1,15 @@
-<!--
-  @file components/common/CardList.vue
-  @description 通用卡片列表组件（支持分页、选择、拖拽）
 
-  功能说明：
-  - 以卡片网格形式展示数据列表
-  - 支持响应式列数（1/2/3/4 列）
-  - 内置加载状态（骨架屏）、空状态处理
-  - 支持单选/多选模式
-  - 支持拖拽排序（需配合外部库实现）
-  - 内置分页器或"加载更多"模式
-  - 丰富的插槽支持自定义内容
-
-  组件结构：
-  ┌──────────────────────────────────────────────────────────────┐
-  │  CardList (容器)                                             │
-  │  ┌────────────────────────────────────────────────────────┐  │
-  │  │ Loading State (骨架屏) / Empty State (空状态提示)      │  │
-  │  ├────────────────────────────────────────────────────────┤  │
-  │  │ Cards Grid (CSS Grid 布局)                             │  │
-  │  │ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐       │  │
-  │  │ │ Card Item 1  │ │ Card Item 2  │ │ Card Item 3  │       │  │
-  │  │ │ [checkbox]   │ │ [checkbox]   │ │ [checkbox]   │       │  │
-  │  │ │ [actions]    │ │ [actions]    │ │ [actions]    │       │  │
-  │  │ │ card content │ │ card content │ │ card content │       │  │
-  │  │ └─────────────┘ └─────────────┘ └─────────────┘       │  │
-  │  ├────────────────────────────────────────────────────────┤  │
-  │  │ Load More Button / Pagination (分页或加载更多)        │  │
-  │  └────────────────────────────────────────────────────────┘  │
-  └──────────────────────────────────────────────────────────────┘
-
-  使用示例：
-
-  基础用法:
-  <CardList :data="list" :loading="loading" :total="total" v-model:current-page="page" v-model:page-size="pageSize" :columns="2" @page-change="loadData">
-    <template #card="{ item }">
-      <div>{{ item.companyName }}</div>
-    </template>
-  </CardList>
-
-  多选模式:
-  <CardList :data="list" selectable multiple v-model:selected-items="selected">
-    <template #card="{ item }">
-      {{ item.name }}
-    </template>
-  </CardList>
-
-  Props 说明：
-  - data: 数据数组
-  - loading: 加载状态
-  - total: 总记录数（用于分页）
-  - columns: 网格列数（1-4）
-  - selectable: 是否可选择
-  - multiple: 是否多选
-  - draggable: 是否可拖拽
-  - loadMore: 启用"加载更多"模式（替代分页）
-
-  插槽说明：
-  - #card: 卡片内容（作用域：item, index, selected）
-  - #actions: 卡片操作按钮（右上角悬浮）
-  - #loading: 自定义加载状态
-  - #empty-image: 自定义空状态图片
-  - #empty-action: 空状态操作按钮区域
-  - #drag-handle: 拖拽手柄
-  - #extra: 额外内容（搜索栏右侧）
--->
 
 <template>
   <div class="card-list" v-bind="$attrs" @copy="handleCopy">
-    <!-- 加载状态 -->
+
     <div v-if="loading" class="loading-wrapper">
       <slot name="loading">
         <el-skeleton :rows="skeletonRows" animated :count="skeletonCount" />
       </slot>
     </div>
 
-    <!-- 空状态 -->
+
     <div v-else-if="data.length === 0" class="empty-wrapper">
       <el-empty :description="emptyDescription" :image-size="emptyImageSize">
         <template #image>
@@ -86,7 +21,7 @@
       </el-empty>
     </div>
 
-    <!-- 卡片列表 -->
+
     <div v-else class="cards-grid" :class="'grid-' + columns">
       <div v-for="(item, index) in data"
         :key="((item as Record<string, unknown>)[idField] as string | number) !== undefined ? ((item as Record<string, unknown>)[idField] as string | number) : index"
@@ -96,27 +31,27 @@
           'is-draggable': draggable
         }" :data-card-item="draggable" @click="handleCardClick(item, $event)"
         @contextmenu.prevent="$emit('card-contextmenu', item, $event)">
-        <!-- 选中状态指示器 -->
+
         <div v-if="selectable && (multiple || isSelected(item))" class="selection-indicator">
           <el-checkbox :model-value="isSelected(item)" @click.stop
             @change="(val: unknown) => handleSelectChange(item, !!val, undefined)" />
         </div>
 
-        <!-- 卡片内容插槽 -->
+
         <slot name="card" :item="item" :index="index" :selected="isSelected(item)">
-          <!-- 默认卡片内容 -->
+
           <div class="default-card">
             <h4>{{ (item as Record<string, unknown>)[titleField] || item.title || '未命名' }}</h4>
             <p>{{ (item as Record<string, unknown>)[descriptionField] || item.description || '' }}</p>
           </div>
         </slot>
 
-        <!-- 卡片操作按钮（右上角） -->
+
         <div v-if="$slots.actions" class="card-actions" @click.stop>
           <slot name="actions" :item="item" :index="index" />
         </div>
 
-        <!-- 拖拽手柄 -->
+
         <div v-if="dragHandle && draggable" class="drag-handle" @mousedown.stop>
           <slot name="drag-handle">
             <span class="drag-icon">⋮⋮</span>
@@ -125,14 +60,14 @@
       </div>
     </div>
 
-    <!-- 加载更多按钮（替代分页） -->
+
     <div v-if="loadMore && hasMore && !loading" class="load-more-wrapper">
       <el-button type="primary" plain :loading="loadingMore" @click="$emit('load-more')">
         {{ loadingMore ? '加载中...' : '加载更多' }}
       </el-button>
     </div>
 
-    <!-- 分页器 -->
+
     <div v-if="showPagination && total > 0 && !loading" class="pagination-wrapper">
       <PagePagination v-model:page="currentPage" v-model:pageSize="currentPageSize" :total="total"
         :page-sizes="pageSizes" @page-change="handlePageChange" />
@@ -153,126 +88,126 @@ export type CardListItem = {
 }
 
 const props = defineProps({
-  /** 数据列表 */
+
   data: {
     type: Array as PropType<T[]>,
     default: () => []
   },
-  /** 是否加载中 */
+
   loading: {
     type: Boolean,
     default: false
   },
-  /** 总记录数 */
+
   total: {
     type: Number,
     default: 0
   },
-  /** 当前页码 */
+
   currentPage: {
     type: Number,
     default: 1
   },
-  /** 每页条数 */
+
   pageSize: {
     type: Number,
     default: 20
   },
-  /** 分页大小选项 */
+
   pageSizes: {
     type: Array as PropType<number[]>,
     default: () => DEFAULT_PAGINATION.pageSizes
   },
-  /** 是否显示分页 */
+
   showPagination: {
     type: Boolean,
     default: true
   },
-  /** 列数（响应式网格） */
+
   columns: {
     type: Number,
     default: 2,
     validator: (val: unknown) => [1, 2, 3, 4].includes(val as number)
   },
-  /** 空状态描述文字 */
+
   emptyDescription: {
     type: String,
     default: '暂无数据'
   },
-  /** 空状态图片大小 */
+
   emptyImageSize: {
     type: Number,
     default: 100
   },
 
-  /** ====== 新增功能属性 ====== */
 
-  /** 是否可选择 */
+
+
   selectable: {
     type: Boolean,
     default: false
   },
-  /** 是否多选 */
+
   multiple: {
     type: Boolean,
     default: false
   },
-  /** 已选中的项（v-model支持） */
+
   selectedItems: {
     type: Array as PropType<T[]>,
     default: () => []
   },
-  /** 数据唯一标识字段名 */
+
   idField: {
     type: String,
     default: 'id'
   },
-  /** 标题字段名（用于默认卡片） */
+
   titleField: {
     type: String,
     default: 'title'
   },
-  /** 描述字段名（用于默认卡片） */
+
   descriptionField: {
     type: String,
     default: 'description'
   },
-  /** 是否可拖拽排序 */
+
   draggable: {
     type: Boolean,
     default: false
   },
-  /** 是否显示拖拽手柄 */
+
   dragHandle: {
     type: Boolean,
     default: false
   },
-  /** 是否禁用项判断函数 */
+
   disabledFn: {
     type: Function as PropType<(item: T) => boolean>,
     default: null
   },
-  /** 是否启用加载更多模式（替代分页） */
+
   loadMore: {
     type: Boolean,
     default: false
   },
-  /** 是否还有更多数据 */
+
   hasMore: {
     type: Boolean,
     default: false
   },
-  /** 加载更多按钮的loading状态 */
+
   loadingMore: {
     type: Boolean,
     default: false
   },
-  /** 骨架屏行数 */
+
   skeletonRows: {
     type: Number,
     default: 3
   },
-  /** 骨架屏数量 */
+
   skeletonCount: {
     type: Number,
     default: 3
@@ -312,11 +247,8 @@ const currentPageSize = computed({
   set: (val) => emit('update:pageSize', val)
 })
 
-/**
- * 判断项是否被选中
- * @param {Object} item - 数据项
- * @returns {boolean}
- */
+
+
 const isSelected = (item: T): boolean => {
   if (!props.selectable) return false
   const itemRecord = item as Record<string, unknown>
@@ -324,20 +256,14 @@ const isSelected = (item: T): boolean => {
   return props.selectedItems.some(selected => (selected as Record<string, unknown>)[props.idField] === id)
 }
 
-/**
- * 判断项是否被禁用
- * @param {Object} item - 数据项
- * @returns {boolean}
- */
+
+
 const isDisabled = (item: T): boolean => {
   return props.disabledFn ? props.disabledFn(item) : false
 }
 
-/**
- * 处理卡片点击事件
- * @param {Object} item - 数据项
- * @param {Event} event - 点击事件
- */
+
+
 const handleCardClick = (item: T, event: MouseEvent): void => {
   if (isDisabled(item)) return
 
@@ -353,12 +279,8 @@ const handleCardClick = (item: T, event: MouseEvent): void => {
   }
 }
 
-/**
- * 处理选择变化
- * @param {Object} item - 数据项
- * @param {boolean} selected - 是否选中
- * @param {Event} event - 事件对象
- */
+
+
 const handleSelectChange = (item: T, selected: boolean, _event?: MouseEvent): void => {
   if (props.multiple) {
     let newSelected = [...props.selectedItems]
@@ -375,10 +297,8 @@ const handleSelectChange = (item: T, selected: boolean, _event?: MouseEvent): vo
   }
 }
 
-/**
- * 处理分页变化
- * @param {number} page - 页码
- */
+
+
 const handlePageChange = (page: number): void => {
   emit('page-change', page)
 }

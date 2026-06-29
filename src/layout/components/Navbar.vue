@@ -205,7 +205,7 @@ const onAvatarUploaded = async () => {
     await userStore.refreshProfile()
     avatarRefreshKey.value = Date.now()
   } catch {
-    // 本地已更新，刷新失败不阻塞
+
   }
 }
 

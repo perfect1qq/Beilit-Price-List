@@ -1,44 +1,4 @@
-/**
- * @module composables/useQuotationHistory
- * @description 报价单历史记录管理组合式函数
- * 
- * 提供报价单/横梁载重单历史记录的完整管理能力：
- * - 分页加载（支持全量拉取后前端分页）
- * - 按公司名称分组展示
- * - 关键词搜索
- * - 创建、更新、删除操作（带乐观更新）
- * - 查看和编辑模式切换
- * 
- * 数据流：
- * 1. loadHistoryList() → 调用 API 获取全部记录
- * 2. fetchAllRecords() → 处理分页，合并所有页数据
- * 3. groupByCompany() → 按公司名分组并排序
- * 4. pagedHistoryGroups → 计算属性，对分组结果进行分页
- * 
- * @example
- * const {
- *   historyList,
- *   groupedHistoryList,
- *   pagedHistoryGroups,
- *   searchKeyword,
- *   page,
- *   pageSize,
- *   total,
- *   loading,
- *   isActionLoading,
- *   loadHistoryList,
- *   onKeywordInput,
- *   handleCurrentChange,
- *   handleSizeChange,
- *   saveQuotation,
- *   deleteHistory,
- *   viewHistory,
- *   editHistory
- * } = useQuotationHistory({
- *   api: quotationApi,
- *   loadToEditor: (record, mode) => { ... }
- * })
- */
+
 
 import { computed, ref, shallowRef, type Ref, type ShallowRef, type ComputedRef } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -158,7 +118,7 @@ const groupByCompany = (records: HistoryRecord[] = []): CompanyGroup[] => {
   return groups
 }
 
-/** 按年份分组，每组内再按公司分组 */
+
 const groupByYearAndCompany = (records: HistoryRecord[] = []): YearGroup[] => {
   const yearMap = new Map<number, HistoryRecord[]>()
 
@@ -176,7 +136,7 @@ const groupByYearAndCompany = (records: HistoryRecord[] = []): YearGroup[] => {
   for (const [year, yearRecords] of yearMap) {
     const companyGroups = groupByCompany(yearRecords)
     const totalRecords = companyGroups.reduce((sum, g) => sum + g.count, 0)
-    // 取所有公司中最新的一条记录的日期作为该年最新日期
+
     let latestDate = ''
     for (const cg of companyGroups) {
       if (!latestDate || cg.latestTime > latestDate) {
@@ -192,7 +152,7 @@ const groupByYearAndCompany = (records: HistoryRecord[] = []): YearGroup[] => {
     })
   }
 
-  // 按年份倒序排列（最新的在前）
+
   yearGroups.sort((a, b) => b.year - a.year)
 
   return yearGroups
@@ -207,7 +167,7 @@ const fetchAllRecords = async (api: QuotationHistoryOptions['api'], keyword = ''
 
   while (safety < 200) {
     const result = await api.list({ page: currentPage, pageSize, keyword: keyword.trim() })
-    
+
     const rawList = result?.list || []
     if (!rawList.length) break
 
@@ -240,7 +200,7 @@ const fetchAllRecords = async (api: QuotationHistoryOptions['api'], keyword = ''
 export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptions): QuotationHistoryReturn {
   const historyList = shallowRef<HistoryRecord[]>([])
 
-  // 自定义年份持久化到 localStorage
+
   const CUSTOM_YEARS_KEY = 'quotation_custom_years'
   const savedCustomYears = (() => { try { return JSON.parse(localStorage.getItem(CUSTOM_YEARS_KEY) || '[]') } catch { return [] } })()
   const customYears = ref<number[]>(savedCustomYears)
@@ -264,28 +224,28 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
 
   const { keyword: searchKeyword, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 15, keyword: '' })
 
-  /** 默认每页公司组数量 */
+
   const DEFAULT_PAGE_SIZE = 15
 
-  /** 每个年份的分页状态：year -> currentPage */
+
   const yearPages = ref<Record<number, number>>({})
 
-  /** 获取某年份的当前页 */
+
   const getYearPage = (year: number): number => yearPages.value[year] || 1
 
-  /** 设置某年份的页码 */
+
   const setYearPage = (year: number, page: number): void => {
     yearPages.value = { ...yearPages.value, [year]: page }
   }
 
-  /** 获取某年份分页后的公司组 */
+
   const getPagedCompanies = (yearGroup: { year: number; companyGroups: CompanyGroup[] }, pageSize = DEFAULT_PAGE_SIZE) => {
     const page = getYearPage(yearGroup.year)
     const start = (page - 1) * pageSize
     return yearGroup.companyGroups.slice(start, start + pageSize)
   }
 
-  /** 获取某年份的总页数 */
+
   const getYearTotalPages = (companyCount: number, pageSize = DEFAULT_PAGE_SIZE): number => {
     return Math.max(1, Math.ceil(companyCount / pageSize))
   }
@@ -294,7 +254,7 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
 
   const loadHistoryList = async (): Promise<HistoryRecord[]> => {
     loading.value = true
-    
+
     const [err, records] = await to(fetchAllRecords(api, searchKeyword.value))
     if (err) {
       loading.value = false
@@ -303,24 +263,24 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
 
     historyList.value = records ?? []
 
-    // 重置所有年份分页到第1页
+
     yearPages.value = {}
 
     loading.value = false
     return historyList.value
   }
 
-  /** 防抖搜索触发器（300ms） */
+
   const triggerSearch = debounce(async () => {
     resetToFirstPage()
     const [searchErr] = await to(loadHistoryList())
     if (searchErr) ElMessage.error((searchErr as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (searchErr as { message?: string })?.message || '历史记录加载失败')
   }, 300)
 
-  /** 搜索输入事件处理 */
+
   const onKeywordInput = () => triggerSearch()
 
-  /** 年份内页码变化处理 */
+
   const handleYearPageChange = (year: number, page: number): void => {
     setYearPage(year, page)
   }
@@ -383,7 +343,7 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
     saveCustomYears()
   }
 
-  /** 将报价单移动到目标年份 */
+
   const moveToYear = async (record: HistoryRecord, targetYear: number): Promise<boolean> => {
     const [err, result] = await to(api.moveYear!(record.id, targetYear))
 
@@ -392,7 +352,7 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
       return false
     }
 
-    // 刷新列表
+
     await loadHistoryList()
     ElMessage.success(`已将报价单移动到 ${targetYear} 年`)
     return true

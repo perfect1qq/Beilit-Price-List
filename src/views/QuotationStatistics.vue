@@ -193,7 +193,7 @@ async function doParse() {
   parts.value = result.parts || []
   errors.value = result.errors || []
   warnings.value = result.warnings || []
-  // 使用后端返回的动态备注（包含膨胀螺丝等计算公式）
+
   if (result.remarks && result.remarks.length > 0) {
     remarks.value = result.remarks
   } else {
@@ -202,9 +202,8 @@ async function doParse() {
   loading.value = false
 }
 
-/**
- * 触发后端解析文本接口（手动按钮）
- */
+
+
 async function parseNow() {
   if (!rawText.value.trim()) {
     return showWarning('请先提供完整的货架报价文本用于解析。')
@@ -217,7 +216,7 @@ async function parseNow() {
   }
 }
 
-/** 清空当前分析状态 */
+
 function clearText() {
   rawText.value = ''
   shelfType.value = 'standard'
