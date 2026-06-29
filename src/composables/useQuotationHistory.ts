@@ -104,6 +104,7 @@ interface QuotationHistoryReturn {
   editHistory: (record: HistoryRecord) => void
   addCustomYear: (year: number) => void
   removeCustomYear: (year: number) => void
+  customYears: Ref<number[]>
   moveToYear: (record: HistoryRecord, targetYear: number) => Promise<boolean>
 }
 

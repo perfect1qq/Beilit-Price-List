@@ -58,6 +58,7 @@ const suggestName = (name: string, companyName?: string, excludeId?: number | st
 
 interface ExtraCounts {
   shelfType?: string
+  calcMode?: string
   crossBraceCount?: number
   gateBeamClampCount?: number
   connectorCount?: number

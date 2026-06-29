@@ -66,8 +66,8 @@
       <el-input v-model="rawText" type="textarea" :rows="8" :placeholder="shelfType === 'standard'
         ? '支持重型货架「L*W*H + N主架 M副架」格式，以及中型/层板/重型货架「L*W*H*N层板（载重）套 N」格式。粘贴后点击生成汇总即可自动计算...'
         : shelfType === 'accessory'
-        ? '请粘贴配件信息，如：\n立柱片 H5700*W1000mm=59片\n横梁1 L2990mm=258根\n连接杆 L400mm=18根\n防撞护栏 L1000*H300mm=20根\n防撞护脚 H300mm=59根\n系统将自动识别并计算螺丝...'
-        : '请粘贴货架平台的配件信息，如：\n合抱立柱1 H4575mm = 10根\n合抱立柱2 H1200mm = 1根\n系统将自动识别并计算膨胀螺丝...'" />
+          ? '请粘贴配件信息，如：\n立柱片 H5700*W1000mm=59片\n横梁1 L2990mm=258根\n连接杆 L400mm=18根\n防撞护栏 L1000*H300mm=20根\n防撞护脚 H300mm=59根\n系统将自动识别并计算螺丝...'
+          : '请粘贴货架平台的配件信息，如：\n合抱立柱1 H4575mm = 10根\n合抱立柱2 H1200mm = 1根\n系统将自动识别并计算膨胀螺丝...'" />
 
       <div class="toolbar">
         <el-button type="primary" @click="parseNow" :loading="loading" size="large">
@@ -171,9 +171,11 @@ async function doParse() {
   loading.value = true
 
   // 配件计算模式：只传横斜撑总数，其余数据从文本解析
+  // shelfType 只表示货架类型（standard/platform），calcMode 表示计算模式（standard/accessory）
   const isAccessory = shelfType.value === 'accessory'
   const [err, result] = await to(quotationStatisticsApi.parse(rawText.value, {
-    shelfType: shelfType.value,
+    shelfType: isAccessory ? 'standard' : shelfType.value,
+    calcMode: isAccessory ? 'accessory' : 'standard',
     crossBraceCount: crossBraceCount.value,
     gateBeamClampCount: isAccessory ? undefined : gateBeamClampCount.value,
     connectorCount: isAccessory ? undefined : connectorCount.value,
