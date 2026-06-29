@@ -76,7 +76,7 @@ const useQuotationEditor = (deps: Partial<QuotationEditorDeps>): Partial<Quotati
         setFinalPriceManual(value)
       }
     } catch (_error) {
-
+      void _error
     }
   }
 
@@ -91,7 +91,7 @@ const useQuotationEditor = (deps: Partial<QuotationEditorDeps>): Partial<Quotati
         restoreAutoFinalPrice()
       }
     } catch (_error) {
-
+      void _error
     }
   }
 

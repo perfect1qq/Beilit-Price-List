@@ -124,7 +124,7 @@ const clearStaleTabs = (userKey: string): void => {
   try {
     window.localStorage.removeItem(getStorageKey(userKey))
   } catch {
-
+    void 0
   }
 }
 
@@ -151,7 +151,7 @@ const persistViews = (): void => {
   try {
     window.localStorage.setItem(getStorageKey(state.userKey), JSON.stringify(state.visitedViews))
   } catch {
-
+    void 0
   }
 }
 
@@ -191,7 +191,7 @@ export function resetBreadcrumbTabs(): void {
     try {
       window.localStorage.removeItem(getStorageKey())
     } catch {
-
+      void 0
     }
   }
 }
@@ -301,7 +301,7 @@ export function useBreadcrumbTabs(): BreadcrumbTabsReturn {
       try {
         window.localStorage.removeItem(getStorageKey(state.userKey))
       } catch {
-
+        void 0
       }
     }
   }

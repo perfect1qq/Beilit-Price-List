@@ -1,7 +1,13 @@
 <template>
   <div class="navbar-shell">
     <div class="navbar-top">
-      <el-button class="mobile-nav-trigger" :icon="Menu" circle size="small" @click="emit('toggle-mobile-sidebar')" />
+      <el-button
+        class="mobile-nav-trigger"
+        :icon="Menu"
+        circle
+        size="small"
+        @click="emit('toggle-mobile-sidebar')"
+      />
       <div class="brand-area">
         <div class="brand-mark">BT</div>
         <div class="brand-copy">
@@ -11,10 +17,19 @@
 
       <div class="right-menu">
         <template v-if="device !== 'mobile'">
-          <el-dropdown class="right-menu-item hover-effect" trigger="click" @command="handleNoticeClick">
+          <el-dropdown
+            class="right-menu-item hover-effect"
+            trigger="click"
+            @command="handleNoticeClick"
+          >
             <div class="notice-box" :class="{ 'has-unread': unreadApprovalCount > 0 }">
               <div v-if="unreadApprovalCount > 0" class="notice-glow"></div>
-              <el-badge :value="unreadApprovalCount" :max="99" :hidden="unreadApprovalCount === 0" class="custom-badge">
+              <el-badge
+                :value="unreadApprovalCount"
+                :max="99"
+                :hidden="unreadApprovalCount === 0"
+                class="custom-badge"
+              >
                 <el-icon class="notice-icon" :class="{ 'is-ringing': isBellRinging }">
                   <Bell />
                 </el-icon>
@@ -28,17 +43,28 @@
                     <span class="title">系统消息</span>
                     <span class="subtitle">最近 10 条通知</span>
                   </div>
-                  <el-button v-if="noticeList.length" link type="primary" size="small"
-                    @click="markAllAsRead">全部已读</el-button>
+                  <el-button
+                    v-if="noticeList.length"
+                    link
+                    type="primary"
+                    size="small"
+                    @click="markAllAsRead"
+                    >全部已读</el-button
+                  >
                 </div>
                 <el-scrollbar max-height="320px">
                   <div v-if="!noticeList.length" class="notice-empty">
                     <el-empty :image-size="40" description="暂无新消息" />
                   </div>
                   <transition-group name="staggered-list" tag="div">
-                    <div v-for="(item, index) in noticeList" :key="item.id" class="notice-item"
-                      :class="{ 'is-read': item.read }" :style="{ '--delay': index * 0.05 + 's' }"
-                      @click="handleNoticeClick(item)">
+                    <div
+                      v-for="(item, index) in noticeList"
+                      :key="item.id"
+                      class="notice-item"
+                      :class="{ 'is-read': item.read }"
+                      :style="{ '--delay': index * 0.05 + 's' }"
+                      @click="handleNoticeClick(item)"
+                    >
                       <div class="notice-item-icon" :class="item.type">
                         <el-icon>
                           <InfoFilled v-if="item.type === 'quotation_submitted'" />
@@ -48,15 +74,28 @@
                       </div>
                       <div class="notice-content">
                         <div class="notice-text">{{ item.content }}</div>
-                        <div class="notice-time">{{ new Date(item.createdAt as string | number | Date).toLocaleString()
-                        }}</div>
+                        <div class="notice-time">
+                          {{ new Date(item.createdAt as string | number | Date).toLocaleString()
+                          }}
+                        </div>
                       </div>
                       <div class="notice-meta">
-                        <el-tag v-if="!item.read" size="small" type="danger" effect="plain" round>未读</el-tag>
+                        <el-tag
+                          v-if="!item.read"
+                          size="small"
+                          type="danger"
+                          effect="plain"
+                          round
+                          >未读</el-tag
+                        >
                         <el-icon class="notice-arrow">
                           <ArrowRight />
                         </el-icon>
-                        <el-icon class="notice-delete-btn" title="删除通知" @click.stop="deleteNotification(item, $event)">
+                        <el-icon
+                          class="notice-delete-btn"
+                          title="删除通知"
+                          @click.stop="deleteNotification(item, $event)"
+                        >
                           <Delete v-if="!deletingIds.has(item.id)" />
                           <el-icon v-else class="is-loading">
                             <Loading />
@@ -74,9 +113,17 @@
           </el-dropdown>
         </template>
 
-        <el-dropdown class="avatar-container right-menu-item hover-effect" trigger="click">
+        <el-dropdown
+          class="avatar-container right-menu-item hover-effect"
+          trigger="click"
+        >
           <div class="avatar-wrapper">
-            <el-avatar :size="32" class="user-avatar clickable-avatar" :src="avatarUrl" @click.stop="showAvatarDialog">
+            <el-avatar
+              :size="32"
+              class="user-avatar clickable-avatar"
+              :src="avatarUrl"
+              @click.stop="showAvatarDialog"
+            >
               {{ userInitial }}
             </el-avatar>
             <div class="user-info">
@@ -90,10 +137,10 @@
             <el-dropdown-menu>
               <el-dropdown-item @click="goHome">首页</el-dropdown-item>
               <el-dropdown-item @click="changePassDialog.visible = true">
-                <span style="display:block;">修改密码</span>
+                <span style="display: block">修改密码</span>
               </el-dropdown-item>
               <el-dropdown-item divided @click="logout">
-                <span style="display:block;">退出登录</span>
+                <span style="display: block">退出登录</span>
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -105,56 +152,100 @@
       <TagsView />
     </div>
 
-    <AsyncDialog ref="changePassDialogRef" v-model="changePassDialog.visible" title="修改个人密码" :width="420"
-      :append-to-body="true">
+    <AsyncDialog
+      ref="changePassDialogRef"
+      v-model="changePassDialog.visible"
+      title="修改个人密码"
+      :width="420"
+      :append-to-body="true"
+    >
       <el-form :model="changePassDialog.form" label-position="top">
         <el-form-item label="当前密码" required>
-          <el-input v-model="changePassDialog.form.oldPassword" type="password" show-password placeholder="请输入当前密码" />
+          <el-input
+            v-model="changePassDialog.form.oldPassword"
+            type="password"
+            show-password
+            placeholder="请输入当前密码"
+          />
         </el-form-item>
         <el-form-item label="设置新密码" required>
-          <el-input v-model="changePassDialog.form.newPassword" type="password" show-password
-            placeholder="新密码建议包含字母和数字组合" />
+          <el-input
+            v-model="changePassDialog.form.newPassword"
+            type="password"
+            show-password
+            placeholder="新密码建议包含字母和数字组合"
+          />
         </el-form-item>
         <el-form-item label="确认新密码" required>
-          <el-input v-model="changePassDialog.form.confirmPassword" type="password" show-password
-            placeholder="请再次输入新密码" />
+          <el-input
+            v-model="changePassDialog.form.confirmPassword"
+            type="password"
+            show-password
+            placeholder="请再次输入新密码"
+          />
         </el-form-item>
       </el-form>
       <template #footer="{ loading }">
         <el-button
-          @click="changePassDialog.form = { oldPassword: '', newPassword: '', confirmPassword: '' }; changePassDialog.visible = false">取消</el-button>
-        <el-button type="primary" :loading="loading" @click="confirmChangePass">提交</el-button>
+          @click="
+            changePassDialog.form = {
+              oldPassword: '',
+              newPassword: '',
+              confirmPassword: '',
+            };
+            changePassDialog.visible = false;
+          "
+          >取消</el-button
+        >
+        <el-button type="primary" :loading="loading" @click="confirmChangePass"
+          >提交</el-button
+        >
       </template>
     </AsyncDialog>
 
-    <AvatarCropDialog v-model="avatarDialogVisible" :avatar-url="avatarUrl" :user-initial="userInitial"
-      @uploaded="onAvatarUploaded" />
+    <AvatarCropDialog
+      v-model="avatarDialogVisible"
+      :avatar-url="avatarUrl"
+      :user-initial="userInitial"
+      @uploaded="onAvatarUploaded"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import request from '@/utils/request'
-import { useUserStore } from '@/stores/user'
-import TagsView from './TagsView.vue'
-import { logoutByUser } from '@/utils/authSession'
-import { Bell, InfoFilled, CircleCheckFilled, CaretBottom, ArrowRight, Menu, Delete, Loading } from '@element-plus/icons-vue'
-import { useNavbarPasswordDialog } from '@/composables/useNavbarPasswordDialog'
-import { useNavbarNotifications } from '@/composables/useNavbarNotifications'
-import AsyncDialog from '@/components/common/AsyncDialog.vue'
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import request from "@/utils/request";
+import { useUserStore } from "@/stores/user";
+import TagsView from "./TagsView.vue";
+import { logoutByUser } from "@/utils/authSession";
+import {
+  Bell,
+  InfoFilled,
+  CircleCheckFilled,
+  CaretBottom,
+  ArrowRight,
+  Menu,
+  Delete,
+  Loading,
+} from "@element-plus/icons-vue";
+import { useNavbarPasswordDialog } from "@/composables/useNavbarPasswordDialog";
+import { useNavbarNotifications } from "@/composables/useNavbarNotifications";
+import AsyncDialog from "@/components/common/AsyncDialog.vue";
 
-const AvatarCropDialog = defineAsyncComponent(() => import('@/components/common/AvatarCropDialog.vue'))
+const AvatarCropDialog = defineAsyncComponent(
+  () => import("@/components/common/AvatarCropDialog.vue")
+);
 
-const router = useRouter()
-const userStore = useUserStore()
-const emit = defineEmits(['toggle-mobile-sidebar'])
-const changePassDialogRef = ref(null)
-const userName = computed(() => userStore.displayName || '管理员')
-const userInitial = computed(() => userName.value.charAt(0).toUpperCase() || 'A')
-const isAdmin = computed(() => userStore.isAdmin)
-const device = ref('desktop')
-const homeRoute = '/home'
+const router = useRouter();
+const userStore = useUserStore();
+const emit = defineEmits(["toggle-mobile-sidebar"]);
+const changePassDialogRef = ref(null);
+const userName = computed(() => userStore.displayName || "管理员");
+const userInitial = computed(() => userName.value.charAt(0).toUpperCase() || "A");
+const isAdmin = computed(() => userStore.isAdmin);
+const device = ref("desktop");
+const homeRoute = "/home";
 const {
   unreadApprovalCount,
   noticeList,
@@ -164,70 +255,70 @@ const {
   handleNoticeClick,
   markAllAsRead,
   deleteNotification,
-  goNoticePage
-} = useNavbarNotifications({ request, router, isAdmin })
+  goNoticePage,
+} = useNavbarNotifications({ request, router, isAdmin });
 
 const { changePassDialog, confirmChangePass } = useNavbarPasswordDialog({
   onSuccess: () => logout(),
-  dialogRef: changePassDialogRef
-})
+  dialogRef: changePassDialogRef,
+});
 
-const avatarRefreshKey = ref(0)
+const avatarRefreshKey = ref(0);
 
 const getServerBase = (): string => {
-  const baseURL = String(request.defaults.baseURL || '').replace(/\/+$/, '')
-  if (baseURL) return baseURL
-  return ''
-}
+  const baseURL = String(request.defaults.baseURL || "").replace(/\/+$/, "");
+  if (baseURL) return baseURL;
+  return "";
+};
 
 const avatarUrl = computed(() => {
-  const avatar = userStore.user?.avatar
-  if (!avatar) return ''
-  if (avatar.startsWith('data:')) return avatar
-  if (avatar.startsWith('http')) {
-    return `${avatar}${avatar.includes('?') ? '&' : '?'}t=${avatarRefreshKey.value}`
+  const avatar = userStore.user?.avatar;
+  if (!avatar) return "";
+  if (avatar.startsWith("data:")) return avatar;
+  if (avatar.startsWith("http")) {
+    return `${avatar}${avatar.includes("?") ? "&" : "?"}t=${avatarRefreshKey.value}`;
   }
-  const path = avatar.startsWith('/') ? avatar : `/${avatar}`
-  const base = getServerBase()
-  return `${base}${path}?t=${avatarRefreshKey.value}`
-})
+  const path = avatar.startsWith("/") ? avatar : `/${avatar}`;
+  const base = getServerBase();
+  return `${base}${path}?t=${avatarRefreshKey.value}`;
+});
 
-const avatarDialogVisible = ref(false)
+const avatarDialogVisible = ref(false);
 
 const showAvatarDialog = () => {
-  avatarDialogVisible.value = true
-}
+  avatarDialogVisible.value = true;
+};
 
 const onAvatarUploaded = async () => {
-  avatarRefreshKey.value = Date.now()
-  avatarDialogVisible.value = false
+  avatarRefreshKey.value = Date.now();
+  avatarDialogVisible.value = false;
   try {
-    await userStore.refreshProfile()
-    avatarRefreshKey.value = Date.now()
+    await userStore.refreshProfile();
+    avatarRefreshKey.value = Date.now();
   } catch {
-
+    avatarRefreshKey.value = Date.now();
   }
-}
+};
 
-const goHome = () => router.push(homeRoute)
+const goHome = () => router.push(homeRoute);
 const logout = async () => {
-  await logoutByUser()
-}
+  await logoutByUser();
+};
 
-const NOTIFICATION_POLL_INTERVAL = 30000
+const NOTIFICATION_POLL_INTERVAL = 30000;
 
-let notificationTimer: ReturnType<typeof setInterval> | null = null
+let notificationTimer: ReturnType<typeof setInterval> | null = null;
 
 onMounted(() => {
-  if (userStore.isLoggedIn) fetchUnreadCount()
+  if (userStore.isLoggedIn) fetchUnreadCount();
   notificationTimer = setInterval(() => {
-    if (userStore.isLoggedIn) fetchUnreadCount()
-  }, NOTIFICATION_POLL_INTERVAL)
-})
+    if (userStore.isLoggedIn) fetchUnreadCount();
+  }, NOTIFICATION_POLL_INTERVAL);
+});
 
 onUnmounted(() => {
-  if (notificationTimer) clearInterval(notificationTimer)
-})
+  if (notificationTimer) clearInterval(notificationTimer);
+});
 </script>
 
 <style scoped>
@@ -393,7 +484,6 @@ onUnmounted(() => {
 }
 
 @keyframes strobe {
-
   0%,
   100% {
     opacity: 1;
@@ -409,7 +499,6 @@ onUnmounted(() => {
 }
 
 @keyframes bell-ring {
-
   0%,
   100% {
     transform: rotate(0);
@@ -433,7 +522,11 @@ onUnmounted(() => {
 
 .notice-dropdown {
   width: 360px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.98),
+    rgba(248, 250, 252, 0.96)
+  );
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-radius: 12px;
@@ -445,7 +538,11 @@ onUnmounted(() => {
 .notice-head {
   padding: 14px 16px 12px;
   border-bottom: 1px solid rgba(226, 232, 240, 0.9);
-  background: linear-gradient(135deg, rgba(239, 246, 255, 0.95), rgba(248, 250, 252, 0.95));
+  background: linear-gradient(
+    135deg,
+    rgba(239, 246, 255, 0.95),
+    rgba(248, 250, 252, 0.95)
+  );
   display: flex;
   justify-content: space-between;
   align-items: center;
