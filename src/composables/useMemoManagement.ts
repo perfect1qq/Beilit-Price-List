@@ -27,9 +27,9 @@ export function useMemoManagement() {
     return {
       mode: isHistory ? 'history' as const : 'today' as const,
       totalLabel: isHistory ? '往期任务' : '全部任务',
-      totalTip: isHistory ? '历史创建的任务总数' : '当前视图的任务总数',
+      totalTip: isHistory ? '历史创建的任务总数' : '待办任务 + 今日动态',
       todoTip: isHistory ? '往期未完成任务' : '待处理事项',
-      doneTip: isHistory ? '往期已完成' : '已完成的任务',
+      doneTip: isHistory ? '往期已完成' : '今日完成的任务',
       pinnedTip: isHistory ? '历史置顶' : '重要置顶'
     }
   })
@@ -53,7 +53,7 @@ export function useMemoManagement() {
   const todoList = computed(() => list.value.filter((i: MemoData) => !i.completed))
   const doneList = computed(() => list.value.filter((i: MemoData) => i.completed))
   const emptyDescription = computed(() =>
-    activeListScope.value === 'history' ? '这一天没有任何记录' : '今日还没有任务，给自己定个目标吧'
+    activeListScope.value === 'history' ? '这一天没有任何记录' : '暂无待办任务，给自己定个目标吧'
   )
 
   const loadList = async (targetPage = page.value, append = false) => {

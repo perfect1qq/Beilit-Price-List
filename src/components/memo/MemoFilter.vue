@@ -54,7 +54,7 @@ const emit = defineEmits(['update:keyword', 'update:historyCreatedOn', 'update:a
 ])
 
 const listScopeOptions = [
-  { label: '今日任务', value: 'today' },
+  { label: '任务中心', value: 'today' },
   { label: '往期回顾', value: 'history' }
 ]
 
@@ -65,7 +65,7 @@ const filterOptions = [
   { label: '置顶', value: 'pinned' }
 ]
 
-const pageTitle = computed(() => (props.activeListScope === 'today' ? '今日任务' : '往期任务'))
+const pageTitle = computed(() => (props.activeListScope === 'today' ? '待办任务' : '往期任务'))
 
 const scopeModel = computed({
   get: () => props.activeListScope,
