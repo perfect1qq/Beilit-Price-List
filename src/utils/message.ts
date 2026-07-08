@@ -46,4 +46,4 @@ const showInfo = (msg: string): void => {
   }
 }
 
-export { showError, showSuccess, showWarning, showInfo, extractMessage }
+export { showError, showSuccess, showWarning, showInfo }

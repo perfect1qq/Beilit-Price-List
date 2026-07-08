@@ -98,7 +98,6 @@ const iconMap: Record<string, Component> = {
   '/medium-shelf-weight': Histogram,
   '/user-management': User,
   '/usd-conversion': Money,
-  '/message': ChatLineSquare,
   '/memo-management': ChatLineSquare,
   '/notepad': Notebook,
   '/customer-management': User,

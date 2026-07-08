@@ -2,11 +2,11 @@
   <header class="memo-header">
     <div class="header-top">
       <div class="header-left">
-        <h1 class="memo-title">{{ pageTitle }}</h1>
-        <div class="memo-badge">{{ activeListScope === 'today' ? 'LIVE' : 'ARCHIVE' }}</div>
+        <h1 class="memo-title">待办任务</h1>
+        <div class="memo-badge">LIVE</div>
       </div>
 
-      <div v-if="activeListScope === 'today' && !isGuest" class="header-actions">
+      <div v-if="!isGuest" class="header-actions">
         <el-button type="primary" :icon="Plus" class="main-add-btn" @click="$emit('create')">
           新建任务
         </el-button>
@@ -14,19 +14,9 @@
     </div>
 
     <div class="header-bottom">
-      <div class="bottom-group">
-        <el-segmented v-model="scopeModel" :options="listScopeOptions" class="custom-segmented"
-          @change="$emit('scope-change')" />
-      </div>
-
-      <div class="bottom-group">
+      <div class="bottom-group search-group">
         <el-input v-model="keywordModel" placeholder="搜索标题或内容..." :prefix-icon="Search" clearable class="custom-search"
           @input="$emit('keyword-input')" />
-
-        <div class="date-picker-box" :class="{ 'is-expanded': activeListScope === 'history' }">
-          <el-date-picker v-model="historyCreatedOnModel" type="date" value-format="YYYY-MM-DD" placeholder="选择创建日期"
-            clearable class="custom-date-picker" @change="$emit('date-change')" />
-        </div>
       </div>
 
       <div class="bottom-group">
@@ -42,21 +32,14 @@ import { computed } from 'vue'
 import { Plus, Search } from '@element-plus/icons-vue'
 
 const props = defineProps({
-  activeListScope: { type: String, default: 'today' },
   keyword: { type: String, default: '' },
-  historyCreatedOn: { type: String, default: null },
   activeFilter: { type: String, default: 'all' },
   isGuest: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['update:keyword', 'update:historyCreatedOn', 'update:activeFilter', 'update:activeListScope',
-  'scope-change', 'keyword-input', 'date-change', 'filter-change', 'create'
+const emit = defineEmits(['update:keyword', 'update:activeFilter',
+  'keyword-input', 'filter-change', 'create'
 ])
-
-const listScopeOptions = [
-  { label: '任务中心', value: 'today' },
-  { label: '往期回顾', value: 'history' }
-]
 
 const filterOptions = [
   { label: '全部', value: 'all' },
@@ -65,21 +48,9 @@ const filterOptions = [
   { label: '置顶', value: 'pinned' }
 ]
 
-const pageTitle = computed(() => (props.activeListScope === 'today' ? '待办任务' : '往期任务'))
-
-const scopeModel = computed({
-  get: () => props.activeListScope,
-  set: (v) => emit('update:activeListScope', v)
-})
-
 const keywordModel = computed({
   get: () => props.keyword,
   set: (v) => emit('update:keyword', v)
-})
-
-const historyCreatedOnModel = computed({
-  get: () => props.historyCreatedOn,
-  set: (v) => emit('update:historyCreatedOn', v)
 })
 
 const filterModel = computed({
@@ -138,20 +109,12 @@ const filterModel = computed({
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.bottom-group:first-child,
-.bottom-group:last-child {
   flex-shrink: 0;
 }
 
-.bottom-group:nth-child(2) {
+.search-group {
   flex: 1;
   min-width: 200px;
-}
-
-.bottom-group .custom-segmented {
-  width: auto;
 }
 
 .custom-search {
@@ -164,15 +127,6 @@ const filterModel = computed({
   box-shadow: none !important;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-}
-
-.date-picker-box {
-  display: none;
-}
-
-.date-picker-box.is-expanded {
-  display: block;
-  flex-shrink: 0;
 }
 
 .custom-segmented {

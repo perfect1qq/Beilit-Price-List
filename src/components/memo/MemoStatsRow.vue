@@ -1,38 +1,38 @@
 <template>
   <el-row :gutter="16" class="memo-stats">
     <el-col :xs="24" :sm="12" :lg="6">
-      <el-card shadow="never" class="stat-card" :class="{ 'is-history': scopeStatCopy.mode === 'history' }">
-        <div class="stat-inner" :class="{ 'is-history': scopeStatCopy.mode === 'history' }">
-          <div class="stat-label">{{ scopeStatCopy.totalLabel }}</div>
+      <el-card shadow="never" class="stat-card">
+        <div class="stat-inner">
+          <div class="stat-label">全部任务</div>
           <div class="stat-value">{{ stats.total }}</div>
-          <div class="stat-tip">{{ scopeStatCopy.totalTip }}</div>
+          <div class="stat-tip">待办任务 + 今日动态</div>
         </div>
       </el-card>
     </el-col>
     <el-col :xs="24" :sm="12" :lg="6">
-      <el-card shadow="never" class="stat-card" :class="{ 'is-history': scopeStatCopy.mode === 'history' }">
-        <div class="stat-inner" :class="{ 'is-history': scopeStatCopy.mode === 'history' }">
+      <el-card shadow="never" class="stat-card">
+        <div class="stat-inner">
           <div class="stat-label">未完成</div>
           <div class="stat-value">{{ stats.todoTotal }}</div>
-          <div class="stat-tip">{{ scopeStatCopy.todoTip }}</div>
+          <div class="stat-tip">待处理事项</div>
         </div>
       </el-card>
     </el-col>
     <el-col :xs="24" :sm="12" :lg="6">
-      <el-card shadow="never" class="stat-card" :class="{ 'is-history': scopeStatCopy.mode === 'history' }">
-        <div class="stat-inner" :class="{ 'is-history': scopeStatCopy.mode === 'history' }">
+      <el-card shadow="never" class="stat-card">
+        <div class="stat-inner">
           <div class="stat-label">已完成</div>
           <div class="stat-value">{{ stats.doneTotal }}</div>
-          <div class="stat-tip">{{ scopeStatCopy.doneTip }}</div>
+          <div class="stat-tip">今日完成的任务</div>
         </div>
       </el-card>
     </el-col>
     <el-col :xs="24" :sm="12" :lg="6">
-      <el-card shadow="never" class="stat-card" :class="{ 'is-history': scopeStatCopy.mode === 'history' }">
-        <div class="stat-inner" :class="{ 'is-history': scopeStatCopy.mode === 'history' }">
+      <el-card shadow="never" class="stat-card">
+        <div class="stat-inner">
           <div class="stat-label">置顶</div>
           <div class="stat-value">{{ stats.pinnedTotal }}</div>
-          <div class="stat-tip">{{ scopeStatCopy.pinnedTip }}</div>
+          <div class="stat-tip">重要置顶</div>
         </div>
       </el-card>
     </el-col>
@@ -41,10 +41,9 @@
 
 <script setup lang="ts">
 import type { PropType } from 'vue'
-import type { MemoStatsData, MemoScopeStatData } from '@/types'
+import type { MemoStatsData } from '@/types'
 defineProps({
-  stats: { type: Object as PropType<MemoStatsData>, required: true },
-  scopeStatCopy: { type: Object as PropType<MemoScopeStatData>, required: true }
+  stats: { type: Object as PropType<MemoStatsData>, required: true }
 })
 </script>
 
@@ -63,25 +62,12 @@ defineProps({
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
-.stat-card.is-history {
-  border-color: #dbeafe;
-  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
-}
-
-.stat-card.is-history:hover {
-  border-color: #bfdbfe;
-}
-
 .stat-inner {
   height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 8px;
-}
-
-.stat-inner.is-history .stat-label {
-  color: #475569;
 }
 
 .stat-label {
@@ -99,10 +85,6 @@ defineProps({
   line-height: 1;
 }
 
-.stat-inner.is-history .stat-value {
-  color: #1d4ed8;
-}
-
 .stat-tip {
   margin-top: 0;
   min-height: 2.2em;
@@ -113,10 +95,5 @@ defineProps({
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-}
-
-.stat-inner.is-history .stat-tip {
-  min-height: 2em;
-  color: #64748b;
 }
 </style>

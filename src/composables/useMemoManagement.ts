@@ -8,7 +8,57 @@ import { showError, showSuccess, showWarning } from '@/utils/message'
 import { useCancelableLoader } from '@/composables/useCancelableLoader'
 import { useListQueryState } from '@/composables/useListQueryState'
 import { usePermissions } from '@/composables/usePermissions'
-import type { MemoData, MemoCreatePayload, MemoHistoryItem, MemoListResult, MemoHistoryListResult, MemoScopeStatData } from '@/types'
+import type { MemoData, MemoCreatePayload, MemoHistoryItem, MemoListResult } from '@/types'
+
+interface DateGroup {
+  key: string
+  date: string
+  title: string
+  count: number
+  items: MemoData[]
+}
+
+const toLocalDateStr = (date: Date): string => {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+const formatDateLabel = (dateStr: string): string => {
+  const date = new Date(`${dateStr}T00:00:00`)
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  return `${dateStr} ${weekdays[date.getDay()]}`
+}
+
+const groupByDate = (items: MemoData[]): DateGroup[] => {
+  const groups = new Map<string, MemoData[]>()
+
+  for (const item of items) {
+    const dateStr = item.createdAt ? toLocalDateStr(new Date(item.createdAt)) : '未知日期'
+    if (!groups.has(dateStr)) {
+      groups.set(dateStr, [])
+    }
+    groups.get(dateStr)!.push(item)
+  }
+
+  const result: DateGroup[] = []
+  for (const [dateStr, groupItems] of groups) {
+    result.push({
+      key: dateStr,
+      date: dateStr,
+      title: formatDateLabel(dateStr),
+      count: groupItems.length,
+      items: groupItems.sort((a, b) => {
+        if (a.pinned !== b.pinned) return b.pinned ? 1 : -1
+        return (b.updatedAt || '').localeCompare(a.updatedAt || '')
+      })
+    })
+  }
+
+  result.sort((a, b) => b.date.localeCompare(a.date))
+  return result
+}
 
 export function useMemoManagement() {
   const { isGuest } = usePermissions()
@@ -17,22 +67,8 @@ export function useMemoManagement() {
   const { loading, run: runListLoad, isLatest } = useCancelableLoader()
   const saving = ref(false)
   const { keyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 50, keyword: '' })
-  const activeListScope = ref('today')
-  const historyCreatedOn = ref<string | undefined>(undefined)
   const activeFilter = ref('all')
   const stats = reactive({ total: 0, todoTotal: 0, doneTotal: 0, pinnedTotal: 0 })
-
-  const scopeStatCopy = computed((): MemoScopeStatData => {
-    const isHistory = activeListScope.value === 'history'
-    return {
-      mode: isHistory ? 'history' as const : 'today' as const,
-      totalLabel: isHistory ? '往期任务' : '全部任务',
-      totalTip: isHistory ? '历史创建的任务总数' : '待办任务 + 今日动态',
-      todoTip: isHistory ? '往期未完成任务' : '待处理事项',
-      doneTip: isHistory ? '往期已完成' : '今日完成的任务',
-      pinnedTip: isHistory ? '历史置顶' : '重要置顶'
-    }
-  })
 
   const route = useRoute()
   const highlightId = ref<number | undefined>(undefined)
@@ -52,9 +88,11 @@ export function useMemoManagement() {
   const isBoardMode = computed(() => activeFilter.value === 'all')
   const todoList = computed(() => list.value.filter((i: MemoData) => !i.completed))
   const doneList = computed(() => list.value.filter((i: MemoData) => i.completed))
-  const emptyDescription = computed(() =>
-    activeListScope.value === 'history' ? '这一天没有任何记录' : '暂无待办任务，给自己定个目标吧'
-  )
+  const groupedTodoList = computed(() => groupByDate(todoList.value))
+  const groupedDoneList = computed(() => groupByDate(doneList.value))
+  const activeDatePanels = ref<string[]>([])
+  const activeDoneDatePanels = ref<string[]>([])
+  const emptyDescription = computed(() => '暂无待办任务，给自己定个目标吧')
 
   const loadList = async (targetPage = page.value, append = false) => {
     await runListLoad(async ({ signal, seq }) => {
@@ -66,14 +104,7 @@ export function useMemoManagement() {
         tz: Intl.DateTimeFormat().resolvedOptions().timeZone
       }
 
-      if (activeListScope.value === 'history' && historyCreatedOn.value) {
-        params.createdOn = historyCreatedOn.value
-      }
-
-      const res: MemoListResult | MemoHistoryListResult =
-        activeListScope.value === 'history'
-          ? await memoApi.listHistory(params, { signal })
-          : await memoApi.list(params)
+      const res: MemoListResult = await memoApi.list(params)
 
       if (!isLatest(seq)) return
 
@@ -83,9 +114,9 @@ export function useMemoManagement() {
 
       Object.assign(stats, {
         total: res.total || 0,
-        todoTotal: (res as MemoListResult).todoTotal || 0,
-        doneTotal: (res as MemoListResult).doneTotal || 0,
-        pinnedTotal: (res as MemoListResult).pinnedTotal || 0
+        todoTotal: res.todoTotal || 0,
+        doneTotal: res.doneTotal || 0,
+        pinnedTotal: res.pinnedTotal || 0
       })
     })
   }
@@ -250,19 +281,6 @@ export function useMemoManagement() {
     loadList(1)
   }
 
-  const handleListScopeChange = () => {
-    historyCreatedOn.value = undefined
-    resetToFirstPage()
-    page.value = 1
-    loadList(1)
-  }
-
-  const onHistoryDateChange = () => {
-    resetToFirstPage()
-    page.value = 1
-    loadList(1)
-  }
-
   const init = async () => {
     highlightId.value = route.query.highlight ? Number(typeof route.query.highlight === 'string' ? route.query.highlight : route.query.highlight[0]) : undefined
     await loadList(1)
@@ -294,11 +312,8 @@ export function useMemoManagement() {
     keyword,
     page,
     pageSize,
-    activeListScope,
-    historyCreatedOn,
     activeFilter,
     stats,
-    scopeStatCopy,
     highlightId,
     editorVisible,
     editorMode,
@@ -312,6 +327,10 @@ export function useMemoManagement() {
     isBoardMode,
     todoList,
     doneList,
+    groupedTodoList,
+    groupedDoneList,
+    activeDatePanels,
+    activeDoneDatePanels,
     emptyDescription,
     loadList,
     loadNextPage,
@@ -325,8 +344,6 @@ export function useMemoManagement() {
     openHistory,
     onKeywordInput,
     handleFilterChange,
-    handleListScopeChange,
-    onHistoryDateChange,
     init,
     cleanup,
   }

@@ -12,14 +12,8 @@ export const QUOTATION_STATUS = {
   DELETED: 'deleted',
 } as const
 
-export const MESSAGE_STATUS = {
-  PENDING: 'pending',
-  ASSIGNED: 'assigned',
-} as const
-
 export type UserRole = typeof ROLES[keyof typeof ROLES]
 export type QuotationStatus = typeof QUOTATION_STATUS[keyof typeof QUOTATION_STATUS]
-export type MessageStatus = typeof MESSAGE_STATUS[keyof typeof MESSAGE_STATUS]
 
 export interface UserInfo {
   id: number
@@ -268,11 +262,6 @@ export interface MemoListResult extends PaginatedResult<MemoData> {
   todoTotal: number
   doneTotal: number
   pinnedTotal: number
-  scope: string
-  calendarDate: string | null
-  timeZone: string | null
-  calendarMode: string
-  createdOnFilter: string | null
 }
 
 export interface MemoHistoryItem {
@@ -287,40 +276,6 @@ export interface MemoHistoryItem {
 }
 
 export type MemoHistoryListResult = PaginatedResult<MemoHistoryItem>
-
-export interface MessageCreatePayload {
-  contactInfo: string
-  content: string
-}
-
-export interface MessageAssignPayload {
-  assignedTo: number
-}
-
-export interface MessageRemarkPayload {
-  remark: string
-}
-
-export interface MessageAssignee {
-  id: number
-  username: string
-  name: string | null
-}
-
-export interface MessageData {
-  id: number
-  contactInfo: string
-  content: string
-  status: MessageStatus
-  assignedTo: number | null
-  remark: string
-  hiddenByAssignee: boolean
-  assignee: MessageAssignee | null
-  createdAt: string
-  updatedAt: string
-}
-
-export type MessageListResult = PaginatedResult<MessageData>
 
 export interface NotificationData {
   id: number
@@ -414,15 +369,6 @@ export interface MemoStatsData {
   todoTotal: number
   doneTotal: number
   pinnedTotal: number
-}
-
-export interface MemoScopeStatData {
-  mode: 'history' | 'today'
-  totalLabel: string
-  totalTip: string
-  todoTip: string
-  doneTip: string
-  pinnedTip: string
 }
 
 export type AsyncResult<T = unknown> = [Error | null, T | null]

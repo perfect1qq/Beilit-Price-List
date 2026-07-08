@@ -12,10 +12,6 @@ export const readCurrentUser = (): UserInfo | GuestUser => {
 type TitleResolver = (route?: RouteLocationNormalized | RouteRecordRaw) => string
 
 const ROUTE_TITLE_MAP: Record<string, TitleResolver> = {
-  '/message': () => {
-    const user = readCurrentUser()
-    return user.role === ROLES.ADMIN ? '留言管理' : '我的留言'
-  },
   '/home': () => '首页',
   '/quotation': () => '报价单',
   '/beam-quotation': () => '横梁载重单',

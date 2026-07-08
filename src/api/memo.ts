@@ -5,16 +5,11 @@ import type { PaginationParams, MemoCreatePayload, MemoUpdatePayload, MemoData, 
 interface MemoListParams extends PaginationParams {
   filter?: string
   view?: string
-  scope?: string
-  createdOn?: string
   tz?: string
 }
 
 const list = (params?: MemoListParams) =>
   request.get<MemoListResult>('/api/memos', { params })
-
-const listHistory = (params?: MemoListParams, opts?: Record<string, unknown>) =>
-  request.get<MemoListResult>('/api/memos/history', { params, ...(opts || {}) })
 
 const create = (data: MemoCreatePayload) =>
   request.post<{ memo: MemoData }>('/api/memos', data)
@@ -30,7 +25,6 @@ const history = (id: number | string) =>
 
 const memoApi = {
   list: unwrap(list),
-  listHistory: unwrap(listHistory),
   create: unwrap(create),
   update: unwrap(update),
   remove: unwrap(remove),

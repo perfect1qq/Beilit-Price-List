@@ -23,7 +23,6 @@ const ApprovalHistory = () => import('../views/ApprovalHistory.vue')
 
 const MediumShelfWeightTable = () => import('../views/MediumShelfWeightTable.vue')
 const MemoManagement = () => import('../views/MemoManagement.vue')
-const MessageManagement = () => import('../views/MessageManagement.vue')
 const UsdConversion = () => import('../views/UsdConversion.vue')
 const CustomerManagement = () => import('../views/CustomerManagement.vue')
 const NotepadView = () => import('../views/NotepadView.vue')
@@ -147,12 +146,6 @@ const routes: RouteRecordRaw[] = [
         name: 'UsdConversion',
         component: UsdConversion,
         meta: { title: '美金换算' },
-      },
-      {
-        path: 'message',
-        name: 'MessageManagement',
-        component: MessageManagement,
-        meta: { title: '留言管理' },
       },
       {
         path: 'customer-management',

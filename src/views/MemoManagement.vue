@@ -1,33 +1,41 @@
-
-
 <template>
   <div class="memo-container">
-    <MemoStatsRow :stats="stats" :scope-stat-copy="scopeStatCopy" />
+    <MemoStatsRow :stats="stats" />
 
     <div class="memo-wrapper">
-      <MemoFilter v-model:active-list-scope="activeListScope" v-model:keyword="keyword"
-        v-model:history-created-on="historyCreatedOn" v-model:active-filter="activeFilter" :is-guest="isGuest"
-        @scope-change="handleListScopeChange" @keyword-input="onKeywordInput" @date-change="onHistoryDateChange"
-        @filter-change="handleFilterChange" @create="openCreate" />
+      <MemoFilter v-model:keyword="keyword" v-model:active-filter="activeFilter" :is-guest="isGuest"
+        @keyword-input="onKeywordInput" @filter-change="handleFilterChange" @create="openCreate" />
 
       <div class="memo-content">
         <el-skeleton :loading="loading && !list.length" animated :rows="12">
           <template #default>
             <div v-show="isBoardMode" class="board-grid">
-              <section class="column">
+              <section class="column todo-column">
                 <div class="column-head">
                   <span class="col-indicator todo"></span>
                   <span class="col-name">待处理</span>
                   <span class="col-num">{{ todoList.length }}</span>
                 </div>
 
-                <div class="task-list">
-                  <MemoCard v-for="item in todoList" :key="item.id" :item="item" board-mode
-                    @toggle-completed="toggleCompleted" @edit="openEdit" @toggle-pinned="togglePinned"
-                    @history="openHistory" @remove="removeMemo" />
-                </div>
+                <div class="date-grouped-list">
+                  <el-collapse v-model="activeDatePanels" accordion>
+                    <el-collapse-item v-for="group in groupedTodoList" :key="group.key" :name="group.key">
+                      <template #title>
+                        <div class="date-group-header">
+                          <span class="date-label">{{ group.title }}</span>
+                          <span class="date-count">{{ group.count }}条</span>
+                        </div>
+                      </template>
+                      <div class="task-list">
+                        <MemoCard v-for="item in group.items" :key="item.id" :item="item" board-mode
+                          @toggle-completed="toggleCompleted" @edit="openEdit" @toggle-pinned="togglePinned"
+                          @history="openHistory" @remove="removeMemo" />
+                      </div>
+                    </el-collapse-item>
+                  </el-collapse>
 
-                <el-empty v-if="!todoList.length" description="今日无事" :image-size="80" />
+                  <el-empty v-if="!groupedTodoList.length" description="暂无待办任务" :image-size="80" />
+                </div>
               </section>
 
               <section class="column">
@@ -37,13 +45,25 @@
                   <span class="col-num">{{ doneList.length }}</span>
                 </div>
 
-                <div class="task-list">
-                  <MemoCard v-for="item in doneList" :key="item.id" :item="item" board-mode
-                    @toggle-completed="toggleCompleted" @edit="openEdit" @toggle-pinned="togglePinned"
-                    @history="openHistory" @remove="removeMemo" />
-                </div>
+                <div class="date-grouped-list">
+                  <el-collapse v-model="activeDoneDatePanels" accordion>
+                    <el-collapse-item v-for="group in groupedDoneList" :key="group.key" :name="group.key">
+                      <template #title>
+                        <div class="date-group-header">
+                          <span class="date-label">{{ group.title }}</span>
+                          <span class="date-count">{{ group.count }}条</span>
+                        </div>
+                      </template>
+                      <div class="task-list">
+                        <MemoCard v-for="item in group.items" :key="item.id" :item="item" board-mode
+                          @toggle-completed="toggleCompleted" @edit="openEdit" @toggle-pinned="togglePinned"
+                          @history="openHistory" @remove="removeMemo" />
+                      </div>
+                    </el-collapse-item>
+                  </el-collapse>
 
-                <el-empty v-if="!doneList.length" description="继续加油" :image-size="80" />
+                  <el-empty v-if="!groupedDoneList.length" description="继续加油" :image-size="80" />
+                </div>
               </section>
             </div>
 
@@ -100,11 +120,8 @@ const {
   loading,
   saving,
   keyword,
-  activeListScope,
-  historyCreatedOn,
   activeFilter,
   stats,
-  scopeStatCopy,
   highlightId,
   editorVisible,
   editorMode,
@@ -116,6 +133,10 @@ const {
   isBoardMode,
   todoList,
   doneList,
+  groupedTodoList,
+  groupedDoneList,
+  activeDatePanels,
+  activeDoneDatePanels,
   emptyDescription,
   openCreate,
   openEdit,
@@ -126,8 +147,6 @@ const {
   openHistory,
   onKeywordInput,
   handleFilterChange,
-  handleListScopeChange,
-  onHistoryDateChange,
   init,
   cleanup,
 } = useMemoManagement()
@@ -174,6 +193,53 @@ onUnmounted(() => {
   border-radius: 16px;
   padding: 20px;
   border: 1px solid #f1f5f9;
+}
+
+.todo-column {
+  min-height: 400px;
+}
+
+.date-grouped-list {
+  margin-top: 10px;
+}
+
+.date-group-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding-right: 20px;
+}
+
+.date-label {
+  font-weight: 600;
+  color: #334155;
+}
+
+.date-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: #94a3b8;
+  background: #fff;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+:deep(.el-collapse-item__header) {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  border: 1px solid #e2e8f0;
+  height: auto;
+  line-height: 1.5;
+}
+
+:deep(.el-collapse-item__wrap) {
+  border-bottom: none;
+}
+
+:deep(.el-collapse-item__content) {
+  padding-bottom: 0;
 }
 
 .column-head {
