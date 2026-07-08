@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import authApi from '@/api/auth'
+import { extractMessage } from '@/utils/message'
 import { ROLES } from '@/types'
 import type {
   LoginCredentials,
@@ -86,8 +87,7 @@ export const useUserStore = defineStore('user', {
           response?: { data?: { message?: string } }
           message?: string
         }
-        this.authError =
-          err?.response?.data?.message || err?.message || '登录失败'
+        this.authError = extractMessage(err, '登录失败')
         throw error
       } finally {
         this.loading = false

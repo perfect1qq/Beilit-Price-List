@@ -1,4 +1,5 @@
 import { onUnmounted, ref, type Ref } from 'vue'
+import { extractMessage } from '@/utils/message'
 
 interface TaskContext {
   signal: AbortSignal
@@ -43,7 +44,7 @@ export const useCancelableLoader = (): CancelableLoaderReturn => {
       if (err?.code === 'ERR_CANCELED') {
         return { ok: false, canceled: true, error: err, seq }
       }
-      loadError.value = err?.response?.data?.message || err?.message || '请求失败'
+      loadError.value = extractMessage(err, '请求失败')
       return { ok: false, canceled: false, error: err, seq }
     } finally {
       if (seq === requestSeq) loading.value = false

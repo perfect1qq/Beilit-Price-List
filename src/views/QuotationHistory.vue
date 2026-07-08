@@ -1,45 +1,24 @@
-
-
 <template>
   <div class="quotation-history-page">
     <div v-if="viewState === 'list'" class="history-list-view">
       <el-card shadow="never" class="card">
         <div class="history-toolbar">
-          <el-input
-            v-model="searchKeyword"
-            placeholder="按公司名称 / 名称搜索"
-            clearable
-            style="max-width: 340px"
-            @input="onKeywordInput"
-          />
+          <el-input v-model="searchKeyword" placeholder="按公司名称 / 名称搜索" clearable style="max-width: 340px"
+            @input="onKeywordInput" />
           <div class="toolbar-right">
             <el-tag type="info">
               共 {{ totalRecords }} 条记录 /
-              {{ groupedHistoryList.length }} 个年份</el-tag
-            >
-            <el-button type="primary" size="small" @click="showAddYearDialog = true"
-              >添加年份</el-button
-            >
+              {{ groupedHistoryList.length }} 个年份</el-tag>
+            <el-button type="primary" size="small" @click="showAddYearDialog = true">添加年份</el-button>
           </div>
         </div>
 
 
-        <el-dialog
-          v-model="showAddYearDialog"
-          title="添加年份"
-          width="360px"
-          :close-on-click-modal="false"
-        >
+        <el-dialog v-model="showAddYearDialog" title="添加年份" width="360px" :close-on-click-modal="false">
           <el-form @submit.prevent="confirmAddYear">
             <el-form-item label="年份">
-              <el-input-number
-                v-model="newYear"
-                :min="2000"
-                :max="2099"
-                :controls="false"
-                placeholder="如 2027"
-                style="width: 100%"
-              />
+              <el-input-number v-model="newYear" :min="2000" :max="2099" :controls="false" placeholder="如 2027"
+                style="width: 100%" />
             </el-form-item>
             <el-form-item>
               <div class="year-dialog-hint">
@@ -57,36 +36,18 @@
         </el-dialog>
 
 
-        <el-dialog
-          v-model="showMoveYearDialog"
-          title="移动到其他年份"
-          width="360px"
-          :close-on-click-modal="false"
-        >
+        <el-dialog v-model="showMoveYearDialog" title="移动到其他年份" width="360px" :close-on-click-modal="false">
           <el-form @submit.prevent="confirmMoveToYear">
             <el-form-item label="目标年份">
-              <el-select
-                v-model="targetMoveYear"
-                placeholder="选择目标年份"
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="year in availableYears"
-                  :key="year"
-                  :label="year + ' 年'"
-                  :value="year"
-                />
+              <el-select v-model="targetMoveYear" placeholder="选择目标年份" style="width: 100%">
+                <el-option v-for="year in availableYears" :key="year" :label="year + ' 年'" :value="year" />
               </el-select>
             </el-form-item>
           </el-form>
           <template #footer>
             <el-button @click="showMoveYearDialog = false">取消</el-button>
-            <el-button
-              type="primary"
-              @click="confirmMoveToYear"
-              :loading="!!movingRecord?.id && isActionLoading(movingRecord.id)"
-              >确定</el-button
-            >
+            <el-button type="primary" @click="confirmMoveToYear"
+              :loading="!!movingRecord?.id && isActionLoading(movingRecord.id)">确定</el-button>
           </template>
         </el-dialog>
 
@@ -94,61 +55,33 @@
           <el-skeleton v-if="loading" animated :rows="8" />
 
           <template v-else>
-            <el-empty
-              v-if="!groupedHistoryList.length"
-              :description="
-                searchKeyword?.trim() ? '未搜索到匹配的报价单记录' : '暂无历史报价单'
-              "
-            />
+            <el-empty v-if="!groupedHistoryList.length" :description="searchKeyword?.trim() ? '未搜索到匹配的报价单记录' : '暂无历史报价单'
+              " />
 
             <el-collapse v-else v-model="activePanels" accordion class="year-collapse">
-              <el-collapse-item
-                v-for="yearGroup in groupedHistoryList"
-                :key="yearGroup.year"
-                :name="String(yearGroup.year)"
-              >
+              <el-collapse-item v-for="yearGroup in groupedHistoryList" :key="yearGroup.year"
+                :name="String(yearGroup.year)">
                 <template #title>
                   <div class="group-title">
                     <div class="group-title-main">
                       <span class="group-company">{{ yearGroup.year }} 年</span>
-                      <el-tag size="small" type="primary"
-                        >{{ yearGroup.count }} 条</el-tag
-                      >
-                      <el-tag size="small" type="info"
-                        >{{ yearGroup.companyGroups.length }} 个公司</el-tag
-                      >
+                      <el-tag size="small" type="primary">{{ yearGroup.count }} 条</el-tag>
+                      <el-tag size="small" type="info">{{ yearGroup.companyGroups.length }} 个公司</el-tag>
                     </div>
                     <div class="group-title-meta">
                       <span>最新：{{ yearGroup.latestDate || "-" }}</span>
-                      <el-button
-                        v-if="isCustomYear(yearGroup.year)"
-                        link
-                        type="danger"
-                        size="small"
-                        @click.stop="handleRemoveYear(yearGroup.year)"
-                        >删除年份</el-button
-                      >
+                      <el-button v-if="isCustomYear(yearGroup.year)" link type="danger" size="small"
+                        @click.stop="handleRemoveYear(yearGroup.year)">删除年份</el-button>
                     </div>
                   </div>
                 </template>
 
 
-                <el-empty
-                  v-if="!yearGroup.companyGroups.length"
-                  description="该年份暂无报价单记录"
-                  :image-size="60"
-                />
+                <el-empty v-if="!yearGroup.companyGroups.length" description="该年份暂无报价单记录" :image-size="60" />
                 <template v-else>
-                  <el-collapse
-                    v-model="activeCompanyPanels"
-                    accordion
-                    class="company-collapse-inner"
-                  >
-                    <el-collapse-item
-                      v-for="group in getPagedCompanies(yearGroup)"
-                      :key="group.companyName"
-                      :name="group.companyName"
-                    >
+                  <el-collapse v-model="activeCompanyPanels" accordion class="company-collapse-inner">
+                    <el-collapse-item v-for="group in getPagedCompanies(yearGroup)" :key="group.companyName"
+                      :name="group.companyName">
                       <template #title>
                         <div class="group-title group-title-sub">
                           <div class="group-title-main">
@@ -161,80 +94,31 @@
                         </div>
                       </template>
 
-                      <el-table
-                        :data="group.records"
-                        stripe
-                        border
-                        :header-cell-style="TABLE_HEADER_STYLE"
-                        class="smart-table"
-                        style="width: 100%"
-                      >
-                        <el-table-column
-                          label="名称"
-                          min-width="120"
-                          show-overflow-tooltip
-                          align="center"
-                        >
+                      <el-table :data="group.records" stripe border :header-cell-style="TABLE_HEADER_STYLE"
+                        class="smart-table" style="width: 100%">
+                        <el-table-column label="名称" min-width="120" show-overflow-tooltip align="center">
                           <template #default="{ row }">
                             {{ row.name || row.companyName || "-" }}
                           </template>
                         </el-table-column>
-                        <el-table-column
-                          prop="ownerName"
-                          label="提交人"
-                          min-width="80"
-                          align="center"
-                          v-if="isAdmin"
-                        />
-                        <el-table-column
-                          prop="finalPrice"
-                          label="成交价"
-                          min-width="90"
-                          align="center"
-                        >
-                          <template #default="{ row }"
-                            >¥ {{ formatMoney(row.finalPrice) }}</template
-                          >
+                        <el-table-column prop="ownerName" label="提交人" min-width="80" align="center" v-if="isAdmin" />
+                        <el-table-column prop="finalPrice" label="成交价" min-width="90" align="center">
+                          <template #default="{ row }">¥ {{ formatMoney(row.finalPrice) }}</template>
                         </el-table-column>
-                        <el-table-column
-                          prop="createDate"
-                          label="创建时间"
-                          min-width="100"
-                          align="center"
-                        />
-                        <el-table-column
-                          label="操作"
-                          fixed="right"
-                          min-width="180"
-                          align="center"
-                        >
+                        <el-table-column prop="createDate" label="创建时间" min-width="100" align="center" />
+                        <el-table-column label="操作" fixed="right" min-width="180" align="center">
                           <template #default="{ row }: { row: HistoryRecord }">
                             <div class="action-btns">
                               <template v-if="!isGuest">
-                                <el-button
-                                  type="warning"
-                                  size="small"
-                                  text
-                                  :loading="isActionLoading(row.id)"
-                                  @click="openDetail(row, 'edit')"
-                                >
+                                <el-button type="warning" size="small" text :loading="isActionLoading(row.id)"
+                                  @click="openDetail(row, 'edit')">
                                   修改
                                 </el-button>
-                                <el-button
-                                  type="success"
-                                  size="small"
-                                  text
-                                  @click="openMoveYearDialog(row)"
-                                >
+                                <el-button type="success" size="small" text @click="openMoveYearDialog(row)">
                                   移动年份
                                 </el-button>
-                                <el-button
-                                  type="danger"
-                                  size="small"
-                                  text
-                                  :loading="isActionLoading(row.id)"
-                                  @click="deleteHistory(row)"
-                                >
+                                <el-button type="danger" size="small" text :loading="isActionLoading(row.id)"
+                                  @click="deleteHistory(row)">
                                   删除
                                 </el-button>
                               </template>
@@ -246,18 +130,10 @@
                   </el-collapse>
 
 
-                  <div
-                    class="year-pager-wrap"
-                    v-if="getYearTotalPages(yearGroup.companyGroups.length) > 1"
-                  >
-                    <el-pagination
-                      :current-page="getYearPage(yearGroup.year)"
-                      :page-size="DEFAULT_PAGE_SIZE"
-                      :total="yearGroup.companyGroups.length"
-                      layout="prev, pager, next, jumper"
-                      @current-change="(val: number) => handleYearPageChange(yearGroup.year, val)"
-                      small
-                    />
+                  <div class="year-pager-wrap" v-if="getYearTotalPages(yearGroup.companyGroups.length) > 1">
+                    <el-pagination :current-page="getYearPage(yearGroup.year)" :page-size="DEFAULT_PAGE_SIZE"
+                      :total="yearGroup.companyGroups.length" layout="prev, pager, next, jumper"
+                      @current-change="(val: number) => handleYearPageChange(yearGroup.year, val)" small />
                   </div>
                 </template>
               </el-collapse-item>
@@ -271,59 +147,23 @@
       <el-card shadow="never" class="card">
         <div class="toolbar">
           <el-button @click="backToList">返回列表</el-button>
-          <el-button
-            type="primary"
-            plain
-            :icon="Plus"
-            @click="addRow"
-            :disabled="isViewMode"
-            >手动添加一行</el-button
-          >
-          <el-button :icon="Refresh" @click="clearRows" :disabled="isViewMode"
-            >清空当前表格</el-button
-          >
-          <el-button
-            type="success"
-            :icon="DocumentAdd"
-            @click="handleSubmit"
-            :loading="isSubmitting"
-            :disabled="isViewMode"
-            >确认保存报价单</el-button
-          >
+          <el-button type="primary" plain :icon="Plus" @click="addRow" :disabled="isViewMode">手动添加一行</el-button>
+          <el-button :icon="Refresh" @click="clearRows" :disabled="isViewMode">清空当前表格</el-button>
+          <el-button type="success" :icon="DocumentAdd" @click="handleSubmit" :loading="isSubmitting"
+            :disabled="isViewMode">确认保存报价单</el-button>
         </div>
 
-        <QuotationEditor
-          ref="formRef"
-          :is-view-mode="isViewMode"
-          :rules-disabled="rulesDisabled"
-          :editing-history-id="editingHistoryId"
-          :form-model="formModel"
-          v-model:remark="remark"
-          v-model:discount="discount"
-          v-model:final-price="finalPrice"
-          v-model:raw-text="rawText"
-          :subtotal="subtotal"
-          :discount-amount="discountAmount"
-          :auto-final-price="autoFinalPrice"
-          :is-manual-final-price="isManualFinalPrice"
-          :items="items"
-          :visible-columns="visibleColumns"
-          :hide-action-column="isGuest"
-          @handle-discount-change="handleDiscountChange"
+        <QuotationEditor ref="formRef" :is-view-mode="isViewMode" :rules-disabled="rulesDisabled"
+          :editing-history-id="editingHistoryId" :form-model="formModel" v-model:remark="remark"
+          v-model:discount="discount" v-model:final-price="finalPrice" v-model:raw-text="rawText" :subtotal="subtotal"
+          :discount-amount="discountAmount" :auto-final-price="autoFinalPrice"
+          :is-manual-final-price="isManualFinalPrice" :items="items" :visible-columns="visibleColumns"
+          :hide-action-column="isGuest" @handle-discount-change="handleDiscountChange"
           @handle-manual-final-price-change="handleManualFinalPriceChange"
-          @restore-auto-final-price="restoreAutoFinalPrice"
-          @update-row-total="updateRowTotal"
-          @remove-row="removeRow"
-        >
+          @restore-auto-final-price="restoreAutoFinalPrice" @update-row-total="updateRowTotal" @remove-row="removeRow">
           <template #parse-action>
-            <el-button
-              v-if="!isViewMode"
-              type="primary"
-              :icon="DocumentAdd"
-              @click="handleParseText"
-              :loading="parsing"
-              >智能解析粘贴内容</el-button
-            >
+            <el-button v-if="!isViewMode" type="primary" :icon="DocumentAdd" @click="handleParseText"
+              :loading="parsing">智能解析粘贴内容</el-button>
           </template>
         </QuotationEditor>
       </el-card>
@@ -332,8 +172,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
-import { ElMessage, ElMessageBox } from "element-plus";
+import { computed, watch } from "vue";
 defineOptions({ name: "QuotationHistory" });
 import { DocumentAdd, Plus, Refresh, InfoFilled } from "@element-plus/icons-vue";
 import { usePermissions } from "@/composables/usePermissions";
@@ -342,6 +181,7 @@ import { TABLE_HEADER_STYLE } from "@/constants/table";
 import QuotationEditor from "@/components/quotation/QuotationEditor.vue";
 import { useQuotationHistoryPage } from "@/composables/useQuotationHistoryPage";
 import type { HistoryRecord } from "@/composables/useQuotationHistory";
+import { useQuotationYearDialogs } from "@/composables/useQuotationYearDialogs";
 
 const { isAdmin, isGuest } = usePermissions();
 
@@ -375,9 +215,7 @@ const {
   searchKeyword,
   loading,
   DEFAULT_PAGE_SIZE,
-  yearPages,
   getYearPage,
-  setYearPage,
   getPagedCompanies,
   getYearTotalPages,
   handleYearPageChange,
@@ -400,80 +238,25 @@ const totalRecords = computed(() =>
   groupedHistoryList.value.reduce((sum, group) => sum + group.count, 0)
 );
 
-const showAddYearDialog = ref(false);
-const newYear = ref(new Date().getFullYear() + 1);
-
-
-const showMoveYearDialog = ref(false);
-const movingRecord = ref<HistoryRecord | null>(null);
-const targetMoveYear = ref<number | null>(null);
-
-
-const availableYears = computed(() => {
-  return groupedHistoryList.value.map((g) => g.year).sort((a, b) => b - a);
+const {
+  showAddYearDialog,
+  newYear,
+  showMoveYearDialog,
+  movingRecord,
+  targetMoveYear,
+  availableYears,
+  confirmAddYear,
+  isCustomYear,
+  handleRemoveYear,
+  openMoveYearDialog,
+  confirmMoveToYear,
+} = useQuotationYearDialogs({
+  groupedHistoryList,
+  customYears,
+  addCustomYear,
+  removeCustomYear,
+  moveToYear,
 });
-
-function confirmAddYear() {
-  const year = newYear.value;
-  if (!year || year < 2000 || year > 2099) {
-    ElMessage.warning("请输入有效的年份（2000-2099）");
-    return;
-  }
-
-  const exists = groupedHistoryList.value.some((g) => g.year === year);
-  if (exists) {
-    ElMessage.warning(`${year} 年已存在`);
-    return;
-  }
-
-  addCustomYear(year);
-  showAddYearDialog.value = false;
-  ElMessage.success(`已添加 ${year} 年`);
-}
-
-
-function isCustomYear(year: number): boolean {
-  return customYears.value.includes(year);
-}
-
-
-function handleRemoveYear(year: number) {
-  ElMessageBox.confirm(
-    `确定删除 ${year} 年？该年份下的报价单不会被删除，只是移除该年份分组。`,
-    "删除年份",
-    { confirmButtonText: "确定", cancelButtonText: "取消", type: "warning" }
-  )
-    .then(() => {
-      removeCustomYear(year);
-      ElMessage.success(`已删除 ${year} 年`);
-    })
-    .catch(() => {});
-}
-
-
-function openMoveYearDialog(record: HistoryRecord) {
-  movingRecord.value = record;
-
-  const currentDate = record.createdAt || record.updatedAt || "";
-  const currentYear = new Date(currentDate).getFullYear();
-  targetMoveYear.value = Number.isNaN(currentYear) ? null : currentYear;
-  showMoveYearDialog.value = true;
-}
-
-
-async function confirmMoveToYear() {
-  if (!movingRecord.value || !targetMoveYear.value) {
-    ElMessage.warning("请选择目标年份");
-    return;
-  }
-
-  const success = await moveToYear(movingRecord.value!, targetMoveYear.value);
-  if (success) {
-    showMoveYearDialog.value = false;
-    movingRecord.value = null;
-    targetMoveYear.value = null;
-  }
-}
 
 
 watch(

@@ -93,7 +93,7 @@ const normalizeRow = (row: Record<string, unknown> = {}): QuotationRow => {
   }
 }
 
-export function useQuotationDraft(): QuotationDraftReturn {
+export const useQuotationDraft = (): QuotationDraftReturn => {
   const name = ref('')
 
   const companyName = ref('')

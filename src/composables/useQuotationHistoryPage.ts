@@ -1,4 +1,4 @@
-import { onMounted, reactive, ref, watch } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import quotationApi from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
@@ -6,7 +6,7 @@ import { useQuotationHistory, type HistoryRecord } from '@/composables/useQuotat
 import { useQuotationEditor } from '@/composables/useQuotationEditor'
 import { showError } from '@/utils/message'
 
-export function useQuotationHistoryPage() {
+export const useQuotationHistoryPage = () => {
   const route = useRoute()
   const parsing = ref(false)
   const isSubmitting = ref(false)

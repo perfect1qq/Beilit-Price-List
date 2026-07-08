@@ -5,7 +5,7 @@ import { to } from '@/utils/async'
 import { showError, showSuccess } from '@/utils/message'
 import type { NotepadData, NotepadHistoryData } from '@/types'
 
-export function useNotepad() {
+export const useNotepad = () => {
   const keyword = ref('')
   const activeFolder = ref('')
   const folderExpanded = ref(true)

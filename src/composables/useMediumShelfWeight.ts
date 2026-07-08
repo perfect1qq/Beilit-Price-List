@@ -93,7 +93,7 @@ const formatConfigText = (text: string): string => {
     .join('\n')
 }
 
-export function useMediumShelfWeight(): MediumShelfWeightReturn {
+export const useMediumShelfWeight = (): MediumShelfWeightReturn => {
   const loading = ref(false)
   const saving = ref(false)
   const errorMsg = ref('')

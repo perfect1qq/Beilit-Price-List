@@ -10,7 +10,7 @@ import type { QuotationRow } from '@/composables/useQuotationDraft'
 import { useQuotationEditor } from '@/composables/useQuotationEditor'
 import type { QuotationData, QuotationCreatePayload, QuotationLogData } from '@/types'
 
-export function useApprovalDetail() {
+export const useApprovalDetail = () => {
   const route = useRoute()
   const router = useRouter()
 
@@ -103,7 +103,7 @@ export function useApprovalDetail() {
     router.push(isHistoryRoute.value ? '/approval/history' : '/approval')
   }
 
-  async function loadDetail() {
+  const loadDetail = async () => {
     const [err, res] = await to(approvalApi.get(String(route.params.id)))
     if (err || !res) {
       showError(err, '加载详情失败')
@@ -130,7 +130,7 @@ export function useApprovalDetail() {
     loadRecord(q, editMode.value && !isHistoryRoute.value ? 'edit' : 'view')
   }
 
-  async function save() {
+  const save = async () => {
     if (actionLoading.value) return
     if (!companyName.value.trim()) return showWarning('公司名称不能为空')
     const payload = getPayload()
@@ -147,7 +147,7 @@ export function useApprovalDetail() {
     actionLoading.value = false
   }
 
-  async function approve() {
+  const approve = async () => {
     if (actionLoading.value) return
     if (!canApprove.value) {
       showWarning('请先保存当前修改，再进行准予通过')
@@ -167,7 +167,7 @@ export function useApprovalDetail() {
     goBackToList()
   }
 
-  async function reject() {
+  const reject = async () => {
     if (actionLoading.value) return
     const prevStatus = meta.status
     const [promptErr, promptRes] = await to(ElMessageBox.prompt('请输入驳回原因', '审批驳回', {

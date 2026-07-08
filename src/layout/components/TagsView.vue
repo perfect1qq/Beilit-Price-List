@@ -11,7 +11,7 @@
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="closeOthers">关闭其他</el-dropdown-item>
-
+            <!-- <el-dropdown-item command="closeLeft">关闭左侧</el-dropdown-item> -->
             <el-dropdown-item command="closeRight">关闭右侧</el-dropdown-item>
             <el-dropdown-item command="closeAll" divided>关闭全部</el-dropdown-item>
           </el-dropdown-menu>
@@ -21,9 +21,10 @@
 
     <el-scrollbar class="tags-view-scrollbar">
       <div class="tags-view-list">
-        <div v-for="item in visitedViews" :key="item.fullPath"
-          :class="['tags-view-item', { active: item.fullPath === activeFullPath, home: item.path === '/home' }]"
-          @click="goView(item)">
+        <div v-for="item in visitedViews" :key="item.fullPath" :class="[
+          'tags-view-item',
+          { active: item.fullPath === activeFullPath, home: item.path === '/home' },
+        ]" @click="goView(item)">
           <el-icon v-if="item.path === '/home'" class="tag-home-icon">
             <House />
           </el-icon>
@@ -38,8 +39,8 @@
 </template>
 
 <script setup lang="ts">
-import { Close, House, MoreFilled } from '@element-plus/icons-vue'
-import { useBreadcrumbTabs } from '@/composables/useBreadcrumbTabs'
+import { Close, House, MoreFilled } from "@element-plus/icons-vue";
+import { useBreadcrumbTabs } from "@/composables/useBreadcrumbTabs";
 
 const {
   visitedViews,
@@ -49,16 +50,18 @@ const {
   closeOthers,
   closeLeft,
   closeRight,
-  closeAll
-} = useBreadcrumbTabs()
+  closeAll,
+} = useBreadcrumbTabs();
 
 const handleCommand = async (command: string) => {
-  const current = visitedViews.value?.find(item => item.fullPath === activeFullPath.value) || visitedViews.value?.[visitedViews.value.length - 1]
-  if (command === 'closeOthers') await closeOthers(current)
-  if (command === 'closeLeft') closeLeft(current)
-  if (command === 'closeRight') closeRight(current)
-  if (command === 'closeAll') await closeAll()
-}
+  const current =
+    visitedViews.value?.find((item) => item.fullPath === activeFullPath.value) ||
+    visitedViews.value?.[visitedViews.value.length - 1];
+  if (command === "closeOthers") await closeOthers(current);
+  if (command === "closeLeft") closeLeft(current);
+  if (command === "closeRight") closeRight(current);
+  if (command === "closeAll") await closeAll();
+};
 </script>
 
 <style scoped>

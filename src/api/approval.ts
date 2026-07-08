@@ -2,12 +2,6 @@ import request from '../utils/request'
 import { unwrap } from '../utils/unwrap'
 import type { PaginationParams, QuotationData, ApprovalListParams, ApprovalListResult, ApprovalDetailData } from '@/types'
 
-const submitApproval = (id: number | string) =>
-  request.post<{ quotation: QuotationData }>(`/api/quotations/${id}/submit`)
-
-const recallApproval = (id: number | string) =>
-  request.post<{ quotation: QuotationData }>(`/api/quotations/${id}/recall`)
-
 const approve = (id: number | string) =>
   request.post<{ quotation: QuotationData }>(`/api/quotations/${id}/approve`)
 
@@ -24,8 +18,6 @@ const listHistory = (params?: PaginationParams) =>
   request.get<ApprovalListResult>('/api/approvals/history', { params })
 
 const approvalApi = {
-  submitApproval: unwrap(submitApproval),
-  recallApproval: unwrap(recallApproval),
   approve: unwrap(approve),
   reject: unwrap(reject),
   list: unwrap(list),

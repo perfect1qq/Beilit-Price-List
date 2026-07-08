@@ -182,7 +182,7 @@ const getCurrent = (route: RouteLocationNormalized): TabView =>
 
 
 
-export function resetBreadcrumbTabs(): void {
+export const resetBreadcrumbTabs = (): void => {
   state.visitedViews = [HOME_VIEW]
   state.activeFullPath = HOME_VIEW.fullPath
   state.userKey = 'anonymous'
@@ -196,7 +196,7 @@ export function resetBreadcrumbTabs(): void {
   }
 }
 
-export function useBreadcrumbTabs(): BreadcrumbTabsReturn {
+export const useBreadcrumbTabs = (): BreadcrumbTabsReturn => {
   const route = useRoute()
   const router = useRouter()
 

@@ -13,9 +13,6 @@ const list = (params?: NotepadListParams) =>
 const listFolders = () =>
   request.get<{ folders: string[] }>('/api/notepads/folders')
 
-const getById = (id: number | string) =>
-  request.get<{ note: NotepadData }>(`/api/notepads/${id}`)
-
 const create = (data: NotepadCreatePayload) =>
   request.post<{ note: NotepadData }>('/api/notepads', data)
 
@@ -37,7 +34,6 @@ const batchDelete = (ids: number[]) =>
 const notepadApi = {
   list: unwrap(list),
   listFolders: unwrap(listFolders),
-  getById: unwrap(getById),
   create: unwrap(create),
   update: unwrap(update),
   togglePin: unwrap(togglePin),

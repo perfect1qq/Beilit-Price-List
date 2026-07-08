@@ -109,9 +109,6 @@ export default defineConfig({
             if (id.includes('element-plus')) return 'vendor-element-plus'
             if (id.includes('vue') || id.includes('pinia') || id.includes('vue-router')) return 'vendor-vue'
             if (id.includes('axios')) return 'vendor-axios'
-            if (id.includes('echarts')) return 'vendor-echarts'
-            if (id.includes('lodash') || id.includes('lodash-es')) return 'vendor-lodash'
-            if (id.includes('dayjs') || id.includes('moment')) return 'vendor-date'
             return 'vendor-misc'
           }
           return undefined

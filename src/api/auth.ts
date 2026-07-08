@@ -61,7 +61,6 @@ const authApi = {
   uploadAvatar: unwrap(uploadAvatar),
   deleteAvatar: unwrap(deleteAvatar),
   refresh: unwrap(refresh),
-  refreshToken: unwrap(refresh),
 }
 
 export default authApi

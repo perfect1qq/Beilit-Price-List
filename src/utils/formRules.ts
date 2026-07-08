@@ -35,12 +35,6 @@ export const createMaxLengthRule = (max: number, label: string = '该字段'): F
   trigger: TRIGGER_BLUR_CHANGE
 })
 
-export const createMinLengthRule = (min: number, label: string = '该字段'): FormItemRule => ({
-  min,
-  message: `${label}不能少于${min}个字符`,
-  trigger: TRIGGER_BLUR_CHANGE
-})
-
 export const quotationNameRule: FormItemRule[] = [
   createRequiredRule('报价单名称'),
   createMaxLengthRule(100, '报价单名称'),

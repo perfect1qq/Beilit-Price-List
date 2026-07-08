@@ -7,7 +7,7 @@ import { showError, showSuccess, showWarning } from '@/utils/message'
 import { useClipboard } from '@/composables/useClipboard'
 import type { EditableUserInfo, UserRole } from '@/types'
 
-export function useUserManagement() {
+export const useUserManagement = () => {
   const loading = ref(false)
   const users = shallowRef<EditableUserInfo[]>([])
   const search = ref('')

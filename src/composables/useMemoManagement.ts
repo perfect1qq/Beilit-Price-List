@@ -60,7 +60,7 @@ const groupByDate = (items: MemoData[]): DateGroup[] => {
   return result
 }
 
-export function useMemoManagement() {
+export const useMemoManagement = () => {
   const { isGuest } = usePermissions()
   const list = shallowRef<MemoData[]>([])
   const hasMore = ref(false)
@@ -95,7 +95,7 @@ export function useMemoManagement() {
   const emptyDescription = computed(() => '暂无待办任务，给自己定个目标吧')
 
   const loadList = async (targetPage = page.value, append = false) => {
-    await runListLoad(async ({ signal, seq }) => {
+    await runListLoad(async ({ seq }) => {
       const params: Record<string, unknown> = {
         page: targetPage,
         pageSize: pageSize.value,

@@ -4,6 +4,7 @@ import { computed, ref, shallowRef, type Ref, type ShallowRef, type ComputedRef 
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { debounce } from '@/utils/debounce'
 import { to } from '@/utils/async'
+import { extractMessage } from '@/utils/message'
 import { formatDateOnly } from '@/utils/date'
 import { useInstantListActions } from '@/composables/useInstantListActions'
 import { useListQueryState } from '@/composables/useListQueryState'
@@ -197,7 +198,7 @@ const fetchAllRecords = async (api: QuotationHistoryOptions['api'], keyword = ''
   return merged
 }
 
-export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptions): QuotationHistoryReturn {
+export const useQuotationHistory = ({ api, loadToEditor }: QuotationHistoryOptions): QuotationHistoryReturn => {
   const historyList = shallowRef<HistoryRecord[]>([])
 
 
@@ -274,7 +275,7 @@ export function useQuotationHistory({ api, loadToEditor }: QuotationHistoryOptio
   const triggerSearch = debounce(async () => {
     resetToFirstPage()
     const [searchErr] = await to(loadHistoryList())
-    if (searchErr) ElMessage.error((searchErr as { response?: { data?: { message?: string } }; message?: string })?.response?.data?.message || (searchErr as { message?: string })?.message || '历史记录加载失败')
+    if (searchErr) ElMessage.error(extractMessage(searchErr, '历史记录加载失败'))
   }, 300)
 
 

@@ -10,10 +10,6 @@ let errorHandler: (message: string) => void = (message: string) => {
   ElMessage.error(message)
 }
 
-export const setRequestErrorHandler = (handler: (message: string) => void): void => {
-  errorHandler = handler
-}
-
 const buildApiUrl = (path: string): string => {
   const baseURL = String(http.defaults.baseURL || '').replace(/\/+$/, '')
   const apiPath = String(path || '').startsWith('/') ? path : `/${path}`
@@ -137,13 +133,6 @@ const cancelPendingRequest = (requestKey: string): boolean => {
     return true
   }
   return false
-}
-
-export const clearAllPendingRequests = (): void => {
-  for (const [key, controller] of pendingControllers.entries()) {
-    controller.abort()
-    pendingControllers.delete(key)
-  }
 }
 
 const service: AxiosInstance = axios.create({

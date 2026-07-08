@@ -47,7 +47,7 @@ interface HistoryViewReturn {
   handleDelete: (row: Record<string, unknown>, nameKey?: string) => Promise<void>
 }
 
-export function useHistoryView({ api, fetchList, onEnterDetail }: HistoryViewOptions): HistoryViewReturn {
+export const useHistoryView = ({ api, fetchList, onEnterDetail }: HistoryViewOptions): HistoryViewReturn => {
   const viewState = ref('list')
   const historyList = shallowRef<(Record<string, unknown> & { id: number | string })[]>([])
   const loading = ref(false)

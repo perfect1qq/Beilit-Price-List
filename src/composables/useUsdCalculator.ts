@@ -30,7 +30,7 @@ interface UsdCalculatorReturn {
   diffRmb: ComputedRef<string>
 }
 
-export function useUsdCalculator(): UsdCalculatorReturn {
+export const useUsdCalculator = (): UsdCalculatorReturn => {
 
   const globalExchangeRate = ref('6.8')
 

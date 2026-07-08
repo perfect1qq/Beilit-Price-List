@@ -47,12 +47,6 @@ const reject = (id: number | string, comment?: string) =>
 const moveYear = (id: number | string, targetYear: number) =>
   request.put<{ quotation: QuotationData }>(`/api/quotations/${id}/move-year`, { targetYear })
 
-const checkCompanyName = (companyName: string, excludeId?: number | string) =>
-  request.get<{ exists: boolean; quotation?: QuotationData }>('/api/quotations/check-company', { params: { companyName, excludeId } })
-
-const checkName = (name: string, excludeId?: number | string) =>
-  request.get<{ exists: boolean; quotation?: QuotationData }>('/api/quotations/check-name', { params: { name, excludeId } })
-
 const suggestName = (name: string, companyName?: string, excludeId?: number | string) =>
   request.get<{ suggestedName: string }>('/api/quotations/suggest-name', { params: { name, companyName, excludeId } })
 
@@ -78,14 +72,10 @@ const quotationApi = {
   update: unwrap(update),
   remove: unwrap(remove),
   get: unwrap(get),
-  getStatistics: unwrap(getStatistics),
   parseText: unwrap(parseText),
   approve: unwrap(approve),
   reject: unwrap(reject),
   moveYear: unwrap(moveYear),
-  parse: unwrap(parseStatistics),
-  checkCompanyName: unwrap(checkCompanyName),
-  checkName: unwrap(checkName),
   suggestName: unwrap(suggestName),
 }
 

@@ -1,8 +1,8 @@
 import { createRouter, createWebHashHistory, type RouteRecordRaw, type RouteLocationNormalized } from 'vue-router'
 import { applyAuthGuard } from '@/router/guards/authGuard'
 
-const Login = () => import('../views/login.vue')
-const Register = () => import('../views/register.vue')
+const Login = () => import('../views/Login.vue')
+const Register = () => import('../views/Register.vue')
 const MainLayout = () => import('../layout/index.vue')
 const HomeView = () => import('../views/HomeView.vue')
 const UserManagement = () => import('../views/UserManagement.vue')
@@ -17,8 +17,8 @@ const BeamQuotationList = () => import('../views/BeamQuotationList.vue')
 const BeamQuotationHistory = () => import('../views/BeamQuotationHistory.vue')
 
 const ApprovalLayout = () => import('../views/ApprovalLayout.vue')
-const Approval = () => import('../views/approval.vue')
-const ApprovalDetail = () => import('../views/approvalDetail.vue')
+const Approval = () => import('../views/Approval.vue')
+const ApprovalDetail = () => import('../views/ApprovalDetail.vue')
 const ApprovalHistory = () => import('../views/ApprovalHistory.vue')
 
 const MediumShelfWeightTable = () => import('../views/MediumShelfWeightTable.vue')
