@@ -1,4 +1,4 @@
-import { computed, nextTick, reactive, ref, shallowRef } from 'vue'
+import { computed, nextTick, reactive, ref, shallowRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { debounce } from '@/utils/debounce'
@@ -9,6 +9,8 @@ import { useCancelableLoader } from '@/composables/useCancelableLoader'
 import { useListQueryState } from '@/composables/useListQueryState'
 import { usePermissions } from '@/composables/usePermissions'
 import type { MemoData, MemoCreatePayload, MemoHistoryItem, MemoListResult } from '@/types'
+
+type MemoFilter = 'all' | 'todo' | 'done' | 'pinned'
 
 interface DateGroup {
   key: string
@@ -63,11 +65,10 @@ const groupByDate = (items: MemoData[]): DateGroup[] => {
 export const useMemoManagement = () => {
   const { isGuest } = usePermissions()
   const list = shallowRef<MemoData[]>([])
-  const hasMore = ref(false)
   const { loading, run: runListLoad, isLatest } = useCancelableLoader()
   const saving = ref(false)
-  const { keyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 50, keyword: '' })
-  const activeFilter = ref('all')
+  const { keyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
+  const activeFilter = ref<MemoFilter>('all')
   const stats = reactive({ total: 0, todoTotal: 0, doneTotal: 0, pinnedTotal: 0 })
 
   const route = useRoute()
@@ -82,23 +83,73 @@ export const useMemoManagement = () => {
   const historyTitle = ref('日志')
   const historyList = shallowRef<MemoHistoryItem[]>([])
 
-  const loadMoreTriggerRef = ref<HTMLElement | null>(null)
-  let observer: IntersectionObserver | null = null
-
   const isBoardMode = computed(() => activeFilter.value === 'all')
   const todoList = computed(() => list.value.filter((i: MemoData) => !i.completed))
   const doneList = computed(() => list.value.filter((i: MemoData) => i.completed))
-  const groupedTodoList = computed(() => groupByDate(todoList.value))
-  const groupedDoneList = computed(() => groupByDate(doneList.value))
+
+  const allDateGroups = computed(() => groupByDate(list.value))
+  const allTodoGroups = computed(() => groupByDate(todoList.value))
+  const allDoneGroups = computed(() => groupByDate(doneList.value))
+
+  const total = computed(() => isBoardMode.value ? allDoneGroups.value.length : allDateGroups.value.length)
+
+  const pagedGroups = computed(() => {
+    const start = (page.value - 1) * pageSize.value
+    const end = start + pageSize.value
+    return allDateGroups.value.slice(start, end)
+  })
+
+  const pagedDoneGroups = computed(() => {
+    const start = (page.value - 1) * pageSize.value
+    const end = start + pageSize.value
+    return allDoneGroups.value.slice(start, end)
+  })
+
+  const todoVisibleCount = ref(10)
+  const visibleTodoGroups = computed(() => allTodoGroups.value.slice(0, todoVisibleCount.value))
+  const todoHasMore = computed(() => todoVisibleCount.value < allTodoGroups.value.length)
+
+  const todoLoadMoreTriggerRef = ref<HTMLElement | null>(null)
+  let todoObserver: IntersectionObserver | null = null
+
+  const loadMoreTodoGroups = () => {
+    if (!todoHasMore.value) return
+    todoVisibleCount.value += 10
+  }
+
+  watch(todoLoadMoreTriggerRef, (el) => {
+    if (todoObserver) {
+      todoObserver.disconnect()
+      todoObserver = null
+    }
+    if (el) {
+      todoObserver = new IntersectionObserver(
+        entries => {
+          const [entry] = entries
+          if (entry?.isIntersecting) {
+            loadMoreTodoGroups()
+          }
+        },
+        { rootMargin: '0px 0px 240px 0px', threshold: 0.1 }
+      )
+      todoObserver.observe(el)
+    }
+  })
+
+  watch(list, () => {
+    todoVisibleCount.value = 10
+  })
+
   const activeDatePanels = ref<string[]>([])
   const activeDoneDatePanels = ref<string[]>([])
+  const activeListDatePanels = ref<string[]>([])
   const emptyDescription = computed(() => '暂无待办任务，给自己定个目标吧')
 
-  const loadList = async (targetPage = page.value, append = false) => {
+  const loadList = async () => {
     await runListLoad(async ({ seq }) => {
       const params: Record<string, unknown> = {
-        page: targetPage,
-        pageSize: pageSize.value,
+        page: 1,
+        pageSize: 100000,
         keyword: keyword.value.trim(),
         filter: activeFilter.value,
         tz: Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -108,49 +159,32 @@ export const useMemoManagement = () => {
 
       if (!isLatest(seq)) return
 
-      const rows = res.list || []
-      list.value = append ? [...list.value, ...rows] : rows
-      hasMore.value = list.value.length < (Number(res.total) || 0)
+      list.value = res.list || []
 
-      Object.assign(stats, {
-        total: res.total || 0,
-        todoTotal: res.todoTotal || 0,
-        doneTotal: res.doneTotal || 0,
-        pinnedTotal: res.pinnedTotal || 0
-      })
+      if (activeFilter.value === 'all') {
+        Object.assign(stats, {
+          total: res.total || 0,
+          todoTotal: res.todoTotal || 0,
+          doneTotal: res.doneTotal || 0,
+          pinnedTotal: res.pinnedTotal || 0
+        })
+      }
     })
   }
 
-  const loadNextPage = async () => {
-    if (!hasMore.value || loading.value) return
-    page.value += 1
-    await loadList(page.value, true)
+  const handlePageChange = (newPage: number) => {
+    page.value = newPage
+    activeDatePanels.value = []
+    activeDoneDatePanels.value = []
+    activeListDatePanels.value = []
   }
 
-  const initInfiniteObserver = () => {
-    if (observer) {
-      observer.disconnect()
-      observer = null
-    }
-
-    const target = loadMoreTriggerRef.value
-    if (!target) return
-
-    observer = new IntersectionObserver(
-      entries => {
-        const [entry] = entries
-        if (entry?.isIntersecting) {
-          loadNextPage()
-        }
-      },
-      {
-        root: null,
-        rootMargin: '0px 0px 240px 0px',
-        threshold: 0.1
-      }
-    )
-
-    observer.observe(target)
+  const handleSizeChange = (newSize: number) => {
+    pageSize.value = newSize
+    page.value = 1
+    activeDatePanels.value = []
+    activeDoneDatePanels.value = []
+    activeListDatePanels.value = []
   }
 
   const openCreate = () => {
@@ -188,8 +222,17 @@ export const useMemoManagement = () => {
       }
       showSuccess('新增成功')
       editorVisible.value = false
+      stats.total += 1
+      if (form.completed) {
+        stats.doneTotal += 1
+      } else {
+        stats.todoTotal += 1
+      }
+      if (form.pinned) {
+        stats.pinnedTotal += 1
+      }
       page.value = 1
-      await loadList(1)
+      await loadList()
     } else {
       const [err, res] = await to(memoApi.update(editingId.value as number, form))
       if (err) {
@@ -256,8 +299,17 @@ export const useMemoManagement = () => {
     const [err] = await to(memoApi.remove(item.id as number))
     if (err) return
     showSuccess('删除成功')
+    stats.total = Math.max(0, stats.total - 1)
+    if (item.completed) {
+      stats.doneTotal = Math.max(0, stats.doneTotal - 1)
+    } else {
+      stats.todoTotal = Math.max(0, stats.todoTotal - 1)
+    }
+    if (item.pinned) {
+      stats.pinnedTotal = Math.max(0, stats.pinnedTotal - 1)
+    }
     page.value = 1
-    await loadList(1)
+    await loadList()
   }
 
   const openHistory = async (item: MemoData) => {
@@ -270,21 +322,22 @@ export const useMemoManagement = () => {
   const triggerSearch = debounce(() => {
     resetToFirstPage()
     page.value = 1
-    loadList(1)
+    loadList()
   }, 300)
 
   const onKeywordInput = () => triggerSearch()
 
-  const handleFilterChange = () => {
+  const setFilter = (filter: string) => {
+    if (activeFilter.value === filter) return
+    activeFilter.value = filter as MemoFilter
     resetToFirstPage()
     page.value = 1
-    loadList(1)
+    loadList()
   }
 
   const init = async () => {
     highlightId.value = route.query.highlight ? Number(typeof route.query.highlight === 'string' ? route.query.highlight : route.query.highlight[0]) : undefined
-    await loadList(1)
-    initInfiniteObserver()
+    await loadList()
     if (highlightId.value) {
       nextTick(() => {
         const el = document.querySelector(`[data-memo-id="${highlightId.value}"]`)
@@ -297,16 +350,16 @@ export const useMemoManagement = () => {
   }
 
   const cleanup = () => {
-    if (observer) {
-      observer.disconnect()
-      observer = null
+    if (todoObserver) {
+      todoObserver.disconnect()
+      todoObserver = null
     }
   }
 
   return {
     isGuest,
     list,
-    hasMore,
+    total,
     loading,
     saving,
     keyword,
@@ -323,18 +376,22 @@ export const useMemoManagement = () => {
     historyVisible,
     historyTitle,
     historyList,
-    loadMoreTriggerRef,
     isBoardMode,
     todoList,
     doneList,
-    groupedTodoList,
-    groupedDoneList,
+    visibleTodoGroups,
+    todoHasMore,
+    todoLoadMoreTriggerRef,
+    pagedDoneGroups,
+    pagedGroups,
     activeDatePanels,
     activeDoneDatePanels,
+    activeListDatePanels,
     emptyDescription,
     loadList,
-    loadNextPage,
-    initInfiniteObserver,
+    handlePageChange,
+    handleSizeChange,
+    setFilter,
     openCreate,
     openEdit,
     saveMemo,
@@ -343,7 +400,6 @@ export const useMemoManagement = () => {
     removeMemo,
     openHistory,
     onKeywordInput,
-    handleFilterChange,
     init,
     cleanup,
   }

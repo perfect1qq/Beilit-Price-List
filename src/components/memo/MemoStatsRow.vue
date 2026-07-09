@@ -1,99 +1,99 @@
 <template>
-  <el-row :gutter="16" class="memo-stats">
-    <el-col :xs="24" :sm="12" :lg="6">
-      <el-card shadow="never" class="stat-card">
-        <div class="stat-inner">
-          <div class="stat-label">全部任务</div>
-          <div class="stat-value">{{ stats.total }}</div>
-          <div class="stat-tip">待办任务 + 今日动态</div>
-        </div>
-      </el-card>
-    </el-col>
-    <el-col :xs="24" :sm="12" :lg="6">
-      <el-card shadow="never" class="stat-card">
-        <div class="stat-inner">
-          <div class="stat-label">未完成</div>
-          <div class="stat-value">{{ stats.todoTotal }}</div>
-          <div class="stat-tip">待处理事项</div>
-        </div>
-      </el-card>
-    </el-col>
-    <el-col :xs="24" :sm="12" :lg="6">
-      <el-card shadow="never" class="stat-card">
-        <div class="stat-inner">
-          <div class="stat-label">已完成</div>
-          <div class="stat-value">{{ stats.doneTotal }}</div>
-          <div class="stat-tip">今日完成的任务</div>
-        </div>
-      </el-card>
-    </el-col>
-    <el-col :xs="24" :sm="12" :lg="6">
-      <el-card shadow="never" class="stat-card">
-        <div class="stat-inner">
-          <div class="stat-label">置顶</div>
-          <div class="stat-value">{{ stats.pinnedTotal }}</div>
-          <div class="stat-tip">重要置顶</div>
-        </div>
-      </el-card>
-    </el-col>
-  </el-row>
+  <div class="memo-stats">
+    <div
+      :class="['stat-card', { active: activeFilter === 'all' }]"
+      @click="$emit('filter-click', 'all')"
+    >
+      <div class="stat-value">{{ stats.total }}</div>
+      <div class="stat-label">全部任务</div>
+    </div>
+    <div
+      :class="['stat-card', 'stat-todo', { active: activeFilter === 'todo' }]"
+      @click="$emit('filter-click', 'todo')"
+    >
+      <div class="stat-value">{{ stats.todoTotal }}</div>
+      <div class="stat-label">未完成</div>
+    </div>
+    <div
+      :class="['stat-card', 'stat-done', { active: activeFilter === 'done' }]"
+      @click="$emit('filter-click', 'done')"
+    >
+      <div class="stat-value">{{ stats.doneTotal }}</div>
+      <div class="stat-label">已完成</div>
+    </div>
+    <div
+      :class="['stat-card', 'stat-pinned', { active: activeFilter === 'pinned' }]"
+      @click="$emit('filter-click', 'pinned')"
+    >
+      <div class="stat-value">{{ stats.pinnedTotal }}</div>
+      <div class="stat-label">置顶</div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import type { PropType } from 'vue'
-import type { MemoStatsData } from '@/types'
+import type { PropType } from "vue";
+import type { MemoStatsData } from "@/types";
 defineProps({
-  stats: { type: Object as PropType<MemoStatsData>, required: true }
-})
+  stats: { type: Object as PropType<MemoStatsData>, required: true },
+  activeFilter: { type: String, default: "all" },
+});
+defineEmits(["filter-click"]);
 </script>
 
 <style scoped>
 .memo-stats {
-  margin-bottom: 0;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .stat-card {
-  height: 100%;
-  min-height: 116px;
-  border-radius: 16px;
+  flex: 1;
+  min-width: 100px;
+  background: #fff;
   border: 1px solid #e5e7eb;
-  background: #ffffff;
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  border-radius: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
 }
 
-.stat-inner {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 8px;
+.stat-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
 }
 
-.stat-label {
-  font-size: 12px;
-  color: #64748b;
-  line-height: 1.2;
-  letter-spacing: 0.2px;
+.stat-card.active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
 }
 
 .stat-value {
-  margin-top: 2px;
-  font-size: 26px;
-  font-weight: 800;
+  font-size: 24px;
+  font-weight: 700;
   color: #0f172a;
-  line-height: 1;
+  line-height: 1.2;
 }
 
-.stat-tip {
-  margin-top: 0;
-  min-height: 2.2em;
-  font-size: 12px;
-  line-height: 1.35;
-  color: #94a3b8;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
+.stat-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.stat-todo .stat-value {
+  color: #f59e0b;
+}
+
+.stat-done .stat-value {
+  color: #22c55e;
+}
+
+.stat-pinned .stat-value {
+  color: #8b5cf6;
 }
 </style>

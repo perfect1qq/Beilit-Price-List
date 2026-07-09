@@ -2,54 +2,19 @@
   <div class="quotation-history-page">
     <div v-if="viewState === 'list'" class="history-list-view">
       <el-card shadow="never" class="card">
-        <div class="history-toolbar">
-          <el-input v-model="searchKeyword" placeholder="按公司名称 / 名称搜索" clearable style="max-width: 340px"
-            @input="onKeywordInput" />
-          <div class="toolbar-right">
-            <el-tag type="info">
-              共 {{ totalRecords }} 条记录 /
-              {{ groupedHistoryList.length }} 个年份</el-tag>
-            <el-button type="primary" size="small" @click="showAddYearDialog = true">添加年份</el-button>
-          </div>
-        </div>
-
-
-        <el-dialog v-model="showAddYearDialog" title="添加年份" width="360px" :close-on-click-modal="false">
-          <el-form @submit.prevent="confirmAddYear">
-            <el-form-item label="年份">
-              <el-input-number v-model="newYear" :min="2000" :max="2099" :controls="false" placeholder="如 2027"
-                style="width: 100%" />
-            </el-form-item>
-            <el-form-item>
-              <div class="year-dialog-hint">
-                <el-icon>
-                  <InfoFilled />
-                </el-icon>
-                <span>提示：添加的年份若暂无数据，将显示"该年份暂无报价单记录"</span>
+        <template #header>
+          <CardHeader title="报价单历史">
+            <template #actions>
+              <div class="history-toolbar">
+                <el-input v-model="searchKeyword" placeholder="按公司名称 / 名称搜索" clearable style="max-width: 340px"
+                  @input="onKeywordInput" />
+                <el-tag type="info">
+                  共 {{ totalRecords }} 条记录 /
+                  {{ groupedHistoryList.length }} 个年份</el-tag>
               </div>
-            </el-form-item>
-          </el-form>
-          <template #footer>
-            <el-button @click="showAddYearDialog = false">取消</el-button>
-            <el-button type="primary" @click="confirmAddYear">确定</el-button>
-          </template>
-        </el-dialog>
-
-
-        <el-dialog v-model="showMoveYearDialog" title="移动到其他年份" width="360px" :close-on-click-modal="false">
-          <el-form @submit.prevent="confirmMoveToYear">
-            <el-form-item label="目标年份">
-              <el-select v-model="targetMoveYear" placeholder="选择目标年份" style="width: 100%">
-                <el-option v-for="year in availableYears" :key="year" :label="year + ' 年'" :value="year" />
-              </el-select>
-            </el-form-item>
-          </el-form>
-          <template #footer>
-            <el-button @click="showMoveYearDialog = false">取消</el-button>
-            <el-button type="primary" @click="confirmMoveToYear"
-              :loading="!!movingRecord?.id && isActionLoading(movingRecord.id)">确定</el-button>
-          </template>
-        </el-dialog>
+            </template>
+          </CardHeader>
+        </template>
 
         <div class="history-content-wrap">
           <el-skeleton v-if="loading" animated :rows="8" />
@@ -70,8 +35,6 @@
                     </div>
                     <div class="group-title-meta">
                       <span>最新：{{ yearGroup.latestDate || "-" }}</span>
-                      <el-button v-if="isCustomYear(yearGroup.year)" link type="danger" size="small"
-                        @click.stop="handleRemoveYear(yearGroup.year)">删除年份</el-button>
                     </div>
                   </div>
                 </template>
@@ -109,18 +72,13 @@
                         <el-table-column label="操作" fixed="right" min-width="180" align="center">
                           <template #default="{ row }: { row: HistoryRecord }">
                             <div class="action-btns">
+                              <el-button type="primary" size="small" plain
+                                @click="openDetail(row, 'view')">查看</el-button>
                               <template v-if="!isGuest">
-                                <el-button type="warning" size="small" text :loading="isActionLoading(row.id)"
-                                  @click="openDetail(row, 'edit')">
-                                  修改
-                                </el-button>
-                                <el-button type="success" size="small" text @click="openMoveYearDialog(row)">
-                                  移动年份
-                                </el-button>
-                                <el-button type="danger" size="small" text :loading="isActionLoading(row.id)"
-                                  @click="deleteHistory(row)">
-                                  删除
-                                </el-button>
+                                <el-button type="warning" size="small" plain :loading="isActionLoading(row.id)"
+                                  @click="openDetail(row, 'edit')">修改</el-button>
+                                <el-button type="danger" size="small" plain :loading="isActionLoading(row.id)"
+                                  @click="deleteHistory(row)">删除</el-button>
                               </template>
                             </div>
                           </template>
@@ -145,13 +103,19 @@
 
     <div v-else class="history-detail-view">
       <el-card shadow="never" class="card">
-        <div class="toolbar">
-          <el-button @click="backToList">返回列表</el-button>
-          <el-button type="primary" plain :icon="Plus" @click="addRow" :disabled="isViewMode">手动添加一行</el-button>
-          <el-button :icon="Refresh" @click="clearRows" :disabled="isViewMode">清空当前表格</el-button>
-          <el-button type="success" :icon="DocumentAdd" @click="handleSubmit" :loading="isSubmitting"
-            :disabled="isViewMode">确认保存报价单</el-button>
-        </div>
+        <template #header>
+          <CardHeader title="报价单详情">
+            <template #actions>
+              <div class="toolbar">
+                <el-button @click="backToList">返回列表</el-button>
+                <el-button v-if="!isViewMode" type="primary" plain :icon="Plus" @click="addRow">手动添加一行</el-button>
+                <el-button v-if="!isViewMode" :icon="Refresh" @click="clearRows">清空当前表格</el-button>
+                <el-button v-if="!isViewMode" type="success" :icon="DocumentAdd" @click="handleSubmit"
+                  :loading="isSubmitting">确认保存报价单</el-button>
+              </div>
+            </template>
+          </CardHeader>
+        </template>
 
         <QuotationEditor ref="formRef" :is-view-mode="isViewMode" :rules-disabled="rulesDisabled"
           :editing-history-id="editingHistoryId" :form-model="formModel" v-model:remark="remark"
@@ -174,14 +138,14 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
 defineOptions({ name: "QuotationHistory" });
-import { DocumentAdd, Plus, Refresh, InfoFilled } from "@element-plus/icons-vue";
+import { DocumentAdd, Plus, Refresh } from "@element-plus/icons-vue";
 import { usePermissions } from "@/composables/usePermissions";
 import { formatMoney } from "@/utils/number";
 import { TABLE_HEADER_STYLE } from "@/constants/table";
 import QuotationEditor from "@/components/quotation/QuotationEditor.vue";
+import CardHeader from "@/components/common/CardHeader.vue";
 import { useQuotationHistoryPage } from "@/composables/useQuotationHistoryPage";
 import type { HistoryRecord } from "@/composables/useQuotationHistory";
-import { useQuotationYearDialogs } from "@/composables/useQuotationYearDialogs";
 
 const { isAdmin, isGuest } = usePermissions();
 
@@ -222,10 +186,6 @@ const {
   isActionLoading,
   onKeywordInput,
   deleteHistory,
-  addCustomYear,
-  removeCustomYear,
-  customYears,
-  moveToYear,
   handleManualFinalPriceChange,
   handleDiscountChange,
   handleParseText,
@@ -237,26 +197,6 @@ const {
 const totalRecords = computed(() =>
   groupedHistoryList.value.reduce((sum, group) => sum + group.count, 0)
 );
-
-const {
-  showAddYearDialog,
-  newYear,
-  showMoveYearDialog,
-  movingRecord,
-  targetMoveYear,
-  availableYears,
-  confirmAddYear,
-  isCustomYear,
-  handleRemoveYear,
-  openMoveYearDialog,
-  confirmMoveToYear,
-} = useQuotationYearDialogs({
-  groupedHistoryList,
-  customYears,
-  addCustomYear,
-  removeCustomYear,
-  moveToYear,
-});
 
 
 watch(
@@ -319,24 +259,16 @@ watch(
 }
 
 .card {
-  border-radius: 14px;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
 }
 
 .history-toolbar {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
   flex-wrap: wrap;
-}
-
-.toolbar-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 
 .history-content-wrap {
@@ -352,7 +284,7 @@ watch(
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  align-items: center;
 }
 
 /* ========== 年份内分页 ========== */
@@ -374,10 +306,9 @@ watch(
 :deep(.year-collapse > .el-collapse-item) {
   border: none;
   margin-bottom: 12px;
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  border: 1px solid #f1f5f9;
+  border: 1px solid #e5e7eb;
 }
 
 :deep(.year-collapse .el-collapse-item__header) {
@@ -505,34 +436,13 @@ watch(
 
 .action-btns {
   display: flex;
-  gap: 2px;
+  gap: 6px;
   justify-content: center;
   align-items: center;
 }
 
 .action-btns .el-button {
-  padding: 0 6px;
-  font-size: 13px;
-}
-
-/* ========== 弹窗提示 ========== */
-
-.year-dialog-hint {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  padding: 10px 12px;
-  background-color: #f0f9ff;
-  border: 1px solid #bae6fd;
-  border-radius: 8px;
-  color: #0369a1;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.year-dialog-hint .el-icon {
-  margin-top: 2px;
-  color: #0284c7;
+  padding: 5px 12px;
 }
 
 /* ========== 表单 ========== */
@@ -551,7 +461,6 @@ watch(
 
 @media (max-width: 768px) {
   .history-toolbar {
-    margin-bottom: 12px;
     align-items: flex-start;
   }
 
@@ -562,7 +471,6 @@ watch(
   }
 
   .toolbar {
-    margin-bottom: 12px;
     gap: 8px;
   }
 
@@ -578,11 +486,6 @@ watch(
 
   .group-title-meta {
     white-space: normal;
-  }
-
-  .action-btns .el-button {
-    padding: 0 4px;
-    font-size: 12px;
   }
 }
 </style>

@@ -6,10 +6,25 @@ interface CustomerListParams extends PaginationParams {
   cooperationStatus?: string
   customerType?: string
   paymentStatus?: string
+  orderStatus?: string
+}
+
+interface CustomerStats {
+  total: number
+  undealt: number
+  dealt: number
+  pending: number
+  settled: number
+  ordered: number
+  dealer: number
+  terminal: number
 }
 
 const list = (params?: CustomerListParams) =>
   request.get<CustomerListResult>('/api/customers', { params })
+
+const getStats = () =>
+  request.get<CustomerStats>('/api/customers/stats')
 
 const getDetail = (id: number | string) =>
   request.get<{ customer: CustomerDetailData }>(`/api/customers/${id}`)
@@ -31,6 +46,7 @@ const deleteFollowUp = (id: number | string) =>
 
 const customerApi = {
   list: unwrap(list),
+  getStats: unwrap(getStats),
   getDetail: unwrap(getDetail),
   create: unwrap(create),
   update: unwrap(update),

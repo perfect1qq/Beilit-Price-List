@@ -1,6 +1,6 @@
 <template>
   <el-drawer :model-value="visible" @update:model-value="$emit('update:visible', $event)"
-    :title="isCreate ? '✨ 开启新任务' : '📝 更新任务细节'" size="540px" class="custom-drawer">
+    :title="isCreate ? '开启新任务' : '更新任务细节'" size="540px" class="custom-drawer">
     <el-form ref="elFormRef" :model="localForm" label-position="top">
       <el-form-item label="任务名称" prop="title" :rules="memoTitleRule" required>
         <el-input v-model="localForm.title" placeholder="输入核心目标" maxlength="100" show-word-limit />

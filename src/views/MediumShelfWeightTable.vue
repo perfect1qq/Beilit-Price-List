@@ -1,5 +1,3 @@
-
-
 <template>
 
 
@@ -9,33 +7,30 @@
   <div class="medium-weight-page">
 
     <el-card class="page-card" shadow="never" v-loading="loading">
+      <template #header>
+        <CardHeader title="中型货架重量表">
+          <template #actions>
+            <div class="toolbar-actions">
+              <template v-if="!isGuest">
+                <el-button v-if="!editMode" type="primary" :icon="Edit" @click="startEdit">
+                  编辑
+                </el-button>
 
+                <template v-else>
+                  <el-button :icon="Plus" @click="addSummaryRow">新增中型货架重量表</el-button>
+                  <el-button :loading="saving" type="success" @click="saveData">保存</el-button>
+                  <el-button @click="cancelEdit">取消</el-button>
+                </template>
+              </template>
 
-      <div class="toolbar">
-        <div>
-          <div class="page-title">中型货架重量表</div>
-          <div class="page-subtitle">
-
-            {{ editMode ? '当前为编辑模式，可动态修改、添加或删除层级与结构数据' : '当前为实时预览模式，系统将自动从服务端同步配置' }}
-          </div>
-        </div>
-
-
-        <div class="toolbar-actions">
-          <template v-if="!isGuest">
-            <el-button v-if="!editMode" type="primary" :icon="Edit" @click="startEdit">
-              编辑
-            </el-button>
-
-            <template v-else>
-              <el-button :icon="Plus" @click="addSummaryRow">新增中型货架重量表</el-button>
-              <el-button :loading="saving" type="success" @click="saveData">保存</el-button>
-              <el-button @click="cancelEdit">取消</el-button>
-            </template>
+              <el-button :icon="Refresh" @click="loadData" :loading="loading">刷新</el-button>
+            </div>
           </template>
+        </CardHeader>
+      </template>
 
-          <el-button :icon="Refresh" @click="loadData" :loading="loading">刷新</el-button>
-        </div>
+      <div class="page-subtitle">
+        {{ editMode ? '当前为编辑模式，可动态修改、添加或删除层级与结构数据' : '当前为实时预览模式，系统将自动从服务端同步配置' }}
       </div>
 
 
@@ -196,6 +191,7 @@ import { Edit, Plus, Refresh } from '@element-plus/icons-vue'
 import { usePermissions } from '@/composables/usePermissions'
 import { useMediumShelfWeight } from '@/composables/useMediumShelfWeight'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
+import CardHeader from '@/components/common/CardHeader.vue'
 
 const { isGuest } = usePermissions()
 
@@ -284,49 +280,34 @@ onMounted(() => {
 }
 
 .page-card {
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-}
-
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
 }
 
 .toolbar-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-}
-
-.page-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: #303133;
+  align-items: center;
 }
 
 .page-subtitle {
-  margin-top: 4px;
+  margin-bottom: 16px;
   font-size: 13px;
-  color: #909399;
+  color: #64748b;
 }
 
 .section-card {
   margin-top: 16px;
-  border-radius: 4px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
 }
 
 .section-title {
   font-size: 15px;
   font-weight: bold;
   color: #1e293b;
-  border-left: 4px solid #3b82f6;
-  /* 使用统一的靛蓝色调 */
-  padding-left: 10px;
   line-height: 1;
 }
 
@@ -346,15 +327,6 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .toolbar {
-    margin-bottom: 12px;
-    gap: 10px;
-  }
-
-  .page-title {
-    font-size: 16px;
-  }
-
   .page-subtitle {
     font-size: 12px;
     line-height: 1.5;

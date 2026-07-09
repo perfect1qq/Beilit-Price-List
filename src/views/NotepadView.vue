@@ -198,16 +198,16 @@ onMounted(() => {
   display: flex;
   height: calc(100vh - 110px);
   background: #f5f7fa;
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
 }
 
 .notepad-sidebar {
   width: 280px;
   min-width: 280px;
   background: #fff;
-  border-right: 1px solid #e4e7ed;
+  border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -266,7 +266,7 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
   color: #606266;
@@ -307,7 +307,7 @@ onMounted(() => {
 
 .note-item {
   padding: 10px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   margin-bottom: 4px;
   transition: all 0.2s;
@@ -339,7 +339,7 @@ onMounted(() => {
   gap: 8px;
   padding: 8px 12px;
   margin-bottom: 4px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 13px;
   color: #606266;

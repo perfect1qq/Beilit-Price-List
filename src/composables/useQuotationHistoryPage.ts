@@ -63,11 +63,7 @@ export const useQuotationHistoryPage = () => {
     loadHistoryList,
     onKeywordInput,
     saveQuotation,
-    deleteHistory,
-    addCustomYear,
-    removeCustomYear,
-    customYears,
-    moveToYear
+    deleteHistory
   } = useQuotationHistory({
     api: quotationApi,
     loadToEditor: (record, mode) => loadRecord(record, mode)
@@ -201,10 +197,6 @@ export const useQuotationHistoryPage = () => {
     onKeywordInput,
     saveQuotation,
     deleteHistory,
-    addCustomYear,
-    removeCustomYear,
-    customYears,
-    moveToYear,
     handleManualFinalPriceChange,
     handleDiscountChange,
     handleParseText,

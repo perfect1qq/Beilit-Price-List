@@ -1,10 +1,9 @@
 <template>
   <div class="memo-container">
-    <MemoStatsRow :stats="stats" />
+    <MemoStatsRow :stats="stats" :active-filter="activeFilter" @filter-click="setFilter" />
 
     <div class="memo-wrapper">
-      <MemoFilter v-model:keyword="keyword" v-model:active-filter="activeFilter" :is-guest="isGuest"
-        @keyword-input="onKeywordInput" @filter-change="handleFilterChange" @create="openCreate" />
+      <MemoFilter v-model:keyword="keyword" :is-guest="isGuest" @keyword-input="onKeywordInput" @create="openCreate" />
 
       <div class="memo-content">
         <el-skeleton :loading="loading && !list.length" animated :rows="12">
@@ -19,7 +18,7 @@
 
                 <div class="date-grouped-list">
                   <el-collapse v-model="activeDatePanels" accordion>
-                    <el-collapse-item v-for="group in groupedTodoList" :key="group.key" :name="group.key">
+                    <el-collapse-item v-for="group in visibleTodoGroups" :key="group.key" :name="group.key">
                       <template #title>
                         <div class="date-group-header">
                           <span class="date-label">{{ group.title }}</span>
@@ -34,8 +33,10 @@
                     </el-collapse-item>
                   </el-collapse>
 
-                  <el-empty v-if="!groupedTodoList.length" description="暂无待办任务" :image-size="80" />
+                  <el-empty v-if="!visibleTodoGroups.length" description="暂无待办任务" :image-size="80" />
                 </div>
+
+                <div v-if="todoHasMore" ref="todoLoadMoreTriggerRef" class="load-more-trigger">加载更多...</div>
               </section>
 
               <section class="column">
@@ -47,7 +48,7 @@
 
                 <div class="date-grouped-list">
                   <el-collapse v-model="activeDoneDatePanels" accordion>
-                    <el-collapse-item v-for="group in groupedDoneList" :key="group.key" :name="group.key">
+                    <el-collapse-item v-for="group in pagedDoneGroups" :key="group.key" :name="group.key">
                       <template #title>
                         <div class="date-group-header">
                           <span class="date-label">{{ group.title }}</span>
@@ -62,34 +63,46 @@
                     </el-collapse-item>
                   </el-collapse>
 
-                  <el-empty v-if="!groupedDoneList.length" description="继续加油" :image-size="80" />
+                  <el-empty v-if="!pagedDoneGroups.length" description="继续加油" :image-size="80" />
+                </div>
+
+                <div v-if="total > 0" class="pager-wrap">
+                  <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]"
+                    :total="total" layout="total, prev, pager, next" @current-change="handlePageChange"
+                    @size-change="handleSizeChange" />
                 </div>
               </section>
             </div>
 
             <div v-show="!isBoardMode" class="list-view">
-              <div v-if="list.length" class="task-list single-stack">
-                <MemoCard v-for="item in list" :key="item.id" :item="item" :board-mode="false"
-                  :highlight-id="highlightId" :is-guest="isGuest" @toggle-completed="toggleCompleted" @edit="openEdit"
-                  @remove="removeMemo" />
+              <div v-if="pagedGroups.length" class="date-grouped-list">
+                <el-collapse v-model="activeListDatePanels" accordion>
+                  <el-collapse-item v-for="group in pagedGroups" :key="group.key" :name="group.key">
+                    <template #title>
+                      <div class="date-group-header">
+                        <span class="date-label">{{ group.title }}</span>
+                        <span class="date-count">{{ group.count }}条</span>
+                      </div>
+                    </template>
+                    <div class="task-list">
+                      <MemoCard v-for="item in group.items" :key="item.id" :item="item" board-mode
+                        @toggle-completed="toggleCompleted" @edit="openEdit" @toggle-pinned="togglePinned"
+                        @history="openHistory" @remove="removeMemo" />
+                    </div>
+                  </el-collapse-item>
+                </el-collapse>
+
+                <el-empty v-if="!pagedGroups.length" :description="emptyDescription" :image-size="80" />
               </div>
 
               <el-empty v-else :description="emptyDescription" />
             </div>
 
-            <div class="load-more-container">
-              <div v-if="loading" class="no-more-text">
-                <span>加载中...</span>
-              </div>
-
-              <div v-else-if="!hasMore && list.length > 0" class="no-more-text">
-                <span class="line"></span>
-                <span>已经没有更多任务了</span>
-                <span class="line"></span>
-              </div>
+            <div v-if="!isBoardMode && total > 0" class="pager-wrap">
+              <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]"
+                :total="total" layout="total, sizes, prev, pager, next, jumper" @current-change="handlePageChange"
+                @size-change="handleSizeChange" />
             </div>
-
-            <div ref="loadMoreTriggerRef" class="load-more-sentinel" aria-hidden="true"></div>
           </template>
         </el-skeleton>
       </div>
@@ -116,10 +129,12 @@ const memoEditorRef = ref<InstanceType<typeof MemoEditorDrawer> | null>(null)
 const {
   isGuest,
   list,
-  hasMore,
+  total,
   loading,
   saving,
   keyword,
+  page,
+  pageSize,
   activeFilter,
   stats,
   highlightId,
@@ -129,14 +144,17 @@ const {
   historyVisible,
   historyTitle,
   historyList,
-  loadMoreTriggerRef,
   isBoardMode,
   todoList,
   doneList,
-  groupedTodoList,
-  groupedDoneList,
+  visibleTodoGroups,
+  todoHasMore,
+  todoLoadMoreTriggerRef,
+  pagedDoneGroups,
+  pagedGroups,
   activeDatePanels,
   activeDoneDatePanels,
+  activeListDatePanels,
   emptyDescription,
   openCreate,
   openEdit,
@@ -146,7 +164,9 @@ const {
   removeMemo,
   openHistory,
   onKeywordInput,
-  handleFilterChange,
+  setFilter,
+  handlePageChange,
+  handleSizeChange,
   init,
   cleanup,
 } = useMemoManagement()
@@ -164,35 +184,35 @@ onUnmounted(() => {
 
 <style scoped>
 .memo-container {
-  padding: 32px;
-  background-color: #fcfdfe;
+  padding: 20px;
+  background-color: transparent;
   min-height: 100vh;
   color: #1a1f36;
 }
 
 .memo-wrapper {
   background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
-  border: 1px solid #f1f5f9;
+  border-radius: 10px;
+  box-shadow: none;
+  border: 1px solid #e5e7eb;
   min-height: 600px;
 }
 
 .memo-content {
-  padding: 28px;
+  padding: 20px;
 }
 
 .board-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 32px;
+  gap: 16px;
 }
 
 .column {
-  background: #f8fafc;
-  border-radius: 16px;
+  background: #f5f7fa;
+  border-radius: 10px;
   padding: 20px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid #e5e7eb;
 }
 
 .todo-column {
@@ -221,15 +241,15 @@ onUnmounted(() => {
   color: #94a3b8;
   background: #fff;
   padding: 2px 8px;
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 :deep(.el-collapse-item__header) {
   background: #fff;
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 12px 16px;
   margin-bottom: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e7eb;
   height: auto;
   line-height: 1.5;
 }
@@ -281,36 +301,26 @@ onUnmounted(() => {
   gap: 14px;
 }
 
-.load-more-container {
-  margin-top: 32px;
-  text-align: center;
-  padding-bottom: 16px;
+.pager-wrap {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
 }
 
-.no-more-text {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
+.load-more-trigger {
+  text-align: center;
+  padding: 16px 0;
   color: #94a3b8;
   font-size: 13px;
-  font-weight: 500;
-}
-
-.no-more-text .line {
-  width: 40px;
-  height: 1px;
-  background-color: #e2e8f0;
-}
-
-.load-more-sentinel {
-  width: 100%;
-  height: 1px;
 }
 
 @media (max-width: 1024px) {
   .board-grid {
     grid-template-columns: 1fr;
+  }
+
+  .pager-wrap {
+    justify-content: center;
   }
 }
 

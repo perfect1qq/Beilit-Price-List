@@ -35,7 +35,6 @@ interface QuotationHistoryApi {
   update: (id: number | string, data: QuotationCreatePayload) => Promise<{ quotation: QuotationData }>
   remove: (id: number | string) => Promise<null>
   copy?: (id: number | string) => Promise<{ quotation: QuotationData }>
-  moveYear?: (id: number | string, targetYear: number) => Promise<{ quotation: QuotationData }>
   [key: string]: unknown
 }
 
@@ -63,10 +62,6 @@ interface QuotationHistoryReturn {
   deleteHistory: (record: HistoryRecord) => Promise<void>
   viewHistory: (record: HistoryRecord) => void
   editHistory: (record: HistoryRecord) => void
-  addCustomYear: (year: number) => void
-  removeCustomYear: (year: number) => void
-  customYears: Ref<number[]>
-  moveToYear: (record: HistoryRecord, targetYear: number) => Promise<boolean>
 }
 
 const clone = <T>(value: T): T => (value === null || value === undefined ? value : JSON.parse(JSON.stringify(value)))
@@ -201,22 +196,8 @@ const fetchAllRecords = async (api: QuotationHistoryOptions['api'], keyword = ''
 export const useQuotationHistory = ({ api, loadToEditor }: QuotationHistoryOptions): QuotationHistoryReturn => {
   const historyList = shallowRef<HistoryRecord[]>([])
 
-
-  const CUSTOM_YEARS_KEY = 'quotation_custom_years'
-  const savedCustomYears = (() => { try { return JSON.parse(localStorage.getItem(CUSTOM_YEARS_KEY) || '[]') } catch { return [] } })()
-  const customYears = ref<number[]>(savedCustomYears)
-
-  const saveCustomYears = () => {
-    localStorage.setItem(CUSTOM_YEARS_KEY, JSON.stringify(customYears.value))
-  }
-
   const groupedHistoryList = computed(() => {
     const groups = groupByYearAndCompany(historyList.value)
-    for (const year of customYears.value) {
-      if (!groups.some(g => g.year === year)) {
-        groups.push({ year, count: 0, latestDate: '', companyGroups: [] })
-      }
-    }
     groups.sort((a, b) => b.year - a.year)
     return groups
   })
@@ -332,33 +313,6 @@ export const useQuotationHistory = ({ api, loadToEditor }: QuotationHistoryOptio
 
   const editHistory = (record: HistoryRecord): void => loadToEditor(record, 'edit')
 
-  const addCustomYear = (year: number): void => {
-    if (!customYears.value.includes(year)) {
-      customYears.value.push(year)
-      saveCustomYears()
-    }
-  }
-
-  const removeCustomYear = (year: number): void => {
-    customYears.value = customYears.value.filter(y => y !== year)
-    saveCustomYears()
-  }
-
-
-  const moveToYear = async (record: HistoryRecord, targetYear: number): Promise<boolean> => {
-    const [err, result] = await to(api.moveYear!(record.id, targetYear))
-
-    if (err || !result) {
-      ElMessage.error((err as { message?: string })?.message || '移动失败')
-      return false
-    }
-
-
-    await loadHistoryList()
-    ElMessage.success(`已将报价单移动到 ${targetYear} 年`)
-    return true
-  }
-
   return {
     historyList,
     groupedHistoryList,
@@ -377,10 +331,6 @@ export const useQuotationHistory = ({ api, loadToEditor }: QuotationHistoryOptio
     saveQuotation,
     deleteHistory,
     viewHistory,
-    editHistory,
-    addCustomYear,
-    removeCustomYear,
-    customYears,
-    moveToYear
+    editHistory
   }
 }

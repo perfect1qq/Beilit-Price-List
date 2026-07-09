@@ -32,6 +32,13 @@
         <el-option label="已结款" value="已结款" />
       </el-select>
     </el-form-item>
+    <el-form-item label="下单状态" prop="orderStatus">
+      <el-select v-model="localData.orderStatus" placeholder="选择下单状态" style="width: 100%"
+        :disabled="localData.cooperationStatus !== '已合作'">
+        <el-option label="未下单" value="未下单" />
+        <el-option label="已下单" value="已下单" />
+      </el-select>
+    </el-form-item>
     <el-form-item label="工期" prop="deliveryDays">
       <div class="delivery-input-row">
         <el-input-number v-model="localData.deliveryDays" :min="1" :max="365" controls-position="right" placeholder="天数"
@@ -83,7 +90,8 @@ const INITIAL_LOCAL: CustomerCreatePayload & CustomerUpdatePayload = {
   deliveryDays: null,
   shelfType: '',
   remark: '',
-  paymentStatus: '未有款项'
+  paymentStatus: '未有款项',
+  orderStatus: '未下单'
 }
 
 const localData = reactive<CustomerCreatePayload & CustomerUpdatePayload>({ ...INITIAL_LOCAL })
@@ -95,6 +103,9 @@ watch(() => props.formData, (newVal) => {
 watch(() => localData.cooperationStatus, (val) => {
   if (val === '未合作') {
     localData.paymentStatus = '未有款项'
+  }
+  if (val !== '已合作') {
+    localData.orderStatus = '未下单'
   }
 })
 

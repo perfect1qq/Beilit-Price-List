@@ -1,25 +1,5 @@
-
-
 <template>
   <AuthLayout card-title="新用户注册" card-subtitle="请填写以下信息完成账号创建">
-    <template #hero-content>
-      <h1>加入我们</h1>
-      <p>
-        创建一个新账号，开启您的智能报价与高效审批之旅。系统将自动根据您的设置分配初始权限。
-      </p>
-
-      <div class="hero-badges">
-        <div class="badge-item"><el-icon>
-            <DataLine />
-          </el-icon><span>即刻开启</span></div>
-        <div class="badge-item"><el-icon>
-            <Grid />
-          </el-icon><span>专业协作</span></div>
-        <div class="badge-item"><el-icon>
-            <Lock />
-          </el-icon><span>安全可靠</span></div>
-      </div>
-    </template>
 
     <el-form ref="formRef" :model="form" :rules="rules" class="form" @keyup.enter="handleRegister">
       <el-form-item prop="username">
@@ -57,7 +37,7 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { to } from '@/utils/async'
 import { showError, showSuccess } from '@/utils/message'
-import { DataLine, Grid, Lock, User, UserFilled, Key } from '@element-plus/icons-vue'
+import { Lock, User, UserFilled, Key } from '@element-plus/icons-vue'
 import { isPublicRegisterEnabled } from '@/utils/runtimeConfig'
 import AuthLayout from '@/components/common/AuthLayout.vue'
 

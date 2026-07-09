@@ -1,17 +1,21 @@
 <template>
   <el-card shadow="never" class="editor-card">
-    <el-form ref="formRef" :model="localFormModel">
-      <div class="detail-toolbar">
-        <el-button @click="$emit('back')">返回列表</el-button>
-        <el-button v-if="mode === 'edit'" type="success" @click="$emit('update')">提交修改</el-button>
+    <template #header>
+      <CardHeader title="横梁载重单详情">
+        <template #actions>
+          <el-button @click="$emit('back')">返回列表</el-button>
+          <el-button v-if="mode === 'edit'" type="success" @click="$emit('update')">提交修改</el-button>
+        </template>
+      </CardHeader>
+    </template>
 
-        <div class="name-display">
-          <span class="label">记录名称:</span>
-          <el-form-item prop="recordName" :rules="recordNameRule">
-            <el-input v-model="localFormModel.recordName" :disabled="mode === 'view'" style="width: 250px"
-              placeholder="必填" />
-          </el-form-item>
-        </div>
+    <el-form ref="formRef" :model="localFormModel">
+      <div class="name-display">
+        <span class="label">记录名称:</span>
+        <el-form-item prop="recordName" :rules="recordNameRule">
+          <el-input v-model="localFormModel.recordName" :disabled="mode === 'view'" style="width: 250px"
+            placeholder="必填" />
+        </el-form-item>
       </div>
 
       <el-table :data="tableItems" border stripe style="width: 100%; margin-top: 20px"
@@ -64,6 +68,7 @@ import { computed } from 'vue'
 import { Plus, Delete } from '@element-plus/icons-vue'
 import { beamNameRule, recordNameRule, positiveDecimalRule, noSpaceRawValidator } from '@/utils/formRules'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
+import CardHeader from '@/components/common/CardHeader.vue'
 import type { BeamQuotationItem } from '@/types'
 
 interface BeamFormModel {
@@ -91,17 +96,8 @@ const tableItems = computed(() => localFormModel.value.editingItems || props.ite
 
 <style scoped>
 .editor-card {
-  border-radius: 12px;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-.detail-toolbar {
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  justify-content: flex-start;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
 }
 
 .name-display {
@@ -146,11 +142,6 @@ const tableItems = computed(() => localFormModel.value.editingItems || props.ite
 }
 
 @media (max-width: 768px) {
-  .detail-toolbar {
-    margin-bottom: 12px;
-    gap: 8px;
-  }
-
   .name-display {
     margin-left: 0;
     width: 100%;

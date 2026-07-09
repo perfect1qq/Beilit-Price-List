@@ -1,23 +1,23 @@
 <template>
   <el-card shadow="never" class="card">
-    <div class="head">
-      <div>
-        <h2>{{ companyName || meta.name || '审批详情' }}</h2>
-        <div class="sub">名称：{{ meta.name || '-' }} ｜ 公司名称：{{ meta.companyName || '-' }} ｜ 发起人：{{ meta.ownerName || '-'
-        }}</div>
-      </div>
-      <div class="actions">
-        <el-tag :type="tagType(meta.status)" effect="dark">{{ statusLabel(meta.status) }}</el-tag>
-        <el-button @click="goBackToList">返回列表</el-button>
-        <el-button v-if="!isHistoryRoute && meta.status === 'pending'" type="success" :loading="actionLoading"
-          :disabled="!canApprove" @click="approve">
-          {{ approveButtonText }}
-        </el-button>
-        <el-button v-if="!isHistoryRoute && meta.status === 'pending'" type="danger" :loading="actionLoading"
-          @click="reject">驳回退回</el-button>
-        <el-button v-if="!isHistoryRoute && meta.status !== 'approved'" type="warning" :loading="actionLoading"
-          :disabled="!editMode" @click="save">保存当前修改</el-button>
-      </div>
+    <template #header>
+      <CardHeader :title="companyName || meta.name || '审批详情'">
+        <template #actions>
+          <el-tag :type="tagType(meta.status)" effect="dark">{{ statusLabel(meta.status) }}</el-tag>
+          <el-button @click="goBackToList">返回列表</el-button>
+          <el-button v-if="!isHistoryRoute && meta.status === 'pending'" type="success" :loading="actionLoading"
+            :disabled="!canApprove" @click="approve">
+            {{ approveButtonText }}
+          </el-button>
+          <el-button v-if="!isHistoryRoute && meta.status === 'pending'" type="danger" :loading="actionLoading"
+            @click="reject">驳回退回</el-button>
+          <el-button v-if="!isHistoryRoute && meta.status !== 'approved'" type="warning" :loading="actionLoading"
+            :disabled="!editMode" @click="save">保存当前修改</el-button>
+        </template>
+      </CardHeader>
+    </template>
+
+    <div class="sub">名称：{{ meta.name || '-' }} ｜ 公司名称：{{ meta.companyName || '-' }} ｜ 发起人：{{ meta.ownerName || '-' }}
     </div>
 
     <el-form class="form" label-width="90px">
@@ -102,6 +102,7 @@
 <script setup lang="ts">
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 import { useApprovalDetail } from '@/composables/useApprovalDetail'
+import CardHeader from '@/components/common/CardHeader.vue'
 
 defineOptions({ name: 'ApprovalDetail' })
 
@@ -139,52 +140,23 @@ const {
 
 <style scoped>
 .card {
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-  border: none;
-}
-
-.head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 16px;
-  margin-bottom: 24px;
-  border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 16px;
-}
-
-.head h2 {
-  font-size: 20px;
-  font-weight: 800;
-  color: #1e293b;
-  margin: 0;
-  line-height: 1;
-  border-left: 4px solid #3b82f6;
-  padding-left: 10px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
 }
 
 .sub {
   color: #64748b;
   font-size: 13px;
-  margin-top: 10px;
-  padding-left: 14px;
-}
-
-.actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  align-items: center;
+  margin-bottom: 16px;
 }
 
 .form {
-  margin-top: 10px;
+  margin-top: 0;
   padding: 20px;
-  background: #f8fafc;
+  background: #f5f7fa;
   border-radius: 8px;
   margin-bottom: 20px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e7eb;
 }
 
 .table-container {
@@ -202,10 +174,10 @@ const {
   justify-content: flex-end;
   gap: 24px;
   padding: 16px 24px;
-  background: #f8fafc;
+  background: #f5f7fa;
   border-radius: 8px;
   font-size: 15px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e7eb;
 }
 
 .summary-item span {
@@ -227,8 +199,6 @@ const {
   color: #1e293b;
   margin-top: 28px;
   margin-bottom: 20px;
-  border-left: 4px solid #3b82f6;
-  padding-left: 10px;
   line-height: 1;
 }
 
@@ -247,23 +217,8 @@ const {
 }
 
 @media (max-width: 768px) {
-  .head {
-    align-items: flex-start;
-    margin-bottom: 14px;
-    padding-bottom: 12px;
-  }
-
-  .head h2 {
-    font-size: 16px;
-  }
-
   .sub {
-    padding-left: 0;
     line-height: 1.6;
-  }
-
-  .actions {
-    width: 100%;
   }
 
   .form {

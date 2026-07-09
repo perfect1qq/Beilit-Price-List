@@ -109,10 +109,7 @@ body {
 }
 
 /* 弹窗滚动锁定 */
-html.dialog-scroll-root-lock,
-html.dialog-scroll-root-lock body,
-html.dialog-scroll-root-lock body #app,
-html.dialog-scroll-root-lock body .el-main,
+html:has(body.el-popup-parent--hidden),
 body.el-popup-parent--hidden,
 body.el-popup-parent--hidden #app,
 body.el-popup-parent--hidden .el-main {
@@ -130,7 +127,7 @@ body.el-popup-parent--hidden .el-main {
 .el-dropdown-menu,
 .el-notification,
 .el-message {
-  border-radius: 14px;
+  border-radius: 10px;
 }
 
 .el-input__wrapper,
@@ -296,7 +293,7 @@ body.el-popup-parent--hidden .el-main {
 
 .action-btns .el-button {
   padding: 5px 12px;
-  border-radius: 16px;
+  border-radius: 10px;
   font-size: 13px;
   transition: all 0.2s ease;
 }
@@ -309,6 +306,18 @@ body.el-popup-parent--hidden .el-main {
 .action-btns .el-button--primary:hover {
   background-color: var(--el-color-primary-light-3);
   border-color: var(--el-color-primary-light-3);
+}
+
+.action-btns .el-button--primary.is-plain {
+  color: var(--el-color-primary);
+  border-color: var(--el-color-primary);
+  background-color: #eff6ff;
+}
+
+.action-btns .el-button--primary.is-plain:hover {
+  background-color: var(--el-color-primary);
+  color: #fff;
+  border-color: var(--el-color-primary);
 }
 
 .action-btns .el-button--warning.is-plain {

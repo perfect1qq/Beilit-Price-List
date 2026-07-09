@@ -1,22 +1,27 @@
-
-
 <template>
   <div class="beam-quotation-page">
     <el-card shadow="never" class="editor-card">
-      <el-form ref="formRef" :model="{ recordName, items }">
-        <div class="toolbar">
-          <template v-if="!isGuest">
-            <el-button type="primary" :icon="Plus" @click="addRow">添加一行</el-button>
-            <el-button type="success" :icon="DocumentAdd" :loading="saving" @click="handleSave">提交保存</el-button>
-          </template>
+      <template #header>
+        <CardHeader title="横梁载重单编辑">
+          <template #actions>
+            <div class="toolbar">
+              <template v-if="!isGuest">
+                <el-button type="primary" :icon="Plus" @click="addRow">添加一行</el-button>
+                <el-button type="success" :icon="DocumentAdd" :loading="saving" @click="handleSave">提交保存</el-button>
+              </template>
 
-          <div class="name-group">
-            <span class="label">横梁名称:</span>
-            <el-form-item prop="recordName" :rules="beamNameRule">
-              <el-input v-model="recordName" placeholder="必填" style="width: 280px" />
-            </el-form-item>
-          </div>
-        </div>
+              <div class="name-group">
+                <span class="label">横梁名称:</span>
+                <el-form-item prop="recordName" :rules="beamNameRule">
+                  <el-input v-model="recordName" placeholder="必填" style="width: 280px" />
+                </el-form-item>
+              </div>
+            </div>
+          </template>
+        </CardHeader>
+      </template>
+
+      <el-form ref="formRef" :model="{ recordName, items }">
 
         <el-table :data="items" border stripe style="width: 100%" :header-cell-style="TABLE_HEADER_STYLE"
           class="smart-table">
@@ -71,6 +76,7 @@ import { showWarning, showError, showSuccess } from '@/utils/message'
 import { beamNameRule, positiveDecimalRule, noSpaceRawValidator } from '@/utils/formRules'
 import { usePermissions } from '@/composables/usePermissions'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
+import CardHeader from '@/components/common/CardHeader.vue'
 
 const { isGuest } = usePermissions()
 
@@ -117,13 +123,12 @@ const handleSave = async () => {
 
 <style scoped>
 .editor-card {
-  border-radius: 12px;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
 }
 
 .toolbar {
-  margin-bottom: 20px;
   display: flex;
   align-items: center;
   gap: 15px;

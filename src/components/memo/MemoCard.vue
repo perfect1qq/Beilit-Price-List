@@ -74,8 +74,8 @@ const formatTime = (v: string | undefined) => formatDateTime(v || '')
 <style scoped>
 .card {
   background: #ffffff;
-  border-radius: 14px;
-  border: 1px solid #eef2f6;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   cursor: default;

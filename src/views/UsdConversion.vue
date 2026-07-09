@@ -1,5 +1,3 @@
-
-
 <template>
   <div class="usd-conversion-page">
     <el-card class="box-card">
@@ -229,8 +227,9 @@ onMounted(() => {
   padding: 20px 0;
 } */
 .box-card {
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
 }
 
 .card-header {
@@ -249,7 +248,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 15px;
-  background: #f8fafc;
+  background: #f5f7fa;
   padding: 18px;
   border-radius: 8px;
 }
@@ -288,9 +287,9 @@ onMounted(() => {
   margin-top: 25px;
   padding: 20px;
   background: #fff;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  box-shadow: none;
 }
 
 .summary-item {

@@ -11,27 +11,54 @@
         </CardHeader>
       </template>
 
+      <div class="stats-row">
+        <div class="stat-card"
+          :class="{ active: !filterCooperationStatus && !filterPaymentStatus && !filterOrderStatus && !filterCustomerType }"
+          @click="handleStatClick('')">
+          <div class="stat-value">{{ stats.total }}</div>
+          <div class="stat-label">全部客户</div>
+        </div>
+        <div class="stat-card stat-undealt" :class="{ active: filterCooperationStatus === '未合作' }"
+          @click="handleStatClick('未成交')">
+          <div class="stat-value">{{ stats.undealt }}</div>
+          <div class="stat-label">未成交</div>
+        </div>
+        <div class="stat-card stat-dealt" :class="{ active: filterCooperationStatus === '已合作' && !filterOrderStatus }"
+          @click="handleStatClick('成交')">
+          <div class="stat-value">{{ stats.dealt }}</div>
+          <div class="stat-label">成交</div>
+        </div>
+        <div class="stat-card stat-pending" :class="{ active: filterPaymentStatus === '待催款' }"
+          @click="handleStatClick('待催款')">
+          <div class="stat-value">{{ stats.pending }}</div>
+          <div class="stat-label">待催款</div>
+        </div>
+        <div class="stat-card stat-settled" :class="{ active: filterPaymentStatus === '已结款' }"
+          @click="handleStatClick('已结款')">
+          <div class="stat-value">{{ stats.settled }}</div>
+          <div class="stat-label">已结款</div>
+        </div>
+        <div class="stat-card stat-ordered" :class="{ active: filterOrderStatus === '已下单' }"
+          @click="handleStatClick('已下单')">
+          <div class="stat-value">{{ stats.ordered }}</div>
+          <div class="stat-label">下单</div>
+        </div>
+        <div class="stat-card stat-dealer" :class="{ active: filterCustomerType === '经销商' }"
+          @click="handleStatClick('经销商')">
+          <div class="stat-value">{{ stats.dealer }}</div>
+          <div class="stat-label">经销商</div>
+        </div>
+        <div class="stat-card stat-terminal" :class="{ active: filterCustomerType === '终端' }"
+          @click="handleStatClick('终端')">
+          <div class="stat-value">{{ stats.terminal }}</div>
+          <div class="stat-label">终端</div>
+        </div>
+      </div>
+
       <div class="search-filter-row">
         <SearchBar v-model="searchKeyword" placeholder="搜索公司名称、客户姓名、联系方式、货架类型" @search="handleSearch" />
 
         <div class="filter-group">
-          <el-select v-model="filterCooperationStatus" placeholder="合作状态" clearable style="width: 130px">
-            <el-option label="已合作" value="已合作" />
-            <el-option label="未合作" value="未合作" />
-          </el-select>
-
-          <el-select v-model="filterCustomerType" placeholder="客户类型" clearable style="width: 130px">
-            <el-option label="终端" value="终端" />
-            <el-option label="经销商" value="经销商" />
-            <el-option label="待确认" value="待确认" />
-          </el-select>
-
-          <el-select v-model="filterPaymentStatus" placeholder="结款状态" clearable style="width: 130px">
-            <el-option label="未有款项" value="未有款项" />
-            <el-option label="待催款" value="待催款" />
-            <el-option label="已结款" value="已结款" />
-          </el-select>
-
           <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
           <el-button @click="handleResetFilter">清空</el-button>
         </div>
@@ -55,6 +82,9 @@
                   :type="item.paymentStatus === '已结款' ? 'success' : item.paymentStatus === '待催款' ? 'danger' : 'info'"
                   size="small">
                   {{ item.paymentStatus || '未有款项' }}
+                </el-tag>
+                <el-tag v-if="item.orderStatus === '已下单'" type="primary" size="small" effect="dark">
+                  已下单
                 </el-tag>
               </div>
             </div>
@@ -158,7 +188,7 @@ import { to } from '@/utils/async'
 import { formatDate } from '@/utils/date'
 import { showError, showSuccess } from '@/utils/message'
 import { usePermissions } from '@/composables/usePermissions'
-import { useCustomerList, useCustomerForm, useFollowUp } from '@/composables/useCustomer'
+import { useCustomerList, useCustomerForm, useFollowUp, useCustomerStats } from '@/composables/useCustomer'
 import type { CustomerCreatePayload, CustomerUpdatePayload, FollowUpData, FollowUpCreatePayload } from '@/types'
 import type { CustomerListItem } from '@/composables/useCustomer'
 
@@ -173,9 +203,11 @@ const router = useRouter()
 const { isGuest, canCreate, canEdit, canDelete } = usePermissions()
 
 const {
-  loading, customerList, searchKeyword, filterCooperationStatus, filterCustomerType, filterPaymentStatus,
+  loading, customerList, searchKeyword, filterCooperationStatus, filterCustomerType, filterPaymentStatus, filterOrderStatus,
   page, pageSize, total, loadList, handleSearch, handleResetFilter, updateLocalItem
 } = useCustomerList()
+
+const { stats, loadStats } = useCustomerStats()
 
 const {
   dialogVisible, editingId, editingDeliveryStartDate, formData, handleAdd, handleEdit, withSubmitLock, resetForm
@@ -206,6 +238,7 @@ const handleFormSubmit = async (data: CustomerCreatePayload & CustomerUpdatePayl
     }
     dialogVisible.value = false
     resetForm()
+    loadStats()
   })
 }
 
@@ -220,6 +253,7 @@ const handleDelete = async (row: { id?: number | string; companyName: string }) 
   if (err) { showError(err, '删除客户失败'); return }
   showSuccess('客户删除成功')
   loadList()
+  loadStats()
 }
 
 const getCustomerTypeTagType = (type?: string | null) => {
@@ -233,12 +267,106 @@ const handleGoToQuotation = (item: { quotationId?: number | string | null }) => 
   }
 }
 
-onMounted(() => loadList())
+const handleStatClick = (type: string) => {
+  filterCooperationStatus.value = ''
+  filterPaymentStatus.value = ''
+  filterOrderStatus.value = ''
+  filterCustomerType.value = ''
+  if (type === '未成交') {
+    filterCooperationStatus.value = '未合作'
+  } else if (type === '成交') {
+    filterCooperationStatus.value = '已合作'
+  } else if (type === '待催款') {
+    filterPaymentStatus.value = '待催款'
+  } else if (type === '已结款') {
+    filterPaymentStatus.value = '已结款'
+  } else if (type === '已下单') {
+    filterOrderStatus.value = '已下单'
+  } else if (type === '经销商') {
+    filterCustomerType.value = '经销商'
+  } else if (type === '终端') {
+    filterCustomerType.value = '终端'
+  }
+  handleSearch()
+}
+
+onMounted(() => { loadList(); loadStats() })
 </script>
 
 <style scoped>
 .customer-management {
   padding: 20px;
+}
+
+.stats-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  flex: 1;
+  min-width: 100px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.stat-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+}
+
+.stat-card.active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.stat-undealt .stat-value {
+  color: #64748b;
+}
+
+.stat-dealt .stat-value {
+  color: #3b82f6;
+}
+
+.stat-pending .stat-value {
+  color: #ef4444;
+}
+
+.stat-settled .stat-value {
+  color: #22c55e;
+}
+
+.stat-ordered .stat-value {
+  color: #8b5cf6;
+}
+
+.stat-dealer .stat-value {
+  color: #f59e0b;
+}
+
+.stat-terminal .stat-value {
+  color: #06b6d4;
 }
 
 .search-filter-row {

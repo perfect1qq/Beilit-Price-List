@@ -1,5 +1,3 @@
-
-
 <template>
   <div class="quotation-editor-component">
     <el-row :gutter="16" class="meta-area">
@@ -227,17 +225,15 @@ const handleNameBlur = async () => {
 }
 
 .inner-card {
-  border-radius: 8px;
+  border-radius: 10px;
   margin-bottom: 16px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e5e7eb;
 }
 
 .section-title {
   font-size: 15px;
   font-weight: 700;
   color: #1e293b;
-  border-left: 4px solid #3b82f6;
-  padding-left: 10px;
   line-height: 1;
   margin-bottom: 4px;
 }
@@ -248,9 +244,9 @@ const handleNameBlur = async () => {
   gap: 12px;
   margin-top: 10px;
   color: #475569;
-  background: #f8fafc;
+  background: #f5f7fa;
   padding: 12px;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 .price-summary strong {

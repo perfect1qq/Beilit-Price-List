@@ -78,7 +78,7 @@ const handleGoHome = () => {
   padding: 60px 20px;
   text-align: center;
   background: #fef2f2;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid #fecaca;
   margin: 20px;
 }

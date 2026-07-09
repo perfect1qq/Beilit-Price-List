@@ -1,31 +1,34 @@
-
-
 <template>
   <div v-if="loading" class="skeleton-wrapper">
     <el-skeleton :rows="8" animated />
   </div>
   <div v-else class="quotation-page">
     <el-card shadow="never" class="card">
+      <template #header>
+        <CardHeader title="报价单编辑">
+          <template #actions>
+            <div class="toolbar">
 
-      <div class="toolbar">
+              <template v-if="!isGuest">
 
-        <template v-if="!isGuest">
-
-          <el-button :icon="Refresh" @click="clearRows" :disabled="isViewMode">
-            清空当前表格
-          </el-button>
-
-
-          <el-button type="success" :icon="DocumentAdd" @click="handleSubmit" :loading="isSubmitting"
-            :disabled="isViewMode">
-            确认保存报价单
-          </el-button>
-        </template>
+                <el-button :icon="Refresh" @click="clearRows" :disabled="isViewMode">
+                  清空当前表格
+                </el-button>
 
 
-        <QuotationModeActions :is-editing="isEditing" :is-view-mode="isViewMode" @reset="resetDraft"
-          @switch-edit="switchToEdit" />
-      </div>
+                <el-button type="success" :icon="DocumentAdd" @click="handleSubmit" :loading="isSubmitting"
+                  :disabled="isViewMode">
+                  确认保存报价单
+                </el-button>
+              </template>
+
+
+              <QuotationModeActions :is-editing="isEditing" :is-view-mode="isViewMode" @reset="resetDraft"
+                @switch-edit="switchToEdit" />
+            </div>
+          </template>
+        </CardHeader>
+      </template>
 
 
 
@@ -69,6 +72,7 @@ import { useQuotationEditor } from '@/composables/useQuotationEditor'
 import { usePermissions } from '@/composables/usePermissions'
 import QuotationModeActions from '@/components/quotation/QuotationModeActions.vue'
 import QuotationEditor from '@/components/quotation/QuotationEditor.vue'
+import CardHeader from '@/components/common/CardHeader.vue'
 
 const { isGuest } = usePermissions()
 
@@ -204,9 +208,9 @@ const switchToEdit = () => {
  * - 无默认边框
  */
 .card {
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-  border: none;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
 }
 
 .skeleton-wrapper {
@@ -224,7 +228,7 @@ const switchToEdit = () => {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  align-items: center;
 }
 
 /** 移动端适配：缩小间距 */

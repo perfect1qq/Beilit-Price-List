@@ -166,6 +166,7 @@ export interface CustomerCreatePayload {
   shelfType?: string
   remark?: string
   paymentStatus?: string
+  orderStatus?: string
 }
 
 export interface CustomerUpdatePayload {
@@ -194,6 +195,7 @@ export interface CustomerData {
   deliveryStartDate: string | null
   shelfType: string
   paymentStatus: string
+  orderStatus: string
   createdAt: string
   updatedAt: string
 }

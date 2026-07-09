@@ -1,34 +1,11 @@
-
-
 <template>
-
-  <div class="login-page">
-
-    <div class="login-decor decor-1"></div>
-    <div class="login-decor decor-2"></div>
-
-
-    <div class="login-wrap">
-
-      <div class="hero-panel">
-        <div class="brand">
-          <div class="brand-logo">R</div>
-          <div>
-            <div class="brand-title">武汉倍力特货架报价系统</div>
-            <div class="brand-sub">Quotation & Approval Platform</div>
-          </div>
-        </div>
-
-        <slot name="hero-content"></slot>
-      </div>
-
-
-      <el-card class="login-card" shadow="never">
+  <div class="auth-page">
+    <div class="auth-wrap">
+      <el-card shadow="never" class="auth-card">
         <div class="card-head">
           <div class="card-title">{{ cardTitle }}</div>
           <div class="card-sub">{{ cardSubtitle }}</div>
         </div>
-
 
         <slot></slot>
       </el-card>
@@ -50,138 +27,26 @@ defineProps({
 </script>
 
 <style scoped>
-
-.login-page {
+.auth-page {
   min-height: 100vh;
   min-height: 100dvh;
-  position: relative;
-  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
-  background: radial-gradient(circle at top left, rgba(99, 102, 241, .24), transparent 40%), radial-gradient(circle at bottom right, rgba(165, 180, 252, .18), transparent 30%), linear-gradient(135deg, #0f172a 0%, #1e1b4b 55%, #020617 100%);
+  padding: 20px;
+  background: #f5f7fa;
 }
 
-.login-decor {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(80px);
-  opacity: .5;
+.auth-wrap {
+  width: 100%;
+  max-width: 440px;
 }
 
-.decor-1 {
-  width: 300px;
-  height: 300px;
-  top: -100px;
-  left: -100px;
-  background: #3b82f6;
-}
-
-.decor-2 {
-  width: 280px;
-  height: 280px;
-  bottom: -80px;
-  right: -80px;
-  background: #818cf8;
-}
-
-.login-wrap {
-  position: relative;
-  z-index: 2;
-  width: min(1100px, 100%);
-  display: grid;
-  grid-template-columns: 1.15fr .85fr;
-  gap: 30px;
-  align-items: center;
-}
-
-.hero-panel {
-  color: #fff;
-  padding: 24px 10px;
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 26px;
-}
-
-.brand-logo {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  font-size: 24px;
-  font-weight: 800;
-  background: linear-gradient(135deg, #3b82f6, #818cf8);
-  box-shadow: 0 8px 20px rgba(99, 102, 241, .4);
-}
-
-.brand-title {
-  font-size: 22px;
-  font-weight: 800;
-  font-family: 'Inter', sans-serif;
-}
-
-.brand-sub {
-  margin-top: 4px;
-  font-size: 12px;
-  letter-spacing: .6px;
-  color: rgba(255, 255, 255, .6);
-  text-transform: uppercase;
-}
-
-.hero-panel :deep(h1) {
-  margin: 0;
-  font-size: 48px;
-  line-height: 1.15;
-  letter-spacing: 1px;
-  font-family: 'Inter', sans-serif;
-}
-
-.hero-panel :deep(p) {
-  max-width: 620px;
-  margin: 18px 0 0;
-  color: rgba(255, 255, 255, .8);
-  line-height: 1.8;
-  font-size: 16px;
-}
-
-.hero-panel :deep(.hero-badges) {
-  margin-top: 28px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.hero-panel :deep(.badge-item) {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, .1);
-  border: 1px solid rgba(255, 255, 255, .15);
-  backdrop-filter: blur(12px);
-  font-size: 14px;
-  transition: background 0.3s;
-}
-
-.hero-panel :deep(.badge-item:hover) {
-  background: rgba(255, 255, 255, .2);
-}
-
-.login-card {
-  border: 0;
-  border-radius: 20px;
+.auth-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
   padding: 36px 32px;
-  background: rgba(255, 255, 255, .98);
-  box-shadow: 0 24px 50px rgba(0, 0, 0, .25);
+  background: #fff;
 }
 
 .card-head {
@@ -189,22 +54,22 @@ defineProps({
 }
 
 .card-title {
-  font-size: 26px;
-  font-weight: 800;
+  font-size: 18px;
+  font-weight: 600;
   color: #1e293b;
 }
 
 .card-sub {
   margin-top: 8px;
   color: #64748b;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 :deep(.form .el-input__wrapper) {
-  border-radius: 12px;
+  border-radius: 8px;
   height: 46px;
-  background: #f8fafc;
-  box-shadow: 0 0 0 1px #e2e8f0 inset;
+  background: #f5f7fa;
+  box-shadow: 0 0 0 1px #e5e7eb inset;
 }
 
 :deep(.form .el-input__wrapper.is-focus) {
@@ -220,19 +85,18 @@ defineProps({
 :deep(.login-btn) {
   width: 100%;
   height: 48px;
-  border-radius: 12px;
+  border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
   margin-top: 10px;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  background: #3b82f6;
   border: none;
-  box-shadow: 0 8px 16px rgba(99, 102, 241, .25);
-  transition: all 0.3s;
+  transition: all 0.25s ease;
 }
 
 :deep(.login-btn:hover) {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 20px rgba(99, 102, 241, .35);
+  background: #2563eb;
+  transform: translateY(-1px);
 }
 
 :deep(.footer-links) {
@@ -253,47 +117,20 @@ defineProps({
   align-items: center;
 }
 
-@media (max-width: 960px) {
-  .login-wrap {
-    grid-template-columns: 1fr;
-    gap: 18px;
-    max-width: 560px;
-  }
-
-  .hero-panel {
-    padding: 6px 0;
-  }
-
-  .hero-panel :deep(h1) {
-    font-size: 34px;
-  }
-
-  .login-card {
-    padding: 28px 24px;
-  }
-}
-
 @media (max-width: 768px) {
-  .login-page {
+  .auth-page {
     padding: 14px;
     align-items: stretch;
   }
 
-  .login-wrap {
-    width: 100%;
+  .auth-wrap {
     max-width: 420px;
     margin: auto;
-    gap: 12px;
   }
 
-  .hero-panel {
-    display: none;
-  }
-
-  .login-card {
-    border-radius: 16px;
-    padding: 20px 16px;
-    box-shadow: 0 14px 28px rgba(0, 0, 0, .2);
+  .auth-card {
+    border-radius: 10px;
+    padding: 28px 24px;
   }
 
   .card-head {
@@ -301,7 +138,7 @@ defineProps({
   }
 
   .card-title {
-    font-size: 22px;
+    font-size: 18px;
   }
 
   .card-sub {
@@ -325,34 +162,12 @@ defineProps({
 }
 
 @media (max-width: 420px) {
-  .login-page {
+  .auth-page {
     padding: 10px;
   }
 
-  .decor-1 {
-    width: 220px;
-    height: 220px;
-    top: -90px;
-    left: -120px;
-  }
-
-  .decor-2 {
-    width: 220px;
-    height: 220px;
-    bottom: -100px;
-    right: -120px;
-  }
-
-  .login-card {
-    padding: 18px 14px;
-  }
-
-  .card-title {
-    font-size: 20px;
-  }
-
-  :deep(.footer-links) {
-    font-size: 13px;
+  .auth-card {
+    padding: 20px 16px;
   }
 }
 </style>

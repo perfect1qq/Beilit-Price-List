@@ -2,9 +2,13 @@
   <div class="beam-quotation-history-container">
     <div v-if="viewState === 'list'" class="history-list-view">
       <el-card shadow="never" class="history-card" v-loading="loading">
-        <div class="search-toolbar">
-          <SearchBar v-model="searchKeyword" placeholder="按横梁名称模糊搜索" @search="handleSearch" />
-        </div>
+        <template #header>
+          <CardHeader title="横梁载重单历史">
+            <template #actions>
+              <SearchBar v-model="searchKeyword" placeholder="按横梁名称模糊搜索" @search="handleSearch" />
+            </template>
+          </CardHeader>
+        </template>
 
         <el-table :data="historyList" stripe border style="width: 100%" :header-cell-style="TABLE_HEADER_STYLE"
           class="smart-table">
@@ -61,6 +65,7 @@ import { TABLE_HEADER_STYLE } from '@/constants/table'
 import beamApi from '@/api/beam'
 import type { BeamQuotationItem } from '@/types'
 import SearchBar from '@/components/common/SearchBar.vue'
+import CardHeader from '@/components/common/CardHeader.vue'
 import BeamQuotationEditor from '@/components/beam/BeamQuotationEditor.vue'
 
 const { isGuest, isAdmin } = usePermissions()
@@ -150,13 +155,12 @@ onMounted(() => loadList(1))
 }
 
 .history-card {
-  border-radius: 12px;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  box-shadow: none;
 }
 
 .search-toolbar {
-  margin-bottom: 20px;
   display: flex;
   align-items: center;
   gap: 15px;
@@ -181,7 +185,6 @@ onMounted(() => loadList(1))
 
 @media (max-width: 768px) {
   .search-toolbar {
-    margin-bottom: 12px;
     gap: 8px;
   }
 

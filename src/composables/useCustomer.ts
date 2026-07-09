@@ -12,6 +12,17 @@ export interface CustomerListItem extends ApiCustomerListItem {
   deliveryDate?: string
 }
 
+export interface CustomerStats {
+  total: number
+  undealt: number
+  dealt: number
+  pending: number
+  settled: number
+  ordered: number
+  dealer: number
+  terminal: number
+}
+
 const INITIAL_FORM: CustomerCreatePayload & CustomerUpdatePayload = {
   companyName: '',
   customerName: '',
@@ -21,7 +32,8 @@ const INITIAL_FORM: CustomerCreatePayload & CustomerUpdatePayload = {
   deliveryDays: null,
   shelfType: '',
   remark: '',
-  paymentStatus: '未有款项'
+  paymentStatus: '未有款项',
+  orderStatus: '未下单'
 }
 
 export const useCustomerList = () => {
@@ -31,6 +43,7 @@ export const useCustomerList = () => {
   const filterCooperationStatus = ref('')
   const filterCustomerType = ref('')
   const filterPaymentStatus = ref('')
+  const filterOrderStatus = ref('')
 
   const { page, pageSize, total, resetToFirstPage } = usePagination({
     defaultPage: 1,
@@ -48,6 +61,7 @@ export const useCustomerList = () => {
     if (filterCooperationStatus.value?.trim()) params.cooperationStatus = filterCooperationStatus.value.trim()
     if (filterCustomerType.value?.trim()) params.customerType = filterCustomerType.value.trim()
     if (filterPaymentStatus.value?.trim()) params.paymentStatus = filterPaymentStatus.value.trim()
+    if (filterOrderStatus.value?.trim()) params.orderStatus = filterOrderStatus.value.trim()
 
     const [err, res] = await to(customerApi.list(params))
     if (err) { showError(err, '加载客户列表失败'); loading.value = false; return }
@@ -69,6 +83,7 @@ export const useCustomerList = () => {
     filterCooperationStatus.value = ''
     filterCustomerType.value = ''
     filterPaymentStatus.value = ''
+    filterOrderStatus.value = ''
     resetToFirstPage()
     loadList()
   }
@@ -93,6 +108,7 @@ export const useCustomerList = () => {
     filterCooperationStatus,
     filterCustomerType,
     filterPaymentStatus,
+    filterOrderStatus,
     page,
     pageSize,
     total,
@@ -132,7 +148,8 @@ export const useCustomerForm = () => {
       deliveryDays: row.deliveryDays ?? null,
       shelfType: row.shelfType || '',
       remark: row.remark,
-      paymentStatus: row.paymentStatus || '未有款项'
+      paymentStatus: row.paymentStatus || '未有款项',
+      orderStatus: row.orderStatus || '未下单'
     })
     dialogVisible.value = true
   }
@@ -147,6 +164,41 @@ export const useCustomerForm = () => {
     handleEdit,
     withSubmitLock
   }
+}
+
+export const useCustomerStats = () => {
+  const stats = ref<CustomerStats>({
+    total: 0,
+    undealt: 0,
+    dealt: 0,
+    pending: 0,
+    settled: 0,
+    ordered: 0,
+    dealer: 0,
+    terminal: 0
+  })
+  const statsLoading = ref(false)
+
+  const loadStats = async () => {
+    statsLoading.value = true
+    const [err, res] = await to(customerApi.getStats())
+    if (err) { showError(err, '加载统计数据失败'); statsLoading.value = false; return }
+    if (res) {
+      stats.value = {
+        total: res.total,
+        undealt: res.undealt,
+        dealt: res.dealt,
+        pending: res.pending,
+        settled: res.settled,
+        ordered: res.ordered,
+        dealer: res.dealer,
+        terminal: res.terminal
+      }
+    }
+    statsLoading.value = false
+  }
+
+  return { stats, statsLoading, loadStats }
 }
 
 export const useFollowUp = () => {

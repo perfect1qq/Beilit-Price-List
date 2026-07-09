@@ -34,9 +34,8 @@ defineEmits(['copy', 'refresh'])
 
 <style scoped>
 .invite-code-card {
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-  border: none;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
 }
 
 .invite-section {
@@ -81,9 +80,9 @@ defineEmits(['copy', 'refresh'])
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background: linear-gradient(135deg, #eef2ff, #e0e7ff);
-  border-radius: 12px;
-  border: 1px solid #c7d2fe;
+  background: #f5f7fa;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
 }
 
 .code-text {
