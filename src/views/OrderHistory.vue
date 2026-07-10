@@ -33,11 +33,8 @@
           </template>
         </el-table-column>
         <el-table-column prop="customerName" label="客户名称" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="contactPerson" label="联系人" width="100" show-overflow-tooltip />
-        <el-table-column prop="phone" label="联系电话" width="120" show-overflow-tooltip />
         <el-table-column prop="deliveryAddress" label="送货地址" min-width="150" show-overflow-tooltip />
         <el-table-column prop="orderDate" label="订单日期" width="120" show-overflow-tooltip />
-        <el-table-column prop="deliveryDays" label="工期" width="90" show-overflow-tooltip />
         <el-table-column prop="ownerName" label="创建者" width="100" show-overflow-tooltip />
         <el-table-column prop="createdAt" label="录入时间" width="160" show-overflow-tooltip>
           <template #default="{ row }">
@@ -80,7 +77,7 @@
       <!-- 嵌入打印版面 -->
       <div id="print-area" class="order-sheet-paper" v-if="currentOrder">
         <div class="sheet-header">
-          <div class="company-brand">倍力特金属制品有限公司</div>
+          <div class="company-brand">武汉倍力特物流装备有限公司</div>
           <div class="sheet-title">生 产 加 工 单</div>
           <div class="sheet-order-no">订单编号：{{ currentOrder.orderNo }}</div>
         </div>

@@ -131,7 +131,7 @@
 
               <!-- 备注 -->
               <el-form-item label="总备注">
-                <el-input v-model="orderForm.remark" type="textarea" :rows="2" placeholder="备注条款..." />
+                <el-input v-model="orderForm.remark" type="textarea" :autosize="{ minRows: 2 }" placeholder="备注条款..." />
               </el-form-item>
             </el-form>
           </div>
@@ -158,7 +158,7 @@
           <!-- 生产加工单纸张版面 (打印容器) -->
           <div id="print-area" class="order-sheet-paper">
             <div class="sheet-header">
-              <div class="company-brand">倍力特金属制品有限公司</div>
+              <div class="company-brand">武汉倍力特物流装备有限公司</div>
               <div class="sheet-title">生 产 加 工 单</div>
               <div class="sheet-order-no" v-if="orderForm.orderNo">订单编号：{{ orderForm.orderNo }}</div>
             </div>

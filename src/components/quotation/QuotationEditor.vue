@@ -16,7 +16,7 @@
             </el-form-item>
             <el-form-item label="备注">
               <el-input :model-value="remark" @update:model-value="$emit('update:remark', $event)" type="textarea"
-                :rows="3" placeholder="备注信息，不参与表格" :disabled="isViewMode" />
+                :autosize="{ minRows: 3 }" placeholder="备注信息，不参与表格" :disabled="isViewMode" />
             </el-form-item>
           </el-form>
         </el-card>
@@ -273,6 +273,13 @@ const handleNameBlur = async () => {
   font-size: 11px;
   line-height: 1.6;
   padding-top: 2px;
+}
+
+:deep(.el-textarea__inner) {
+  line-height: 1.65 !important;
+  padding: 10px 14px !important;
+  font-size: 14px;
+  transition: height 0.2s ease;
 }
 
 @media (max-width: 960px) {

@@ -1,5 +1,5 @@
 <template>
-  <AuthLayout card-title="账号登录" card-subtitle="请输入正式账号登录系统">
+  <AuthLayout card-title="欢迎登入系统" card-subtitle="请输入正式员工账号与密码登录倍力特工作台">
 
     <el-form ref="formRef" :model="form" :rules="rules" class="form" @keyup.enter="handleLogin">
 

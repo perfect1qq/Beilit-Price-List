@@ -1,5 +1,5 @@
 <template>
-  <AuthLayout card-title="新用户注册" card-subtitle="请填写以下信息完成账号创建">
+  <AuthLayout card-title="申请创建账号" card-subtitle="填写基本员工信息与邀请码加入倍力特管理平台">
 
     <el-form ref="formRef" :model="form" :rules="rules" class="form" @keyup.enter="handleRegister">
       <el-form-item prop="username">
