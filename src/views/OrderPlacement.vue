@@ -255,8 +255,9 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Check, Printer, Plus, Delete, Refresh, Download } from '@element-plus/icons-vue'
+import { Check, Printer, Plus, Delete, Refresh } from '@element-plus/icons-vue'
 import { showSuccess, showError } from '@/utils/message'
+import { debounce } from '@/utils/debounce'
 import orderApi, { type OrderItem, type AccessoryItem } from '@/api/order'
 
 const router = useRouter()
@@ -429,7 +430,7 @@ const parseText = (text: string) => {
   return { header, items, accessories }
 }
 
-const handleAutoParse = () => {
+const handleAutoParse = debounce(() => {
   if (!rawText.value.trim()) return
   const { header, items, accessories } = parseText(rawText.value)
   
@@ -443,7 +444,7 @@ const handleAutoParse = () => {
   
   if (items.length > 0) orderForm.items = items
   if (accessories.length > 0) orderForm.accessories = accessories
-}
+}, 300)
 
 const handleManualParse = () => {
   if (!rawText.value.trim()) {
