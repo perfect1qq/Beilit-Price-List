@@ -167,6 +167,7 @@ export interface CustomerCreatePayload {
   remark?: string
   paymentStatus?: string
   orderStatus?: string
+  installationStatus?: string
 }
 
 export interface CustomerUpdatePayload {
@@ -179,6 +180,8 @@ export interface CustomerUpdatePayload {
   shelfType?: string
   remark?: string
   paymentStatus?: string
+  orderStatus?: string
+  installationStatus?: string
 }
 
 export interface CustomerData {
@@ -196,6 +199,7 @@ export interface CustomerData {
   shelfType: string
   paymentStatus: string
   orderStatus: string
+  installationStatus: string
   createdAt: string
   updatedAt: string
 }

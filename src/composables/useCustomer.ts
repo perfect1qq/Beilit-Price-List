@@ -19,6 +19,9 @@ export interface CustomerStats {
   pending: number
   settled: number
   ordered: number
+  notOrdered: number
+  pendingInstall: number
+  installed: number
   dealer: number
   terminal: number
 }
@@ -33,7 +36,8 @@ const INITIAL_FORM: CustomerCreatePayload & CustomerUpdatePayload = {
   shelfType: '',
   remark: '',
   paymentStatus: '未有款项',
-  orderStatus: '未下单'
+  orderStatus: '未下单',
+  installationStatus: '待安装'
 }
 
 export const useCustomerList = () => {
@@ -44,6 +48,7 @@ export const useCustomerList = () => {
   const filterCustomerType = ref('')
   const filterPaymentStatus = ref('')
   const filterOrderStatus = ref('')
+  const filterInstallationStatus = ref('')
 
   const { page, pageSize, total, resetToFirstPage } = usePagination({
     defaultPage: 1,
@@ -62,6 +67,7 @@ export const useCustomerList = () => {
     if (filterCustomerType.value?.trim()) params.customerType = filterCustomerType.value.trim()
     if (filterPaymentStatus.value?.trim()) params.paymentStatus = filterPaymentStatus.value.trim()
     if (filterOrderStatus.value?.trim()) params.orderStatus = filterOrderStatus.value.trim()
+    if (filterInstallationStatus.value?.trim()) params.installationStatus = filterInstallationStatus.value.trim()
 
     const [err, res] = await to(customerApi.list(params))
     if (err) { showError(err, '加载客户列表失败'); loading.value = false; return }
@@ -84,6 +90,7 @@ export const useCustomerList = () => {
     filterCustomerType.value = ''
     filterPaymentStatus.value = ''
     filterOrderStatus.value = ''
+    filterInstallationStatus.value = ''
     resetToFirstPage()
     loadList()
   }
@@ -109,6 +116,7 @@ export const useCustomerList = () => {
     filterCustomerType,
     filterPaymentStatus,
     filterOrderStatus,
+    filterInstallationStatus,
     page,
     pageSize,
     total,
@@ -149,7 +157,8 @@ export const useCustomerForm = () => {
       shelfType: row.shelfType || '',
       remark: row.remark,
       paymentStatus: row.paymentStatus || '未有款项',
-      orderStatus: row.orderStatus || '未下单'
+      orderStatus: row.orderStatus || '未下单',
+      installationStatus: row.installationStatus || '待安装'
     })
     dialogVisible.value = true
   }
@@ -174,6 +183,9 @@ export const useCustomerStats = () => {
     pending: 0,
     settled: 0,
     ordered: 0,
+    notOrdered: 0,
+    pendingInstall: 0,
+    installed: 0,
     dealer: 0,
     terminal: 0
   })
@@ -191,6 +203,9 @@ export const useCustomerStats = () => {
         pending: res.pending,
         settled: res.settled,
         ordered: res.ordered,
+        notOrdered: res.notOrdered,
+        pendingInstall: res.pendingInstall,
+        installed: res.installed,
         dealer: res.dealer,
         terminal: res.terminal
       }

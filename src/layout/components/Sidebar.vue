@@ -74,7 +74,8 @@ import {
   Menu as IconMenu,
   ChatLineSquare,
   Clock,
-  Notebook
+  Notebook,
+  Tickets
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -104,7 +105,8 @@ const iconMap: Record<string, Component> = {
   '/home': House,
   '/quotation/history': Clock,
   '/beam-quotation/history': Clock,
-  '/approval/history': Clock,
+  '/order': Tickets,
+  '/order/history': Clock,
   default: IconMenu
 }
 
@@ -114,6 +116,7 @@ const activeMenu = computed(() => {
   const path = route.path
   if (path === '/' || path === '/home') return '/home'
   if (path === '/quotation' || path.startsWith('/quotation/')) return path
+  if (path === '/order' || path.startsWith('/order/')) return path
   if (path === '/beam-quotation' || path.startsWith('/beam-quotation/')) return path
   if (path.startsWith('/approval/history')) return '/approval/history'
   if (path.startsWith('/approval')) return '/approval'
@@ -123,6 +126,7 @@ const activeMenu = computed(() => {
 const openMenus = computed(() => {
   const path = route.path
   if (path === '/quotation' || path.startsWith('/quotation/')) return ['/quotation-group']
+  if (path === '/order' || path.startsWith('/order/')) return ['/order-group']
   if (path === '/beam-quotation' || path.startsWith('/beam-quotation/')) return ['/beam-quotation-group']
   if (path === '/approval' || path.startsWith('/approval/')) return ['/approval-group']
   return []

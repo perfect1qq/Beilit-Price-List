@@ -12,6 +12,10 @@ const QuotationList = () => import('../views/QuotationList.vue')
 const QuotationHistory = () => import('../views/QuotationHistory.vue')
 const QuotationStatistics = () => import('../views/QuotationStatistics.vue')
 
+const OrderLayout = () => import('../views/OrderLayout.vue')
+const OrderPlacement = () => import('../views/OrderPlacement.vue')
+const OrderHistory = () => import('../views/OrderHistory.vue')
+
 const BeamQuotationLayout = () => import('../views/BeamQuotationLayout.vue')
 const BeamQuotationList = () => import('../views/BeamQuotationList.vue')
 const BeamQuotationHistory = () => import('../views/BeamQuotationHistory.vue')
@@ -71,6 +75,25 @@ const routes: RouteRecordRaw[] = [
             name: 'QuotationHistory',
             component: QuotationHistory,
             meta: { title: '报价单历史' },
+          },
+        ],
+      },
+      {
+        path: 'order',
+        component: OrderLayout,
+        meta: { title: '下单' },
+        children: [
+          {
+            path: '',
+            name: 'OrderPlacement',
+            component: OrderPlacement,
+            meta: { title: '新增下单', requiresPermission: 'order:write' },
+          },
+          {
+            path: 'history',
+            name: 'OrderHistory',
+            component: OrderHistory,
+            meta: { title: '订单历史' },
           },
         ],
       },

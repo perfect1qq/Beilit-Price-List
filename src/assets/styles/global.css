@@ -371,13 +371,22 @@ body.el-popup-parent--hidden .el-main {
 
 /* 卡片头部 */
 [data-card-item] .card-header,
-.customer-card .card-header,
 .user-card-item .card-header,
 .message-card-item .card-header,
 .history-card-item .card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.customer-card .card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
   margin-bottom: 16px;
   padding-bottom: 12px;
   border-bottom: 1px solid #ebeef5;
@@ -400,11 +409,41 @@ body.el-popup-parent--hidden .el-main {
 }
 
 /* 标签组 */
-[data-card-item] .tags,
-.customer-card .tags {
+[data-card-item] .tags {
   display: flex;
   gap: 6px;
   flex-shrink: 0;
+}
+
+.customer-card .tags {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+
+.customer-card .tags .el-tag {
+  width: 100%;
+  text-align: center;
+  justify-content: center;
+}
+
+@media (max-width: 1200px) {
+  .customer-card .tags {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .customer-card .tags {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .customer-card .tags {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* 卡片主体 */

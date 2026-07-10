@@ -13,7 +13,7 @@
 
       <div class="stats-row">
         <div class="stat-card"
-          :class="{ active: !filterCooperationStatus && !filterPaymentStatus && !filterOrderStatus && !filterCustomerType }"
+          :class="{ active: !filterCooperationStatus && !filterPaymentStatus && !filterOrderStatus && !filterInstallationStatus && !filterCustomerType }"
           @click="handleStatClick('')">
           <div class="stat-value">{{ stats.total }}</div>
           <div class="stat-label">全部客户</div>
@@ -38,10 +38,25 @@
           <div class="stat-value">{{ stats.settled }}</div>
           <div class="stat-label">已结款</div>
         </div>
-        <div class="stat-card stat-ordered" :class="{ active: filterOrderStatus === '已下单' }"
+        <div class="stat-card stat-not-ordered" :class="{ active: filterOrderStatus === '未下单' }"
+          @click="handleStatClick('未下单')">
+          <div class="stat-value">{{ stats.notOrdered }}</div>
+          <div class="stat-label">未下单</div>
+        </div>
+        <div class="stat-card stat-ordered" :class="{ active: filterOrderStatus === '已下单' && !filterInstallationStatus }"
           @click="handleStatClick('已下单')">
           <div class="stat-value">{{ stats.ordered }}</div>
           <div class="stat-label">下单</div>
+        </div>
+        <div class="stat-card stat-pending-install" :class="{ active: filterInstallationStatus === '待安装' }"
+          @click="handleStatClick('待安装')">
+          <div class="stat-value">{{ stats.pendingInstall }}</div>
+          <div class="stat-label">待安装</div>
+        </div>
+        <div class="stat-card stat-installed" :class="{ active: filterInstallationStatus === '已安装' }"
+          @click="handleStatClick('已安装')">
+          <div class="stat-value">{{ stats.installed }}</div>
+          <div class="stat-label">已安装</div>
         </div>
         <div class="stat-card stat-dealer" :class="{ active: filterCustomerType === '经销商' }"
           @click="handleStatClick('经销商')">
@@ -59,7 +74,6 @@
         <SearchBar v-model="searchKeyword" placeholder="搜索公司名称、客户姓名、联系方式、货架类型" @search="handleSearch" />
 
         <div class="filter-group">
-          <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
           <el-button @click="handleResetFilter">清空</el-button>
         </div>
       </div>
@@ -72,19 +86,29 @@
             <div class="card-header">
               <h3 class="company-name">{{ item.companyName }}</h3>
               <div class="tags">
+                <!-- 报价状态 -->
+                <el-tag :type="item.hasQuotation ? 'success' : 'info'" size="small" :plain="!item.hasQuotation">
+                  {{ item.hasQuotation ? '已报价' : '未报价' }}
+                </el-tag>
+                <!-- 合作状态 -->
                 <el-tag :type="item.cooperationStatus === '已合作' ? 'success' : 'warning'" size="small">
                   {{ item.cooperationStatus || '未合作' }}
                 </el-tag>
-                <el-tag :type="getCustomerTypeTagType(item.customerType)" size="small">
+                <!-- 客户类型 -->
+                <el-tag :type="item.customerType === '经销商' ? 'primary' : 'info'" size="small">
                   {{ item.customerType || '终端' }}
                 </el-tag>
-                <el-tag
-                  :type="item.paymentStatus === '已结款' ? 'success' : item.paymentStatus === '待催款' ? 'danger' : 'info'"
-                  size="small">
+                <!-- 结款状态 -->
+                <el-tag :type="item.paymentStatus === '已结款' ? 'success' : item.paymentStatus === '待催款' ? 'danger' : 'info'" size="small">
                   {{ item.paymentStatus || '未有款项' }}
                 </el-tag>
-                <el-tag v-if="item.orderStatus === '已下单'" type="primary" size="small" effect="dark">
-                  已下单
+                <!-- 下单状态 -->
+                <el-tag :type="item.orderStatus === '已下单' ? 'primary' : 'info'" size="small" :effect="item.orderStatus === '已下单' ? 'dark' : 'plain'">
+                  {{ item.orderStatus || '未下单' }}
+                </el-tag>
+                <!-- 安装状态 -->
+                <el-tag :type="item.installationStatus === '已安装' ? 'success' : 'info'" size="small" :effect="item.installationStatus === '已安装' ? 'dark' : 'plain'">
+                  {{ item.installationStatus || '待安装' }}
                 </el-tag>
               </div>
             </div>
@@ -101,17 +125,9 @@
                 </div>
               </div>
 
-              <div class="info-row two-col">
-                <div class="col-item">
-                  <span class="label">货架类型：</span>
-                  <span class="value">{{ item.shelfType || '-' }}</span>
-                </div>
-                <div class="col-item quotation-info">
-                  <span class="label">报价状态：</span>
-                  <el-tag v-if="item.hasQuotation" type="success" size="small">已报价</el-tag>
-                  <el-tag v-else type="info" size="small" plain>未报价</el-tag>
-
-                </div>
+              <div class="info-row">
+                <span class="label">货架类型：</span>
+                <span class="value">{{ item.shelfType || '-' }}</span>
               </div>
 
               <div class="info-row">
@@ -203,7 +219,7 @@ const router = useRouter()
 const { isGuest, canCreate, canEdit, canDelete } = usePermissions()
 
 const {
-  loading, customerList, searchKeyword, filterCooperationStatus, filterCustomerType, filterPaymentStatus, filterOrderStatus,
+  loading, customerList, searchKeyword, filterCooperationStatus, filterCustomerType, filterPaymentStatus, filterOrderStatus, filterInstallationStatus,
   page, pageSize, total, loadList, handleSearch, handleResetFilter, updateLocalItem
 } = useCustomerList()
 
@@ -271,6 +287,7 @@ const handleStatClick = (type: string) => {
   filterCooperationStatus.value = ''
   filterPaymentStatus.value = ''
   filterOrderStatus.value = ''
+  filterInstallationStatus.value = ''
   filterCustomerType.value = ''
   if (type === '未成交') {
     filterCooperationStatus.value = '未合作'
@@ -282,6 +299,14 @@ const handleStatClick = (type: string) => {
     filterPaymentStatus.value = '已结款'
   } else if (type === '已下单') {
     filterOrderStatus.value = '已下单'
+  } else if (type === '未下单') {
+    filterOrderStatus.value = '未下单'
+  } else if (type === '待安装') {
+    filterOrderStatus.value = '已下单'
+    filterInstallationStatus.value = '待安装'
+  } else if (type === '已安装') {
+    filterOrderStatus.value = '已下单'
+    filterInstallationStatus.value = '已安装'
   } else if (type === '经销商') {
     filterCustomerType.value = '经销商'
   } else if (type === '终端') {
@@ -359,6 +384,18 @@ onMounted(() => { loadList(); loadStats() })
 
 .stat-ordered .stat-value {
   color: #8b5cf6;
+}
+
+.stat-not-ordered .stat-value {
+  color: #94a3b8;
+}
+
+.stat-pending-install .stat-value {
+  color: #f59e0b;
+}
+
+.stat-installed .stat-value {
+  color: #10b981;
 }
 
 .stat-dealer .stat-value {

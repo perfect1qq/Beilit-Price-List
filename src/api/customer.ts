@@ -7,6 +7,7 @@ interface CustomerListParams extends PaginationParams {
   customerType?: string
   paymentStatus?: string
   orderStatus?: string
+  installationStatus?: string
 }
 
 interface CustomerStats {
@@ -16,6 +17,9 @@ interface CustomerStats {
   pending: number
   settled: number
   ordered: number
+  notOrdered: number
+  pendingInstall: number
+  installed: number
   dealer: number
   terminal: number
 }
