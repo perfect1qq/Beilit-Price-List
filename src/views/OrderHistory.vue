@@ -77,20 +77,17 @@
 
     <!-- 订单排版详情预览抽屉/弹窗 -->
     <el-dialog v-model="previewVisible" title="订单详情" width="800px" destroy-on-close append-to-body>
-      <div class="preview-actions">
-        <el-button type="primary" :icon="Printer" @click="printCurrentOrder">打印 / 导出 PDF</el-button>
-      </div>
       <!-- 嵌入打印版面 -->
       <div id="print-area" class="order-sheet-paper" v-if="currentOrder">
         <div class="sheet-header">
           <div class="company-brand">倍力特金属制品有限公司</div>
-          <div class="sheet-title">销 售 订 货 单</div>
+          <div class="sheet-title">生 产 加 工 单</div>
           <div class="sheet-order-no">订单编号：{{ currentOrder.orderNo }}</div>
         </div>
 
         <table class="meta-table">
           <tr>
-            <td class="meta-label">订货单位</td>
+            <td class="meta-label">客户名称</td>
             <td class="meta-value" colspan="3"><strong>{{ currentOrder.customerName }}</strong></td>
             <td class="meta-label">订单日期</td>
             <td class="meta-value">{{ currentOrder.orderDate }}</td>
@@ -109,24 +106,25 @@
           </tr>
         </table>
 
-        <table class="data-table">
+        <table class="items-table">
           <thead>
             <tr>
               <th style="width: 50px;">序号</th>
               <th>品名</th>
-              <th>规格/尺寸</th>
-              <th style="width: 80px;">数量</th>
-              <th>用料/材质</th>
+              <th>规格</th>
+              <th>用料</th>
               <th>颜色</th>
-              <th>其他说明/备注</th>
+              <th>备注</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="(item, index) in currentOrderItems" :key="index">
               <td class="text-center">{{ index + 1 }}</td>
               <td><strong>{{ item.name || '-' }}</strong></td>
-              <td>{{ item.spec || '-' }}</td>
-              <td class="text-center highlight-qty">{{ item.qty || '-' }}</td>
+              <td>
+                {{ item.spec || '-' }}
+                <span v-if="item.qty" class="spec-qty-suffix"> = {{ item.qty }}</span>
+              </td>
               <td>{{ item.material || '-' }}</td>
               <td class="text-center">{{ item.color || '-' }}</td>
               <td class="remark-col">{{ item.other || '-' }}</td>
@@ -140,7 +138,7 @@
             <div v-for="(acc, index) in currentOrderAccessories" :key="index" class="accessory-item">
               <span class="acc-num">{{ index + 1 }}.</span>
               <span class="acc-name">{{ acc.name }}</span>
-              <span class="acc-divider"></span>
+              <span class="acc-divider-equal">=</span>
               <span class="acc-qty">{{ acc.qty }}</span>
             </div>
           </div>
@@ -161,17 +159,6 @@
               </div>
             </el-col>
           </el-row>
-
-          <div class="signature-row">
-            <el-row>
-              <el-col :span="12">
-                <div class="sig-box">供方代表签章：__________________</div>
-              </el-col>
-              <el-col :span="12">
-                <div class="sig-box text-right">需方代表签章：__________________</div>
-              </el-col>
-            </el-row>
-          </div>
         </div>
       </div>
     </el-dialog>
@@ -181,7 +168,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Plus, Search, View, Edit, Delete, Printer } from '@element-plus/icons-vue'
+import { Plus, Search, View, Edit, Delete, Printer, Download } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import { showSuccess, showError } from '@/utils/message'
 import { usePermissions } from '@/composables/usePermissions'
@@ -416,7 +403,8 @@ onMounted(() => {
   margin-top: 6px;
 }
 
-.meta-table, .data-table {
+/* 统一表格基础样式 */
+.meta-table, .items-table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 16px;
@@ -439,15 +427,15 @@ onMounted(() => {
   width: 21%;
 }
 
-.data-table th, .data-table td {
+.items-table th, .items-table td {
   border: 1px solid #2b2b2b;
   padding: 8px 10px;
+  text-align: center;
 }
 
-.data-table th {
+.items-table th {
   background-color: #f3f4f6;
   font-weight: bold;
-  text-align: center;
 }
 
 .text-center {
@@ -502,13 +490,18 @@ onMounted(() => {
   font-weight: 550;
 }
 
-.acc-divider {
-  flex-grow: 1;
-  border-bottom: 1px dotted #ccc;
-  margin: 0 8px;
+.acc-divider-equal {
+  margin: 0 4px;
+  color: #555;
+  font-weight: normal;
 }
 
 .acc-qty {
+  font-weight: bold;
+  color: #1d4ed8;
+}
+
+.spec-qty-suffix {
   font-weight: bold;
   color: #1d4ed8;
 }
@@ -546,23 +539,62 @@ onMounted(() => {
 }
 
 @media print {
-  body * {
-    visibility: hidden;
-  }
-  #print-area, #print-area * {
-    visibility: visible;
-  }
-  #print-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    border: none;
-    box-shadow: none;
-    padding: 0;
-  }
-  .order-history, .el-dialog__header, .el-dialog__close, .preview-actions {
+  /* 隐藏主应用、侧边栏、对话框头部以及操作按钮 */
+  #app, .sidebar-container, .navbar, .tags-view-container,
+  .el-dialog__header, .el-dialog__close, .preview-actions {
     display: none !important;
+  }
+
+  /* 重置弹窗及其遮罩层的全部定位约束，并隐藏所有滚动条 */
+  body, html {
+    background: #fff !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* 隐藏所有浏览器的滚动条 */
+  ::-webkit-scrollbar {
+    display: none !important;
+  }
+  
+  * {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
+
+  .el-overlay, .el-overlay-dialog, .el-dialog {
+    position: static !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .el-dialog__body {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* 铺满整个A4页面，允许自然分页 */
+  #print-area {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+  
+  /* 防止表格行中途截断分页 */
+  tr {
+    page-break-inside: avoid !important;
   }
 }
 </style>

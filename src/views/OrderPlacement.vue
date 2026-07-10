@@ -7,9 +7,6 @@
           <template #header>
             <div class="card-title">
               <span>新建订单</span>
-              <el-button type="primary" size="small" :icon="DocumentCopy" @click="loadSampleText">
-                载入示例数据
-              </el-button>
             </div>
           </template>
 
@@ -75,7 +72,7 @@
 
               <!-- 明细项目表 -->
               <div class="section-title">
-                <span>订货明细</span>
+                <span>加工明细</span>
                 <el-button type="primary" link size="small" :icon="Plus" @click="addItem">
                   添加项
                 </el-button>
@@ -141,12 +138,12 @@
         </el-card>
       </el-col>
 
-      <!-- 右侧：订货单排版预览与保存 -->
+      <!-- 右侧：生产加工单排版预览与保存 -->
       <el-col :xs="24" :md="14">
         <el-card class="preview-card" shadow="never">
           <template #header>
             <div class="preview-header-actions">
-              <span class="preview-title">订货单版面预览</span>
+              <span class="preview-title">生产加工单版面预览</span>
               <div class="buttons">
                 <el-button v-if="isEditMode" type="info" @click="cancelEdit">
                   取消编辑
@@ -154,25 +151,22 @@
                 <el-button type="success" :icon="Check" :loading="saving" @click="saveOrder">
                   {{ isEditMode ? '更新订单' : '保存订单' }}
                 </el-button>
-                <el-button type="primary" :icon="Printer" @click="printOrder" :disabled="!orderForm.customerName">
-                  打印 / 导出 PDF
-                </el-button>
               </div>
             </div>
           </template>
 
-          <!-- 订货单纸张版面 (打印容器) -->
+          <!-- 生产加工单纸张版面 (打印容器) -->
           <div id="print-area" class="order-sheet-paper">
             <div class="sheet-header">
               <div class="company-brand">倍力特金属制品有限公司</div>
-              <div class="sheet-title">销 售 订 货 单</div>
+              <div class="sheet-title">生 产 加 工 单</div>
               <div class="sheet-order-no" v-if="orderForm.orderNo">订单编号：{{ orderForm.orderNo }}</div>
             </div>
 
             <!-- 客户主信息表 -->
             <table class="meta-table">
               <tr>
-                <td class="meta-label">订货单位</td>
+                <td class="meta-label">客户名称</td>
                 <td class="meta-value" colspan="3"><strong>{{ orderForm.customerName || '未指定客户' }}</strong></td>
                 <td class="meta-label">订单日期</td>
                 <td class="meta-value">{{ orderForm.orderDate || formatDate(new Date()) }}</td>
@@ -192,30 +186,31 @@
             </table>
 
             <!-- 产品明细表 -->
-            <table class="data-table">
+            <table class="items-table">
               <thead>
                 <tr>
                   <th style="width: 50px;">序号</th>
                   <th>品名</th>
-                  <th>规格/尺寸</th>
-                  <th style="width: 80px;">数量</th>
-                  <th>用料/材质</th>
+                  <th>规格</th>
+                  <th>用料</th>
                   <th>颜色</th>
-                  <th>其他说明/备注</th>
+                  <th>备注</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(item, index) in orderForm.items" :key="item.id || index">
                   <td class="text-center">{{ index + 1 }}</td>
                   <td><strong>{{ item.name || '-' }}</strong></td>
-                  <td>{{ item.spec || '-' }}</td>
-                  <td class="text-center highlight-qty">{{ item.qty || '-' }}</td>
+                  <td>
+                    {{ item.spec || '-' }}
+                    <span v-if="item.qty" class="spec-qty-suffix"> = {{ item.qty }}</span>
+                  </td>
                   <td>{{ item.material || '-' }}</td>
                   <td class="text-center">{{ item.color || '-' }}</td>
                   <td class="remark-col">{{ item.other || '-' }}</td>
                 </tr>
                 <tr v-if="orderForm.items.length === 0">
-                  <td colspan="7" class="empty-row">暂无产品明细，请在左侧添加或解析数据</td>
+                  <td colspan="6" class="empty-row">暂无产品明细，请在左侧添加或解析数据</td>
                 </tr>
               </tbody>
             </table>
@@ -227,7 +222,7 @@
                 <div v-for="(acc, index) in orderForm.accessories" :key="acc.id || index" class="accessory-item">
                   <span class="acc-num">{{ index + 1 }}.</span>
                   <span class="acc-name">{{ acc.name }}</span>
-                  <span class="acc-divider"></span>
+                  <span class="acc-divider-equal">=</span>
                   <span class="acc-qty">{{ acc.qty }}</span>
                 </div>
               </div>
@@ -249,17 +244,6 @@
                   </div>
                 </el-col>
               </el-row>
-
-              <div class="signature-row">
-                <el-row>
-                  <el-col :span="12">
-                    <div class="sig-box">供方代表签章：__________________</div>
-                  </el-col>
-                  <el-col :span="12">
-                    <div class="sig-box text-right">需方代表签章：__________________</div>
-                  </el-col>
-                </el-row>
-              </div>
             </div>
           </div>
         </el-card>
@@ -271,7 +255,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Check, Printer, DocumentCopy, Plus, Delete, Refresh } from '@element-plus/icons-vue'
+import { Check, Printer, Plus, Delete, Refresh, Download } from '@element-plus/icons-vue'
 import { showSuccess, showError } from '@/utils/message'
 import orderApi, { type OrderItem, type AccessoryItem } from '@/api/order'
 
@@ -303,29 +287,6 @@ const hasParsedData = computed(() => {
   return orderForm.customerName || orderForm.items.length > 0 || orderForm.accessories.length > 0
 })
 
-// 载入示例数据
-const loadSampleText = () => {
-  rawText.value = `客户	湖北都昱新材料科技有限公司	电话：
-送货地址	应城	传真：
-联系人		日期：2026年7月4日
-序号	名称	规格	用料	颜色	其他
-1	立柱片	H4200*W1100mm = 10片 	100*70*1.9mm	蓝色	2横5斜；按750mm   
-2	横梁	L2840mm = 36根	140*50*1.4mm抱焊梁	桔红色	
-3	工字跨梁	L1250*W1100mm = 36根	40*60*1.5mm矩管	桔红色	
-4	护脚	H300mm = 10个	L型	桔红色	
-5	护栏	L1100mm*H500mm = 2个		桔红色	
-6	槽钢	L1200mm = 10根	用140*70*3.0mm折板，对应位置留出立柱底脚膨胀螺丝的孔	桔红色	外购
-配件：
-脚板（100型） = 20个
-黑色垫圈 = 20个
-螺丝M10*70 = 80套（含螺帽）
-螺丝M10*20 = 40个（含螺帽）
-膨胀螺丝= 150个
-大安全销 = 72个
-蓝色/桔红色自喷漆各一瓶
-工期：13天`
-  handleManualParse()
-}
 
 // 格式化日期辅助
 const formatDate = (date: Date) => {
@@ -384,6 +345,7 @@ const parseText = (text: string) => {
       ]
       
       for (const segment of segments) {
+        let matched = false
         for (const key of keys) {
           for (const label of key.labels) {
             if (segment.startsWith(label)) {
@@ -400,8 +362,11 @@ const parseText = (text: string) => {
                   }
                 }
               }
+              matched = true
+              break
             }
           }
+          if (matched) break
         }
       }
     } else if (mode === 'items') {
@@ -760,7 +725,7 @@ onMounted(async () => {
 }
 
 /* 统一表格基础样式 */
-.meta-table, .data-table {
+.meta-table, .items-table {
   width: 100%;
   border-collapse: collapse;
   margin-bottom: 16px;
@@ -783,15 +748,15 @@ onMounted(async () => {
   width: 21%;
 }
 
-.data-table th, .data-table td {
+.items-table th, .items-table td {
   border: 1px solid #2b2b2b;
   padding: 8px 10px;
+  text-align: center;
 }
 
-.data-table th {
+.items-table th {
   background-color: #f3f4f6;
   font-weight: bold;
-  text-align: center;
 }
 
 .text-center {
@@ -853,13 +818,18 @@ onMounted(async () => {
   font-weight: 550;
 }
 
-.acc-divider {
-  flex-grow: 1;
-  border-bottom: 1px dotted #ccc;
-  margin: 0 8px;
+.acc-divider-equal {
+  margin: 0 4px;
+  color: #555;
+  font-weight: normal;
 }
 
 .acc-qty {
+  font-weight: bold;
+  color: #1d4ed8;
+}
+
+.spec-qty-suffix {
   font-weight: bold;
   color: #1d4ed8;
 }
@@ -899,27 +869,68 @@ onMounted(async () => {
 
 /* 打印样式适配 */
 @media print {
-  body * {
-    visibility: hidden;
+  /* 隐藏左侧输入栏、头部以及系统侧边栏导航 */
+  .sidebar-container, .navbar, .tags-view-container, .app-header, .header-container,
+  .order-placement > .el-row > .el-col:first-child,
+  .preview-card .el-card__header,
+  .preview-header-actions,
+  .buttons,
+  .el-button {
+    display: none !important;
   }
-  #print-area, #print-area * {
-    visibility: visible;
+
+  /* 消除页面主体容器的所有内外边距和布局约束，并强行隐藏所有滚动条 */
+  body, html, #app, .app-wrapper, .main-container {
+    background: #fff !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
   }
-  #print-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    border: none;
-    box-shadow: none;
-    padding: 0;
+
+  /* 隐藏所有浏览器的滚动条 */
+  ::-webkit-scrollbar {
+    display: none !important;
   }
-  .order-placement {
-    padding: 0;
+  
+  * {
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
   }
-  /* Remove shadows and borders in print */
-  .preview-card, .el-card {
+  
+  .order-placement, .order-placement > .el-row, .order-placement > .el-row > .el-col {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    float: none !important;
+    overflow: visible !important;
+  }
+
+  /* 去除 Element plus 卡片外框的背景、边框及内边距 */
+  .preview-card, .el-card, .el-card__body {
     border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  /* 铺满整个A4页面，允许自然分页 */
+  #print-area {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+  
+  /* 防止表格行中途截断分页 */
+  tr {
+    page-break-inside: avoid !important;
   }
 }
 </style>

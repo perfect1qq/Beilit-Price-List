@@ -300,6 +300,7 @@ const handleStatClick = (type: string) => {
   } else if (type === '已下单') {
     filterOrderStatus.value = '已下单'
   } else if (type === '未下单') {
+    filterCooperationStatus.value = '已合作'
     filterOrderStatus.value = '未下单'
   } else if (type === '待安装') {
     filterOrderStatus.value = '已下单'

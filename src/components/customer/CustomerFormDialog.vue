@@ -62,7 +62,7 @@
         style="width: 100%"
         :disabled="localData.cooperationStatus === '未合作'"
       >
-        <el-option label="未有款项" value="未有款项" />
+        <el-option v-if="localData.cooperationStatus !== '已合作'" label="未有款项" value="未有款项" />
         <el-option label="待催款" value="待催款" />
         <el-option label="已结款" value="已结款" />
       </el-select>
@@ -189,6 +189,10 @@ watch(
   (val) => {
     if (val === "未合作") {
       localData.paymentStatus = "未有款项";
+    } else if (val === "已合作") {
+      if (localData.paymentStatus === "未有款项") {
+        localData.paymentStatus = "待催款";
+      }
     }
     if (val !== "已合作") {
       localData.orderStatus = "未下单";
