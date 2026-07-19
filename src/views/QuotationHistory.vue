@@ -23,7 +23,7 @@
             <el-empty v-if="!groupedHistoryList.length" :description="searchKeyword?.trim() ? '未搜索到匹配的报价单记录' : '暂无历史报价单'
               " />
 
-            <el-collapse v-else v-model="activePanels" accordion class="year-collapse">
+            <el-collapse v-else v-model="activePanels" class="year-collapse">
               <el-collapse-item v-for="yearGroup in groupedHistoryList" :key="yearGroup.year"
                 :name="String(yearGroup.year)">
                 <template #title>
@@ -42,7 +42,7 @@
 
                 <el-empty v-if="!yearGroup.companyGroups.length" description="该年份暂无报价单记录" :image-size="60" />
                 <template v-else>
-                  <el-collapse v-model="activeCompanyPanels" accordion class="company-collapse-inner">
+                  <el-collapse v-model="activeCompanyPanels" class="company-collapse-inner">
                     <el-collapse-item v-for="group in getPagedCompanies(yearGroup)" :key="group.companyName"
                       :name="group.companyName">
                       <template #title>
@@ -137,6 +137,7 @@
 
 <script setup lang="ts">
 import { computed, watch } from "vue";
+import { useRoute } from "vue-router";
 defineOptions({ name: "QuotationHistory" });
 import { DocumentAdd, Plus, Refresh } from "@element-plus/icons-vue";
 import { usePermissions } from "@/composables/usePermissions";
@@ -148,6 +149,7 @@ import { useQuotationHistoryPage } from "@/composables/useQuotationHistoryPage";
 import type { HistoryRecord } from "@/composables/useQuotationHistory";
 
 const { isAdmin, isGuest } = usePermissions();
+const route = useRoute();
 
 const {
   parsing,
@@ -200,22 +202,31 @@ const totalRecords = computed(() =>
 
 
 watch(
-  () => [groupedHistoryList.value, searchKeyword.value] as const,
-  ([groups, keyword]) => {
+  () => [groupedHistoryList.value, searchKeyword.value, route.query.expandCompany] as const,
+  ([groups, keyword, expandCompany]) => {
     if (!keyword?.trim()) {
-
+      activePanels.value = groups.map(group => String(group.year));
+      if (expandCompany) {
+        const target = String(expandCompany).trim().toLowerCase();
+        const foundCompanies: string[] = [];
+        for (const group of groups) {
+          for (const cg of group.companyGroups) {
+            if (cg.companyName.toLowerCase().includes(target)) {
+              foundCompanies.push(cg.companyName);
+            }
+          }
+        }
+        activeCompanyPanels.value = foundCompanies;
+      }
       return;
     }
-
 
     const matchedYears: string[] = [];
     const matchedCompanies: string[] = [];
 
     for (const group of groups) {
-
       let yearMatched = false;
       for (const companyGroup of group.companyGroups) {
-
         const companyMatched = companyGroup.companyName
           .toLowerCase()
           .includes(keyword.toLowerCase().trim());
@@ -224,7 +235,6 @@ watch(
           yearMatched = true;
           continue;
         }
-
 
         for (const record of companyGroup.records) {
           const name = (record.name || record.companyName || "").toLowerCase();
@@ -242,11 +252,9 @@ watch(
       }
     }
 
-
     if (matchedYears.length > 0) {
       activePanels.value = matchedYears;
-      activeCompanyPanels.value =
-        matchedCompanies.length > 0 ? [matchedCompanies[0]] : [];
+      activeCompanyPanels.value = matchedCompanies;
     }
   },
   { deep: true }

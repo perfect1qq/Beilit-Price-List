@@ -33,7 +33,9 @@ const INITIAL_FORM: CustomerCreatePayload & CustomerUpdatePayload = {
   cooperationStatus: '未合作',
   customerType: '终端',
   deliveryDays: null,
+  workshopDeliveryDays: null,
   shelfType: '',
+  discountPoints: '',
   remark: '',
   paymentStatus: '未有款项',
   orderStatus: '未下单',
@@ -76,6 +78,9 @@ export const useCustomerList = () => {
       ...c,
       deliveryDate: c.deliveryDays && c.deliveryDays > 0
         ? formatDate(addDays(c.deliveryDays, c.deliveryStartDate || c.createdAt))
+        : '',
+      workshopDeliveryDate: c.workshopDeliveryDays && c.workshopDeliveryDays > 0
+        ? formatDate(addDays(c.workshopDeliveryDays, c.workshopDeliveryStartDate || c.createdAt))
         : ''
     }))
     total.value = Number(res?.total ?? 0)
@@ -132,6 +137,7 @@ export const useCustomerForm = () => {
   const dialogVisible = ref(false)
   const editingId = ref<number | null>(null)
   const editingDeliveryStartDate = ref('')
+  const editingWorkshopDeliveryStartDate = ref('')
   const formData = reactive<CustomerCreatePayload & CustomerUpdatePayload>({ ...INITIAL_FORM })
   const { withSubmitLock } = useFormSubmit()
 
@@ -139,6 +145,7 @@ export const useCustomerForm = () => {
     Object.assign(formData, INITIAL_FORM)
     editingId.value = null
     editingDeliveryStartDate.value = ''
+    editingWorkshopDeliveryStartDate.value = ''
   }
 
   const handleAdd = () => { resetForm(); dialogVisible.value = true }
@@ -147,6 +154,7 @@ export const useCustomerForm = () => {
     resetForm()
     editingId.value = row.id ?? null
     editingDeliveryStartDate.value = row.deliveryStartDate || ''
+    editingWorkshopDeliveryStartDate.value = row.workshopDeliveryStartDate || ''
     Object.assign(formData, {
       companyName: row.companyName,
       customerName: row.customerName,
@@ -154,7 +162,9 @@ export const useCustomerForm = () => {
       cooperationStatus: row.cooperationStatus || '未合作',
       customerType: row.customerType || '终端',
       deliveryDays: row.deliveryDays ?? null,
+      workshopDeliveryDays: row.workshopDeliveryDays ?? null,
       shelfType: row.shelfType || '',
+      discountPoints: row.discountPoints || '',
       remark: row.remark,
       paymentStatus: row.paymentStatus || '未有款项',
       orderStatus: row.orderStatus || '未下单',
@@ -167,6 +177,7 @@ export const useCustomerForm = () => {
     dialogVisible,
     editingId,
     editingDeliveryStartDate,
+    editingWorkshopDeliveryStartDate,
     formData,
     resetForm,
     handleAdd,

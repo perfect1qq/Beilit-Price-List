@@ -163,7 +163,9 @@ export interface CustomerCreatePayload {
   cooperationStatus?: string
   customerType?: string
   deliveryDays?: number | null
+  workshopDeliveryDays?: number | null
   shelfType?: string
+  discountPoints?: string
   remark?: string
   paymentStatus?: string
   orderStatus?: string
@@ -177,7 +179,9 @@ export interface CustomerUpdatePayload {
   cooperationStatus?: string
   customerType?: string
   deliveryDays?: number | null
+  workshopDeliveryDays?: number | null
   shelfType?: string
+  discountPoints?: string
   remark?: string
   paymentStatus?: string
   orderStatus?: string
@@ -196,7 +200,10 @@ export interface CustomerData {
   customerType: string
   deliveryDays: number | null
   deliveryStartDate: string | null
+  workshopDeliveryDays: number | null
+  workshopDeliveryStartDate: string | null
   shelfType: string
+  discountPoints: string
   paymentStatus: string
   orderStatus: string
   installationStatus: string
@@ -204,19 +211,65 @@ export interface CustomerData {
   updatedAt: string
 }
 
+export interface CustomerOrderData {
+  id: number
+  customerId: number
+  orderName: string
+  orderAmount: number | null
+  orderStatus: string
+  paymentStatus: string
+  installationStatus: string
+  deliveryDays: number | null
+  deliveryStartDate: string | null
+  workshopDeliveryDays: number | null
+  workshopDeliveryStartDate: string | null
+  remark: string
+  operatorId: number
+  operatorName: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CustomerOrderCreatePayload {
+  orderName: string
+  orderAmount?: number | null
+  orderStatus?: string
+  paymentStatus?: string
+  installationStatus?: string
+  deliveryDays?: number | null
+  workshopDeliveryDays?: number | null
+  remark?: string
+}
+
+export interface CustomerOrderUpdatePayload {
+  orderName?: string
+  orderAmount?: number | null
+  orderStatus?: string
+  paymentStatus?: string
+  installationStatus?: string
+  deliveryDays?: number | null
+  workshopDeliveryDays?: number | null
+  remark?: string
+}
+
 export interface CustomerListItem extends CustomerData {
   hasQuotation: boolean
   quotationDate: string | null
   quotationStatus: QuotationStatus | null
   quotationId: number | null
+  quotationCount?: number
   followUpCount: number
+  orderCount?: number
   latestFollowUp: FollowUpData | null
+  deliveryDate?: string
+  workshopDeliveryDate?: string
 }
 
 export type CustomerListResult = PaginatedResult<CustomerListItem>
 
 export interface CustomerDetailData extends CustomerData {
   followUps: FollowUpData[]
+  orders?: CustomerOrderData[]
 }
 
 export interface FollowUpCreatePayload {

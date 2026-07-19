@@ -2,7 +2,14 @@
   <div class="page">
     <el-card shadow="never" class="page-card">
       <template #header>
-        <CardHeader title="货架部件智能汇总" />
+        <CardHeader title="货架部件智能汇总">
+          <template #actions>
+            <el-button type="info" plain @click="drawerVisible = true">
+              <template #icon><el-icon><Clock /></el-icon></template>
+              历史记录
+            </el-button>
+          </template>
+        </CardHeader>
       </template>
 
       <section class="panel editor">
@@ -67,7 +74,7 @@
         </div>
 
         <el-input v-model="rawText" type="textarea" :rows="8" :placeholder="shelfType === 'standard'
-          ? '支持重型货架「L*W*H + N主架 M副架」格式，以及中型/层板/重型货架「L*W*H*N层板（载重）套 N」格式。粘贴后点击生成汇总即可自动计算...'
+          ? '支持重型/中型货架尺寸输入（L/W/H字母可选，直接输2000*600*2000或L2000*W600*H2000均可）。\n如：「2000*600*2000 + 10主架 20副架」或「2000*600*2000*4层板 套 10」...'
           : shelfType === 'accessory'
             ? '请粘贴配件信息，如：\n立柱片 H5700*W1000mm=59片\n横梁1 L2990mm=258根\n连接杆 L400mm=18根\n防撞护栏 L1000*H300mm=20根\n防撞护脚 H300mm=59片\n系统将自动识别并计算螺丝...'
             : '请粘贴货架平台的配件信息，如：\n合抱立柱1 H4575mm = 10根\n合抱立柱2 H1200mm = 1根\n系统将自动识别并计算膨胀螺丝...'
@@ -127,12 +134,49 @@
         </ul>
       </section>
     </el-card>
+
+    <!-- 历史记录抽屉 -->
+    <el-drawer v-model="drawerVisible" :with-header="false" size="480px" destroy-on-close>
+      <div class="drawer-header">
+        <span class="drawer-title">复制历史记录</span>
+        <el-button v-if="historyList.length" type="danger" size="small" plain @click="clearAllHistory">
+          清空历史
+        </el-button>
+      </div>
+      <el-divider style="margin: 12px 0 16px;" />
+
+      <div class="history-list">
+        <el-empty v-if="!historyList.length" description="暂无历史记录" />
+        <template v-else>
+          <div v-for="item in historyList" :key="item.id" class="history-item">
+            <div class="history-item-meta">
+              <span class="time">{{ item.time }}</span>
+              <el-tag size="small" :type="getShelfTypeTag(item.shelfType)">
+                {{ getShelfTypeName(item.shelfType) }}
+              </el-tag>
+            </div>
+            <div class="history-item-content">
+              <pre>{{ item.rawText }}</pre>
+            </div>
+            <div class="history-item-actions">
+              <el-button type="primary" size="small" plain @click="applyHistory(item)">
+                重新载入
+              </el-button>
+              <el-button type="danger" size="small" plain @click="deleteHistoryItem(item.id)">
+                删除
+              </el-button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </el-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { Promotion, RefreshLeft } from "@element-plus/icons-vue";
+import { ref, onMounted } from "vue";
+import { Promotion, RefreshLeft, Clock } from "@element-plus/icons-vue";
+import { ElMessageBox } from "element-plus";
 import { quotationStatisticsApi } from "../api/quotation";
 import { to } from "@/utils/async";
 import { showWarning, showError, showSuccess } from "@/utils/message";
@@ -165,9 +209,8 @@ const DEFAULT_REMARKS = [
 const remarks = ref<string[]>([...DEFAULT_REMARKS]);
 const loading = ref(false);
 
-/** 执行解析 */
-const doParse = async () => {
-  if (!rawText.value.trim()) return;
+const doParse = async (): Promise<boolean> => {
+  if (!rawText.value.trim()) return false;
 
   loading.value = true;
 
@@ -191,7 +234,7 @@ const doParse = async () => {
   if (err || !result) {
     showError(err, "智能引擎解析失败");
     loading.value = false;
-    return;
+    return false;
   }
   parts.value = result.parts || [];
   errors.value = result.errors || [];
@@ -203,17 +246,21 @@ const doParse = async () => {
     remarks.value = [...DEFAULT_REMARKS];
   }
   loading.value = false;
+  return true;
 };
 
 const parseNow = async () => {
   if (!rawText.value.trim()) {
     return showWarning("请先提供完整的货架报价文本用于解析。");
   }
-  await doParse();
+  const success = await doParse();
+  if (!success) return;
+
   if (errors.value.length) {
     showWarning('文本存在无法精准识别的内容区块，请检查页面"错误"反馈。');
   } else {
     showSuccess("文本解析及计算转换成功");
+    addHistoryRecord();
   }
 };
 
@@ -233,6 +280,138 @@ const clearText = () => {
   warnings.value = [];
   remarks.value = [...DEFAULT_REMARKS];
 };
+
+// --- History records logic ---
+const drawerVisible = ref(false);
+
+interface StatisticsHistoryItem {
+  id: string;
+  time: string;
+  shelfType: string;
+  rawText: string;
+  crossBraceCount: number;
+  gateBeamClampCount: number;
+  connectorCount: number;
+  guardrailCount: number;
+  guardrailType: string;
+  protectorCount: number;
+  pickingLayerCount: number;
+  embraceColumnCount: number;
+}
+
+const historyList = ref<StatisticsHistoryItem[]>([]);
+
+// Load history from localStorage
+const loadHistory = () => {
+  const data = localStorage.getItem("quotation_statistics_history");
+  if (data) {
+    try {
+      historyList.value = JSON.parse(data);
+    } catch (e) {
+      historyList.value = [];
+    }
+  }
+};
+
+// Save history to localStorage
+const saveHistory = () => {
+  localStorage.setItem("quotation_statistics_history", JSON.stringify(historyList.value));
+};
+
+// Add current data to history
+const addHistoryRecord = () => {
+  if (!rawText.value.trim()) return;
+
+  const existIndex = historyList.value.findIndex(item => item.rawText.trim() === rawText.value.trim() && item.shelfType === shelfType.value);
+  if (existIndex !== -1) {
+    historyList.value.splice(existIndex, 1);
+  }
+
+  const now = new Date();
+  const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+  const newItem: StatisticsHistoryItem = {
+    id: String(Date.now()),
+    time: timeStr,
+    shelfType: shelfType.value,
+    rawText: rawText.value,
+    crossBraceCount: crossBraceCount.value || 0,
+    gateBeamClampCount: gateBeamClampCount.value || 0,
+    connectorCount: connectorCount.value || 0,
+    guardrailCount: guardrailCount.value || 0,
+    guardrailType: guardrailType.value || "2",
+    protectorCount: protectorCount.value || 0,
+    pickingLayerCount: pickingLayerCount.value || 0,
+    embraceColumnCount: embraceColumnCount.value || 0,
+  };
+
+  historyList.value.unshift(newItem);
+  if (historyList.value.length > 50) {
+    historyList.value.pop();
+  }
+
+  saveHistory();
+};
+
+// Apply a history item
+const applyHistory = (item: StatisticsHistoryItem) => {
+  shelfType.value = item.shelfType;
+  rawText.value = item.rawText;
+  crossBraceCount.value = item.crossBraceCount;
+  gateBeamClampCount.value = item.gateBeamClampCount;
+  connectorCount.value = item.connectorCount;
+  guardrailCount.value = item.guardrailCount;
+  guardrailType.value = item.guardrailType;
+  protectorCount.value = item.protectorCount;
+  pickingLayerCount.value = item.pickingLayerCount;
+  embraceColumnCount.value = item.embraceColumnCount;
+  
+  drawerVisible.value = false;
+  showSuccess("历史记录已重新载入，请点击生成汇总进行计算。");
+};
+
+// Delete a history item
+const deleteHistoryItem = (id: string) => {
+  historyList.value = historyList.value.filter(item => item.id !== id);
+  saveHistory();
+  showSuccess("删除成功");
+};
+
+// Clear all history
+const clearAllHistory = async () => {
+  try {
+    await ElMessageBox.confirm("确定要清空所有复制历史记录吗？", "提示", {
+      confirmButtonText: "确定",
+      cancelButtonText: "取消",
+      type: "warning",
+    });
+    historyList.value = [];
+    saveHistory();
+    showSuccess("历史记录已清空");
+  } catch (e) {
+    // User cancelled
+  }
+};
+
+const getShelfTypeName = (type: string) => {
+  return {
+    standard: "重型/中型货架",
+    platform: "货架平台",
+    accessory: "配件计算"
+  }[type] || type;
+};
+
+const getShelfTypeTag = (type: string) => {
+  return {
+    standard: "primary",
+    platform: "success",
+    accessory: "warning"
+  }[type] || "info";
+};
+
+onMounted(() => {
+  loadHistory();
+});
 </script>
 
 <style scoped>
@@ -374,5 +553,77 @@ h2 {
   textarea {
     min-height: 180px;
   }
+}
+
+/* --- History drawer styles --- */
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.drawer-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0;
+}
+
+.history-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px;
+  background-color: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.history-item:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.history-item-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.history-item-meta .time {
+  font-size: 12px;
+  color: #64748b;
+  font-family: monospace;
+}
+
+.history-item-content {
+  margin-bottom: 12px;
+  background-color: #fff;
+  border: 1px solid #f1f5f9;
+  border-radius: 4px;
+  padding: 8px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.history-item-content pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: inherit;
+  font-size: 12px;
+  color: #334155;
+}
+
+.history-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 </style>

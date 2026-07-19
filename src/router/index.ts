@@ -187,6 +187,8 @@ const routes: RouteRecordRaw[] = [
   { path: '/beam-quotation-history', redirect: '/beam-quotation/history' },
   { path: '/quotation-history', redirect: '/quotation/history' },
   { path: '/Quotation-statistics', redirect: '/quotation-statistics' },
+  // 兜底路由：未登录 → 由 authGuard 重定向到 /login；已登录 → 重定向到首页
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
 const router = createRouter({

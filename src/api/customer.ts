@@ -1,6 +1,6 @@
 import request from '@/utils/request'
 import { unwrap } from '@/utils/unwrap'
-import type { PaginationParams, CustomerCreatePayload, CustomerUpdatePayload, CustomerData, CustomerListResult, CustomerDetailData, FollowUpCreatePayload, FollowUpData } from '@/types'
+import type { PaginationParams, CustomerCreatePayload, CustomerUpdatePayload, CustomerData, CustomerListResult, CustomerDetailData, FollowUpCreatePayload, FollowUpData, CustomerOrderCreatePayload, CustomerOrderUpdatePayload, CustomerOrderData } from '@/types'
 
 interface CustomerListParams extends PaginationParams {
   cooperationStatus?: string
@@ -48,6 +48,15 @@ const addFollowUp = (customerId: number | string, data: FollowUpCreatePayload) =
 const deleteFollowUp = (id: number | string) =>
   request.delete<null>(`/api/customers/follow-ups/${id}`)
 
+const addOrder = (customerId: number | string, data: CustomerOrderCreatePayload) =>
+  request.post<{ order: CustomerOrderData }>(`/api/customers/${customerId}/orders`, data)
+
+const updateOrder = (orderId: number | string, data: CustomerOrderUpdatePayload) =>
+  request.put<{ order: CustomerOrderData }>(`/api/customers/orders/${orderId}`, data)
+
+const deleteOrder = (orderId: number | string) =>
+  request.delete<null>(`/api/customers/orders/${orderId}`)
+
 const customerApi = {
   list: unwrap(list),
   getStats: unwrap(getStats),
@@ -56,7 +65,10 @@ const customerApi = {
   update: unwrap(update),
   remove: unwrap(remove),
   addFollowUp: unwrap(addFollowUp),
-  deleteFollowUp: unwrap(deleteFollowUp)
+  deleteFollowUp: unwrap(deleteFollowUp),
+  addOrder: unwrap(addOrder),
+  updateOrder: unwrap(updateOrder),
+  deleteOrder: unwrap(deleteOrder)
 }
 
 export default customerApi

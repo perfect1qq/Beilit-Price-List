@@ -1,4 +1,4 @@
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import quotationApi from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
@@ -123,8 +123,23 @@ export const useQuotationHistoryPage = () => {
     await loadHistoryList()
   }
 
+  watch(
+    () => route.query.keyword,
+    async (kw) => {
+      const queryKeyword = kw
+      if (queryKeyword !== undefined && String(queryKeyword).trim() !== searchKeyword.value) {
+        searchKeyword.value = String(queryKeyword).trim()
+        await loadHistoryList()
+      }
+    }
+  )
+
   onMounted(async () => {
     try {
+      const queryKeyword = route.query.keyword
+      if (queryKeyword) {
+        searchKeyword.value = String(queryKeyword).trim()
+      }
       await loadHistoryList()
 
       const queryId = route.query.id

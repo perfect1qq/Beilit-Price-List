@@ -89,12 +89,13 @@
         <el-option label="已安装" value="已安装" />
       </el-select>
     </el-form-item>
-    <el-form-item label="工期" prop="deliveryDays">
+    <el-form-item label="实际工期" prop="deliveryDays">
       <div class="delivery-input-row">
         <el-input-number
           v-model="localData.deliveryDays"
           :min="1"
           :max="365"
+          :disabled="localData.cooperationStatus !== '已合作'"
           controls-position="right"
           placeholder="天数"
           style="width: 140px"
@@ -104,7 +105,27 @@
           v-if="localData.deliveryDays && localData.deliveryDays > 0"
           class="delivery-preview"
         >
-          → 预计完成：{{ getDeliveryDate(localData.deliveryDays) }}
+          → 预计完成：{{ getDeliveryDate(localData.deliveryDays, isEdit ? deliveryStartDate : '') }}
+        </span>
+      </div>
+    </el-form-item>
+    <el-form-item label="车间工期" prop="workshopDeliveryDays">
+      <div class="delivery-input-row">
+        <el-input-number
+          v-model="localData.workshopDeliveryDays"
+          :min="1"
+          :max="365"
+          :disabled="localData.cooperationStatus !== '已合作'"
+          controls-position="right"
+          placeholder="天数"
+          style="width: 140px"
+        />
+        <span class="delivery-unit">天</span>
+        <span
+          v-if="localData.workshopDeliveryDays && localData.workshopDeliveryDays > 0"
+          class="delivery-preview"
+        >
+          → 预计完成：{{ getDeliveryDate(localData.workshopDeliveryDays, isEdit ? workshopDeliveryStartDate : '') }}
         </span>
       </div>
     </el-form-item>
@@ -112,6 +133,14 @@
       <el-input
         v-model="localData.shelfType"
         placeholder="请输入货架类型"
+        maxlength="100"
+        show-word-limit
+      />
+    </el-form-item>
+    <el-form-item label="优惠点" prop="discountPoints">
+      <el-input
+        v-model="localData.discountPoints"
+        placeholder="请输入优惠点（例如：5个点或9折等）"
         maxlength="100"
         show-word-limit
       />
@@ -149,6 +178,7 @@ const props = defineProps({
   },
   isEdit: { type: Boolean, default: false },
   deliveryStartDate: { type: String, default: "" },
+  workshopDeliveryStartDate: { type: String, default: "" },
 });
 
 const emit = defineEmits(["update:modelValue", "submit"]);
@@ -165,7 +195,9 @@ const INITIAL_LOCAL: CustomerCreatePayload & CustomerUpdatePayload = {
   cooperationStatus: "未合作",
   customerType: "终端",
   deliveryDays: null,
+  workshopDeliveryDays: null,
   shelfType: "",
+  discountPoints: "",
   remark: "",
   paymentStatus: "未有款项",
   orderStatus: "未下单",
@@ -196,6 +228,8 @@ watch(
     }
     if (val !== "已合作") {
       localData.orderStatus = "未下单";
+      localData.deliveryDays = null;
+      localData.workshopDeliveryDays = null;
     }
   }
 );
@@ -231,12 +265,12 @@ const formRules = {
   contactInfo: [createMaxLengthRule(100, "联系方式")],
 };
 
-const getDeliveryDate = (days: number): string => {
+const getDeliveryDate = (days?: number | null, startDate?: string): string => {
   if (!days || days <= 0) return "";
-  // 编辑时从 deliveryStartDate 算，新增时从当天算
+  // 编辑时从 startDate 算，新增时或起始日期为空时从当天算
   const fromDate =
-    props.isEdit && props.deliveryStartDate
-      ? new Date(props.deliveryStartDate)
+    props.isEdit && startDate
+      ? new Date(startDate)
       : new Date();
   const endDate = addDays(days, fromDate);
   return formatDate(endDate);

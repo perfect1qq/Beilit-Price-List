@@ -12,103 +12,181 @@
       </template>
 
       <div class="stats-row">
-        <div class="stat-card"
-          :class="{ active: !filterCooperationStatus && !filterPaymentStatus && !filterOrderStatus && !filterInstallationStatus && !filterCustomerType }"
-          @click="handleStatClick('')">
+        <div
+          class="stat-card"
+          :class="{
+            active:
+              !filterCooperationStatus &&
+              !filterPaymentStatus &&
+              !filterOrderStatus &&
+              !filterInstallationStatus &&
+              !filterCustomerType,
+          }"
+          @click="handleStatClick('')"
+        >
           <div class="stat-value">{{ stats.total }}</div>
           <div class="stat-label">全部客户</div>
         </div>
-        <div class="stat-card stat-undealt" :class="{ active: filterCooperationStatus === '未合作' }"
-          @click="handleStatClick('未成交')">
+        <div
+          class="stat-card stat-undealt"
+          :class="{ active: filterCooperationStatus === '未合作' }"
+          @click="handleStatClick('未成交')"
+        >
           <div class="stat-value">{{ stats.undealt }}</div>
           <div class="stat-label">未成交</div>
         </div>
-        <div class="stat-card stat-dealt" :class="{ active: filterCooperationStatus === '已合作' && !filterOrderStatus }"
-          @click="handleStatClick('成交')">
+        <div
+          class="stat-card stat-dealt"
+          :class="{ active: filterCooperationStatus === '已合作' && !filterOrderStatus }"
+          @click="handleStatClick('成交')"
+        >
           <div class="stat-value">{{ stats.dealt }}</div>
           <div class="stat-label">成交</div>
         </div>
-        <div class="stat-card stat-pending" :class="{ active: filterPaymentStatus === '待催款' }"
-          @click="handleStatClick('待催款')">
+        <div
+          class="stat-card stat-pending"
+          :class="{ active: filterPaymentStatus === '待催款' }"
+          @click="handleStatClick('待催款')"
+        >
           <div class="stat-value">{{ stats.pending }}</div>
           <div class="stat-label">待催款</div>
         </div>
-        <div class="stat-card stat-settled" :class="{ active: filterPaymentStatus === '已结款' }"
-          @click="handleStatClick('已结款')">
+        <div
+          class="stat-card stat-settled"
+          :class="{ active: filterPaymentStatus === '已结款' }"
+          @click="handleStatClick('已结款')"
+        >
           <div class="stat-value">{{ stats.settled }}</div>
           <div class="stat-label">已结款</div>
         </div>
-        <div class="stat-card stat-not-ordered" :class="{ active: filterOrderStatus === '未下单' }"
-          @click="handleStatClick('未下单')">
+        <div
+          class="stat-card stat-not-ordered"
+          :class="{ active: filterOrderStatus === '未下单' }"
+          @click="handleStatClick('未下单')"
+        >
           <div class="stat-value">{{ stats.notOrdered }}</div>
           <div class="stat-label">未下单</div>
         </div>
-        <div class="stat-card stat-ordered" :class="{ active: filterOrderStatus === '已下单' && !filterInstallationStatus }"
-          @click="handleStatClick('已下单')">
+        <div
+          class="stat-card stat-ordered"
+          :class="{ active: filterOrderStatus === '已下单' && !filterInstallationStatus }"
+          @click="handleStatClick('已下单')"
+        >
           <div class="stat-value">{{ stats.ordered }}</div>
           <div class="stat-label">下单</div>
         </div>
-        <div class="stat-card stat-pending-install" :class="{ active: filterInstallationStatus === '待安装' }"
-          @click="handleStatClick('待安装')">
-          <div class="stat-value">{{ stats.pendingInstall }}</div>
-          <div class="stat-label">待安装</div>
-        </div>
-        <div class="stat-card stat-installed" :class="{ active: filterInstallationStatus === '已安装' }"
-          @click="handleStatClick('已安装')">
+        <div
+          class="stat-card stat-installed"
+          :class="{ active: filterInstallationStatus === '已安装' }"
+          @click="handleStatClick('已安装')"
+        >
           <div class="stat-value">{{ stats.installed }}</div>
           <div class="stat-label">已安装</div>
         </div>
-        <div class="stat-card stat-dealer" :class="{ active: filterCustomerType === '经销商' }"
-          @click="handleStatClick('经销商')">
+        <div
+          class="stat-card stat-dealer"
+          :class="{ active: filterCustomerType === '经销商' }"
+          @click="handleStatClick('经销商')"
+        >
           <div class="stat-value">{{ stats.dealer }}</div>
           <div class="stat-label">经销商</div>
         </div>
-        <div class="stat-card stat-terminal" :class="{ active: filterCustomerType === '终端' }"
-          @click="handleStatClick('终端')">
+        <div
+          class="stat-card stat-terminal"
+          :class="{ active: filterCustomerType === '终端' }"
+          @click="handleStatClick('终端')"
+        >
           <div class="stat-value">{{ stats.terminal }}</div>
           <div class="stat-label">终端</div>
         </div>
       </div>
 
       <div class="search-filter-row">
-        <SearchBar v-model="searchKeyword" placeholder="搜索公司名称、客户姓名、联系方式、货架类型" @search="handleSearch" />
+        <SearchBar
+          v-model="searchKeyword"
+          placeholder="搜索公司名称、客户姓名、联系方式、货架类型"
+          @search="handleSearch"
+        />
 
         <div class="filter-group">
           <el-button @click="handleResetFilter">清空</el-button>
         </div>
       </div>
 
-      <CardList :data="customerList" :loading="loading" :total="total" v-model:current-page="page"
-        v-model:page-size="pageSize" :columns="2" empty-description="暂无客户数据" :empty-image-size="120"
-        @page-change="() => loadList()">
+      <CardList
+        :data="customerList"
+        :loading="loading"
+        :total="total"
+        v-model:current-page="page"
+        v-model:page-size="pageSize"
+        :columns="2"
+        empty-description="暂无客户数据"
+        :empty-image-size="120"
+        @page-change="() => loadList()"
+      >
         <template #card="{ item }">
           <div class="customer-card">
             <div class="card-header">
               <h3 class="company-name">{{ item.companyName }}</h3>
               <div class="tags">
                 <!-- 报价状态 -->
-                <el-tag :type="item.hasQuotation ? 'success' : 'info'" size="small" :plain="!item.hasQuotation">
-                  {{ item.hasQuotation ? '已报价' : '未报价' }}
+                <el-tag
+                  :type="item.hasQuotation ? 'success' : 'info'"
+                  size="small"
+                  :plain="!item.hasQuotation"
+                >
+                  {{ item.hasQuotation ? "已报价" : "未报价" }}
                 </el-tag>
                 <!-- 合作状态 -->
-                <el-tag :type="item.cooperationStatus === '已合作' ? 'success' : 'warning'" size="small">
-                  {{ item.cooperationStatus || '未合作' }}
+                <el-tag
+                  :type="item.cooperationStatus === '已合作' ? 'success' : 'warning'"
+                  size="small"
+                >
+                  {{ item.cooperationStatus || "未合作" }}
+                </el-tag>
+                <el-tag
+                  v-if="item.orderCount && item.orderCount > 0"
+                  type="warning"
+                  size="small"
+                  effect="dark"
+                >
+                  合作项目: {{ item.orderCount }} 个
                 </el-tag>
                 <!-- 客户类型 -->
-                <el-tag :type="item.customerType === '经销商' ? 'primary' : 'info'" size="small">
-                  {{ item.customerType || '终端' }}
+                <el-tag
+                  :type="item.customerType === '经销商' ? 'primary' : 'info'"
+                  size="small"
+                >
+                  {{ item.customerType || "终端" }}
                 </el-tag>
                 <!-- 结款状态 -->
-                <el-tag :type="item.paymentStatus === '已结款' ? 'success' : item.paymentStatus === '待催款' ? 'danger' : 'info'" size="small">
-                  {{ item.paymentStatus || '未有款项' }}
+                <el-tag
+                  :type="
+                    item.paymentStatus === '已结款'
+                      ? 'success'
+                      : item.paymentStatus === '待催款'
+                      ? 'danger'
+                      : 'info'
+                  "
+                  size="small"
+                >
+                  {{ item.paymentStatus || "未有款项" }}
                 </el-tag>
                 <!-- 下单状态 -->
-                <el-tag :type="item.orderStatus === '已下单' ? 'primary' : 'info'" size="small" :effect="item.orderStatus === '已下单' ? 'dark' : 'plain'">
-                  {{ item.orderStatus || '未下单' }}
+                <el-tag
+                  :type="item.orderStatus === '已下单' ? 'primary' : 'info'"
+                  size="small"
+                  :effect="item.orderStatus === '已下单' ? 'dark' : 'plain'"
+                >
+                  {{ item.orderStatus || "未下单" }}
                 </el-tag>
                 <!-- 安装状态 -->
-                <el-tag :type="item.installationStatus === '已安装' ? 'success' : 'info'" size="small" :effect="item.installationStatus === '已安装' ? 'dark' : 'plain'">
-                  {{ item.installationStatus || '待安装' }}
+                <el-tag
+                  :type="item.installationStatus === '已安装' ? 'success' : 'info'"
+                  size="small"
+                  :effect="item.installationStatus === '已安装' ? 'dark' : 'plain'"
+                >
+                  {{ item.installationStatus || "待安装" }}
                 </el-tag>
               </div>
             </div>
@@ -117,59 +195,117 @@
               <div class="info-row two-col">
                 <div class="col-item">
                   <span class="label">客户姓名：</span>
-                  <span class="value">{{ item.customerName || '-' }}</span>
+                  <span class="value">{{ item.customerName || "-" }}</span>
                 </div>
                 <div class="col-item">
                   <span class="label">联系方式：</span>
-                  <span class="value">{{ item.contactInfo || '-' }}</span>
+                  <span class="value">{{ item.contactInfo || "-" }}</span>
                 </div>
               </div>
 
               <div class="info-row">
                 <span class="label">货架类型：</span>
-                <span class="value">{{ item.shelfType || '-' }}</span>
+                <span class="value">{{ item.shelfType || "-" }}</span>
+              </div>
+
+              <div v-if="item.discountPoints && item.discountPoints.trim()" class="info-row">
+                <span class="label">优惠点：</span>
+                <span class="value" style="color: #f56c6c; font-weight: 600;">{{ item.discountPoints }}</span>
               </div>
 
               <div class="info-row">
                 <span class="label">备注：</span>
-                <span class="value remark-text">{{ item.remark || '-' }}</span>
+                <span class="value remark-text">{{ item.remark || "-" }}</span>
               </div>
 
-              <div v-if="item.deliveryDays && item.deliveryDays > 0" class="info-row delivery-info">
-                <span class="label">工期：</span>
+              <div
+                v-if="item.deliveryDays && item.deliveryDays > 0"
+                class="info-row delivery-info"
+              >
+                <span class="label">实际工期：</span>
                 <span class="delivery-days-value">{{ item.deliveryDays }}天</span>
                 <span class="delivery-arrow">→</span>
                 <span class="delivery-date-label">预计完成：</span>
                 <span class="delivery-date-value">{{ item.deliveryDate }}</span>
               </div>
+              <div
+                v-if="item.workshopDeliveryDays && item.workshopDeliveryDays > 0"
+                class="info-row delivery-info"
+              >
+                <span class="label">车间工期：</span>
+                <span class="delivery-days-value">{{ item.workshopDeliveryDays }}天</span>
+                <span class="delivery-arrow">→</span>
+                <span class="delivery-date-label">预计完成：</span>
+                <span class="delivery-date-value">{{ item.workshopDeliveryDate }}</span>
+              </div>
 
               <div v-if="item.latestFollowUp" class="info-row follow-up-info">
                 <span class="label">最新跟进：</span>
                 <div class="follow-up-content">
-                  <span class="follow-up-text">{{ (item.latestFollowUp as FollowUpData).content }}</span>
+                  <span
+                    class="follow-up-text"
+                    >{{ (item.latestFollowUp as FollowUpData).content }}</span
+                  >
                   <span class="follow-up-meta">
                     <span class="follow-up-time">{{ formatDate((item.latestFollowUp as FollowUpData).createdAt as
                       string) }}</span>
                   </span>
                 </div>
               </div>
-              <div v-else-if="Number(item.followUpCount) > 0" class="info-row follow-up-info">
+              <div
+                v-else-if="Number(item.followUpCount) > 0"
+                class="info-row follow-up-info"
+              >
                 <span class="label">跟进记录：</span>
-                <el-tag size="small" type="info">{{ Number(item.followUpCount) }} 条记录</el-tag>
+                <el-tag size="small" type="info"
+                  >{{ Number(item.followUpCount) }} 条记录</el-tag
+                >
               </div>
             </div>
 
             <div class="card-footer">
               <div class="action-buttons">
-                <el-button type="primary" size="small" round
-                  @click.stop="handleViewDetail(item as CustomerListItem)">详情</el-button>
-                <el-button v-if="item.hasQuotation && item.quotationId" type="success" size="small" round
-                  @click.stop="handleGoToQuotation(item as CustomerListItem)">查看报价单</el-button>
+                <el-button
+                  type="primary"
+                  size="small"
+                  round
+                  @click.stop="handleViewDetail(item as CustomerListItem)"
+                  >详情</el-button
+                >
+                <el-button
+                  v-if="canCreate && item.cooperationStatus === '已合作'"
+                  type="primary"
+                  size="small"
+                  round
+                  plain
+                  @click.stop="handleRepurchase(item as CustomerListItem)"
+                  >复购</el-button
+                >
+                <el-button
+                  v-if="item.hasQuotation && (item.quotationId || (item.quotationCount && item.quotationCount > 0))"
+                  type="success"
+                  size="small"
+                  round
+                  @click.stop="handleGoToQuotation(item as CustomerListItem)"
+                  >查看报价单{{ item.quotationCount && item.quotationCount > 1 ? ` (${item.quotationCount})` : '' }}</el-button
+                >
                 <template v-if="!isGuest">
-                  <el-button v-if="canEdit" type="warning" size="small" plain
-                    @click.stop="handleEdit(item as CustomerListItem)">编辑</el-button>
-                  <el-button v-if="canDelete" type="danger" size="small" plain
-                    @click.stop="handleDelete(item as CustomerListItem)">删除</el-button>
+                  <el-button
+                    v-if="canEdit"
+                    type="warning"
+                    size="small"
+                    plain
+                    @click.stop="handleEdit(item as CustomerListItem)"
+                    >编辑</el-button
+                  >
+                  <el-button
+                    v-if="canDelete"
+                    type="danger"
+                    size="small"
+                    plain
+                    @click.stop="handleDelete(item as CustomerListItem)"
+                    >删除</el-button
+                  >
                 </template>
               </div>
             </div>
@@ -177,142 +313,278 @@
         </template>
 
         <template #empty-action>
-          <el-button v-if="canCreate" type="primary" @click="handleAdd">立即添加客户</el-button>
+          <el-button v-if="canCreate" type="primary" @click="handleAdd"
+            >立即添加客户</el-button
+          >
         </template>
       </CardList>
     </el-card>
 
-    <CustomerFormDialog v-model="dialogVisible" :form-data="formData" :is-edit="editingId !== null"
-      :delivery-start-date="editingDeliveryStartDate" @submit="handleFormSubmit" append-to-body />
+    <CustomerFormDialog
+      v-model="dialogVisible"
+      :form-data="formData"
+      :is-edit="editingId !== null"
+      :delivery-start-date="editingDeliveryStartDate"
+      :workshop-delivery-start-date="editingWorkshopDeliveryStartDate"
+      @submit="handleFormSubmit"
+      append-to-body
+    />
 
-    <CustomerDetailDialog v-model="detailVisible" :customer="currentCustomer" :can-create="canCreate"
-      :is-guest="isGuest" append-to-body @open="handleDetailOpen" @add-follow-up="showAddFollowUpDialog"
-      @delete-follow-up="(item: FollowUpData) => handleDeleteFollowUp(item, loadList)" />
+    <CustomerDetailDialog
+      v-model="detailVisible"
+      :customer="currentCustomer"
+      :can-create="canCreate"
+      :is-guest="isGuest"
+      append-to-body
+      @open="() => handleDetailOpen()"
+      @add-follow-up="() => showAddFollowUpDialog()"
+      @delete-follow-up="(item: FollowUpData) => handleDeleteFollowUp(item, loadList)"
+      @order-change="handleOrderChange"
+    />
 
-    <FollowUpFormDialog v-model="followUpDialogVisible" :form-data="followUpFormData"
-      @submit="(data: FollowUpCreatePayload) => handleFollowUpSubmit(data, loadList)" append-to-body />
+    <FollowUpFormDialog
+      v-model="followUpDialogVisible"
+      :form-data="followUpFormData"
+      @submit="(data: FollowUpCreatePayload) => handleFollowUpSubmit(data, loadList)"
+      append-to-body
+    />
+
+    <OrderFormDialog
+      ref="orderDialogRef"
+      v-model="orderFormVisible"
+      :customer-id="currentOrderCustomerId"
+      :order-data="null"
+      @submit="handleOrderSubmit"
+      append-to-body
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
-import { Plus, Search } from '@element-plus/icons-vue'
-import customerApi from '@/api/customer'
-import { to } from '@/utils/async'
-import { formatDate } from '@/utils/date'
-import { showError, showSuccess } from '@/utils/message'
-import { usePermissions } from '@/composables/usePermissions'
-import { useCustomerList, useCustomerForm, useFollowUp, useCustomerStats } from '@/composables/useCustomer'
-import type { CustomerCreatePayload, CustomerUpdatePayload, FollowUpData, FollowUpCreatePayload } from '@/types'
-import type { CustomerListItem } from '@/composables/useCustomer'
+import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import { ElMessageBox } from "element-plus";
+import { Plus, Search } from "@element-plus/icons-vue";
+import customerApi from "@/api/customer";
+import { to } from "@/utils/async";
+import { formatDate } from "@/utils/date";
+import { showError, showSuccess } from "@/utils/message";
+import { usePermissions } from "@/composables/usePermissions";
+import {
+  useCustomerList,
+  useCustomerForm,
+  useFollowUp,
+  useCustomerStats,
+} from "@/composables/useCustomer";
+import type {
+  CustomerCreatePayload,
+  CustomerUpdatePayload,
+  CustomerOrderCreatePayload,
+  CustomerOrderUpdatePayload,
+  FollowUpData,
+  FollowUpCreatePayload,
+} from "@/types";
+import type { CustomerListItem } from "@/composables/useCustomer";
 
-import SearchBar from '@/components/common/SearchBar.vue'
-import CardHeader from '@/components/common/CardHeader.vue'
-import CardList from '@/components/common/CardList.vue'
-import CustomerFormDialog from '@/components/customer/CustomerFormDialog.vue'
-import CustomerDetailDialog from '@/components/customer/CustomerDetailDialog.vue'
-import FollowUpFormDialog from '@/components/customer/FollowUpFormDialog.vue'
+import SearchBar from "@/components/common/SearchBar.vue";
+import CardHeader from "@/components/common/CardHeader.vue";
+import CardList from "@/components/common/CardList.vue";
+import CustomerFormDialog from "@/components/customer/CustomerFormDialog.vue";
+import CustomerDetailDialog from "@/components/customer/CustomerDetailDialog.vue";
+import FollowUpFormDialog from "@/components/customer/FollowUpFormDialog.vue";
+import OrderFormDialog from "@/components/customer/OrderFormDialog.vue";
 
-const router = useRouter()
-const { isGuest, canCreate, canEdit, canDelete } = usePermissions()
+const router = useRouter();
+const { isGuest, canCreate, canEdit, canDelete } = usePermissions();
 
 const {
-  loading, customerList, searchKeyword, filterCooperationStatus, filterCustomerType, filterPaymentStatus, filterOrderStatus, filterInstallationStatus,
-  page, pageSize, total, loadList, handleSearch, handleResetFilter, updateLocalItem
-} = useCustomerList()
+  loading,
+  customerList,
+  searchKeyword,
+  filterCooperationStatus,
+  filterCustomerType,
+  filterPaymentStatus,
+  filterOrderStatus,
+  filterInstallationStatus,
+  page,
+  pageSize,
+  total,
+  loadList,
+  handleSearch,
+  handleResetFilter,
+  updateLocalItem,
+} = useCustomerList();
 
-const { stats, loadStats } = useCustomerStats()
+const { stats, loadStats } = useCustomerStats();
 
 const {
-  dialogVisible, editingId, editingDeliveryStartDate, formData, handleAdd, handleEdit, withSubmitLock, resetForm
-} = useCustomerForm()
+  dialogVisible,
+  editingId,
+  editingDeliveryStartDate,
+  editingWorkshopDeliveryStartDate,
+  formData,
+  handleAdd,
+  handleEdit,
+  withSubmitLock,
+  resetForm,
+} = useCustomerForm();
 
 const {
-  detailVisible, currentCustomer, followUpDialogVisible, followUpFormData,
-  handleViewDetail, handleDetailOpen, showAddFollowUpDialog,
-  handleFollowUpSubmit, handleDeleteFollowUp
-} = useFollowUp()
+  detailVisible,
+  currentCustomer,
+  followUpDialogVisible,
+  followUpFormData,
+  handleViewDetail,
+  handleDetailOpen,
+  showAddFollowUpDialog,
+  handleFollowUpSubmit,
+  handleDeleteFollowUp,
+} = useFollowUp();
+
+const handleOrderChange = () => {
+  loadList();
+  loadStats();
+  if (currentCustomer.value?.id) {
+    handleViewDetail({ id: currentCustomer.value.id } as CustomerListItem);
+  }
+};
+
+// 复购项目相关状态
+const orderFormVisible = ref(false);
+const currentOrderCustomerId = ref<number>(0);
+const orderDialogRef = ref<InstanceType<typeof OrderFormDialog> | null>(null);
+
+const handleRepurchase = (item: CustomerListItem) => {
+  currentOrderCustomerId.value = item.id ?? 0;
+  orderFormVisible.value = true;
+};
+
+const handleOrderSubmit = async (payload: {
+  isEdit: boolean;
+  data: CustomerOrderCreatePayload | CustomerOrderUpdatePayload;
+  orderId?: number;
+}) => {
+  if (!currentOrderCustomerId.value) return;
+  await withSubmitLock(async () => {
+    const [err] = await to(
+      customerApi.addOrder(
+        currentOrderCustomerId.value,
+        payload.data as CustomerOrderCreatePayload
+      )
+    );
+    if (err) {
+      showError(err, "复购项目添加失败");
+      throw err;
+    }
+    showSuccess("复购项目添加成功");
+    orderFormVisible.value = false;
+    loadList();
+    loadStats();
+  });
+};
 
 const handleFormSubmit = async (data: CustomerCreatePayload & CustomerUpdatePayload) => {
   await withSubmitLock(async () => {
     if (editingId.value) {
-      const [err] = await to(customerApi.update(editingId.value, { ...data }))
-      if (err) { showError(err, '更新客户失败'); throw err }
-      loadList()
-      showSuccess('客户更新成功')
+      const [err] = await to(customerApi.update(editingId.value, { ...data }));
+      if (err) {
+        showError(err, "更新客户失败");
+        throw err;
+      }
+      loadList();
+      showSuccess("客户更新成功");
     } else {
-      const [err] = await to(customerApi.create({ ...data }))
-      if (err) { showError(err, '创建客户失败'); throw err }
-      showSuccess('客户创建成功')
-      loadList()
+      const [err] = await to(customerApi.create({ ...data }));
+      if (err) {
+        showError(err, "创建客户失败");
+        throw err;
+      }
+      showSuccess("客户创建成功");
+      loadList();
     }
-    dialogVisible.value = false
-    resetForm()
-    loadStats()
-  })
-}
+    dialogVisible.value = false;
+    resetForm();
+    loadStats();
+  });
+};
 
 const handleDelete = async (row: { id?: number | string; companyName: string }) => {
-  const [confirmErr] = await to(ElMessageBox.confirm(
-    `确定要删除客户"${row.companyName}"吗？此操作将同时删除所有跟进记录。`,
-    '删除确认', { type: 'warning', confirmButtonText: '确定删除', cancelButtonText: '取消' }
-  ))
-  if (confirmErr) return
+  const [confirmErr] = await to(
+    ElMessageBox.confirm(
+      `确定要删除客户"${row.companyName}"吗？此操作将同时删除所有跟进记录。`,
+      "删除确认",
+      { type: "warning", confirmButtonText: "确定删除", cancelButtonText: "取消" }
+    )
+  );
+  if (confirmErr) return;
 
-  const [err] = await to(customerApi.remove(row.id!))
-  if (err) { showError(err, '删除客户失败'); return }
-  showSuccess('客户删除成功')
-  loadList()
-  loadStats()
-}
+  const [err] = await to(customerApi.remove(row.id!));
+  if (err) {
+    showError(err, "删除客户失败");
+    return;
+  }
+  showSuccess("客户删除成功");
+  loadList();
+  loadStats();
+};
 
 const getCustomerTypeTagType = (type?: string | null) => {
-  const map: Record<string, string> = { 终端: 'info', 经销商: 'primary', 待确认: 'warning' }
-  return map[type || ''] || 'info'
-}
+  const map: Record<string, string> = {
+    终端: "info",
+    经销商: "primary",
+    待确认: "warning",
+  };
+  return map[type || ""] || "info";
+};
 
-const handleGoToQuotation = (item: { quotationId?: number | string | null }) => {
-  if (item.quotationId != null) {
-    router.push({ path: '/quotation/history', query: { id: String(item.quotationId), mode: 'view' } as Record<string, string> })
+const handleGoToQuotation = (item: { quotationId?: number | string | null; quotationCount?: number; companyName: string }) => {
+  if (item.quotationCount && item.quotationCount > 1) {
+    router.push({
+      path: "/quotation/history",
+      query: { expandCompany: item.companyName } as Record<string, string>,
+    });
+  } else if (item.quotationId != null) {
+    router.push({
+      path: "/quotation/history",
+      query: { id: String(item.quotationId), mode: "view" } as Record<string, string>,
+    });
   }
-}
+};
 
 const handleStatClick = (type: string) => {
-  filterCooperationStatus.value = ''
-  filterPaymentStatus.value = ''
-  filterOrderStatus.value = ''
-  filterInstallationStatus.value = ''
-  filterCustomerType.value = ''
-  if (type === '未成交') {
-    filterCooperationStatus.value = '未合作'
-  } else if (type === '成交') {
-    filterCooperationStatus.value = '已合作'
-  } else if (type === '待催款') {
-    filterPaymentStatus.value = '待催款'
-  } else if (type === '已结款') {
-    filterPaymentStatus.value = '已结款'
-  } else if (type === '已下单') {
-    filterOrderStatus.value = '已下单'
-  } else if (type === '未下单') {
-    filterCooperationStatus.value = '已合作'
-    filterOrderStatus.value = '未下单'
-  } else if (type === '待安装') {
-    filterOrderStatus.value = '已下单'
-    filterInstallationStatus.value = '待安装'
-  } else if (type === '已安装') {
-    filterOrderStatus.value = '已下单'
-    filterInstallationStatus.value = '已安装'
-  } else if (type === '经销商') {
-    filterCustomerType.value = '经销商'
-  } else if (type === '终端') {
-    filterCustomerType.value = '终端'
+  filterCooperationStatus.value = "";
+  filterPaymentStatus.value = "";
+  filterOrderStatus.value = "";
+  filterInstallationStatus.value = "";
+  filterCustomerType.value = "";
+  if (type === "未成交") {
+    filterCooperationStatus.value = "未合作";
+  } else if (type === "成交") {
+    filterCooperationStatus.value = "已合作";
+  } else if (type === "待催款") {
+    filterPaymentStatus.value = "待催款";
+  } else if (type === "已结款") {
+    filterPaymentStatus.value = "已结款";
+  } else if (type === "已下单") {
+    filterOrderStatus.value = "已下单";
+  } else if (type === "未下单") {
+    filterCooperationStatus.value = "已合作";
+    filterOrderStatus.value = "未下单";
+  } else if (type === "已安装") {
+    filterOrderStatus.value = "已下单";
+    filterInstallationStatus.value = "已安装";
+  } else if (type === "经销商") {
+    filterCustomerType.value = "经销商";
+  } else if (type === "终端") {
+    filterCustomerType.value = "终端";
   }
-  handleSearch()
-}
+  handleSearch();
+};
 
-onMounted(() => { loadList(); loadStats() })
+onMounted(() => {
+  loadList();
+  loadStats();
+});
 </script>
 
 <style scoped>
@@ -385,10 +657,6 @@ onMounted(() => { loadList(); loadStats() })
 
 .stat-not-ordered .stat-value {
   color: #94a3b8;
-}
-
-.stat-pending-install .stat-value {
-  color: #f59e0b;
 }
 
 .stat-installed .stat-value {
