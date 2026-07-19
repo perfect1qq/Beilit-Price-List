@@ -1,1 +1,0 @@
-import{e as o,b as p}from"./index-JNUBREzV.js";const a=t=>p.post(`/api/quotations/${t}/approve`),e=(t,s)=>p.post(`/api/quotations/${t}/reject`,{comment:s}),r=t=>p.get("/api/approvals",{params:t}),i=t=>p.get(`/api/approvals/${t}`),c=t=>p.get("/api/approvals/history",{params:t}),l={approve:o(a),reject:o(e),list:o(r),get:o(i),listHistory:o(c)};export{l as a};
