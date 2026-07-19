@@ -93,4 +93,19 @@ defineEmits(['copy', 'refresh'])
   color: #4338ca;
   user-select: all;
 }
+
+@media (max-width: 768px) {
+  .invite-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .invite-right,
+  .invite-code-display {
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+}
 </style>

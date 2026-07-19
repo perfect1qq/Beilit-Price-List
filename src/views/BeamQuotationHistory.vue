@@ -11,21 +11,21 @@
         </template>
 
         <el-table :data="historyList" stripe border style="width: 100%" :header-cell-style="TABLE_HEADER_STYLE"
-          class="smart-table">
-          <el-table-column label="时间" width="105" align="center">
+          class="smart-table nowrap-table">
+          <el-table-column label="时间" width="115" align="center">
             <template #default="{ row }">{{ formatDate(row.createdAt || row.updatedAt) }}</template>
           </el-table-column>
-          <el-table-column prop="name" label="横梁名称" min-width="140" show-overflow-tooltip align="center" />
-          <el-table-column label="长度(mm)" align="center">
+          <AutoFitColumn :data="historyList" prop="name" label="横梁名称" :min="220" :max="480" />
+          <AutoFitColumn :data="historyList" label="长度(mm)" :getter="(row: any) => getFirstItemValue(row, 'length')" :min="110" :max="160" use-width>
             <template #default="{ row }">{{ getFirstItemValue(row, 'length') }}</template>
-          </el-table-column>
-          <el-table-column label="规格(mm)" min-width="150" show-overflow-tooltip align="center">
+          </AutoFitColumn>
+          <AutoFitColumn :data="historyList" label="规格(mm)" :getter="(row: any) => getFirstItemValue(row, 'spec')" :min="200" :max="480">
             <template #default="{ row }">{{ getFirstItemValue(row, 'spec') }}</template>
-          </el-table-column>
-          <el-table-column label="最大载重(kg)" align="center">
+          </AutoFitColumn>
+          <AutoFitColumn :data="historyList" label="最大载重(kg)" :getter="(row: any) => getFirstItemValue(row, 'maxLoad')" :min="160" :max="400">
             <template #default="{ row }">{{ getFirstItemValue(row, 'maxLoad') }}</template>
-          </el-table-column>
-          <el-table-column label="操作" width="180" fixed="right" align="center">
+          </AutoFitColumn>
+          <el-table-column label="操作" width="170" fixed="right" align="center">
             <template #default="{ row }">
               <div class="action-btns">
                 <template v-if="!isGuest">
@@ -64,8 +64,6 @@ import { formatDate } from '@/utils/date'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 import beamApi from '@/api/beam'
 import type { BeamQuotationItem } from '@/types'
-import SearchBar from '@/components/common/SearchBar.vue'
-import CardHeader from '@/components/common/CardHeader.vue'
 import BeamQuotationEditor from '@/components/beam/BeamQuotationEditor.vue'
 
 const { isGuest, isAdmin } = usePermissions()
@@ -172,20 +170,13 @@ onMounted(() => loadList(1))
   justify-content: flex-end;
 }
 
-.action-btns {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  align-items: center;
-}
-
-.action-btns .el-button {
-  padding: 5px 12px;
-}
 
 @media (max-width: 768px) {
   .search-toolbar {
+    flex-direction: column;
+    align-items: stretch;
     gap: 8px;
+    width: 100%;
   }
 
   .search-toolbar :deep(.el-input),

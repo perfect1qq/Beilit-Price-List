@@ -86,7 +86,7 @@ export default defineConfig({
     },
   },
   build: {
-    chunkSizeWarningLimit: 500,
+    chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
         chunkFileNames(chunkInfo: { name: string }): string {

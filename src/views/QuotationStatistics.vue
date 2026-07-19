@@ -420,6 +420,7 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
+  flex-wrap: wrap;
 }
 
 .shelf-type-selector label {
@@ -505,6 +506,7 @@ h2 {
 .toolbar {
   display: flex;
   justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 12px;
   margin-top: 20px;
   padding-top: 16px;
@@ -536,9 +538,9 @@ h2 {
   padding-left: 21px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .page {
-    padding: 12px;
+    padding: 8px;
   }
 
   .panel {
@@ -547,11 +549,24 @@ h2 {
   }
 
   h2 {
-    font-size: 14px;
+    font-size: 15px;
   }
 
   textarea {
-    min-height: 180px;
+    min-height: 160px;
+  }
+
+  .shelf-type-selector .el-select {
+    width: 100%;
+  }
+
+  .toolbar {
+    justify-content: stretch;
+  }
+
+  .toolbar :deep(.el-button) {
+    flex: 1;
+    margin: 0 !important;
   }
 }
 

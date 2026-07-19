@@ -152,8 +152,9 @@ const onConfirmReset = () => confirmReset(resetDialogRef.value)
 
 @media (max-width: 768px) {
   .header-box {
-    align-items: flex-start;
-    gap: 10px;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px;
   }
 
   .title {

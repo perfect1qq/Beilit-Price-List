@@ -88,7 +88,7 @@ const normalizeView = (routeLike: RouteLocationNormalized | Record<string, unkno
 
 const dedupeAndFixHome = (list: TabView[]): TabView[] => {
   const result: TabView[] = [HOME_VIEW]
-  const seen = new Set([HOME_VIEW.fullPath])
+  const seen = new Set([HOME_VIEW.fullPath, HOME_VIEW.path])
 
   for (const item of list || []) {
     if (!item || !item.path || item.path === '/login' || item.path === '/register') continue
@@ -100,8 +100,9 @@ const dedupeAndFixHome = (list: TabView[]): TabView[] => {
       query: safeClone(item.query),
       hash: item.hash || ''
     }
-    if (seen.has(view.fullPath)) continue
+    if (seen.has(view.fullPath) || seen.has(view.path)) continue
     seen.add(view.fullPath)
+    seen.add(view.path)
     result.push(view)
   }
 
@@ -167,7 +168,7 @@ const syncUserContext = (route: RouteLocationNormalized): void => {
 
 const ensureCurrentExists = (route: RouteLocationNormalized): TabView => {
   const current = normalizeView(route)
-  const index = state.visitedViews.findIndex(item => item.fullPath === current.fullPath)
+  const index = state.visitedViews.findIndex(item => item.fullPath === current.fullPath || (item.path === current.path && item.path !== '/home'))
   if (index === -1) {
     state.visitedViews.push(current)
   } else {

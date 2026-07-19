@@ -151,7 +151,11 @@ body.el-popup-parent--hidden .el-main {
 
 /* ==================== 智能表格样式 ==================== */
 
-.el-table.smart-table {
+.el-table.smart-table,
+.el-table.smart-table table,
+.el-table.smart-table .el-table__header,
+.el-table.smart-table .el-table__body,
+.el-table.smart-table .el-table__footer {
   width: 100% !important;
   table-layout: auto !important;
 }
@@ -162,7 +166,7 @@ body.el-popup-parent--hidden .el-main {
 .el-table.smart-table .el-table__fixed,
 .el-table.smart-table .el-table__fixed-right,
 .el-table.smart-table .el-table__fixed-left {
-  overflow-x: hidden !important;
+  overflow-x: auto !important;
 }
 
 .el-table.smart-table th.el-table__cell,
@@ -171,23 +175,27 @@ body.el-popup-parent--hidden .el-main {
   height: auto !important;
 }
 
-.el-table.smart-table .cell {
-  width: 100% !important;
-  white-space: normal !important;
-  word-break: break-word !important;
-  overflow-wrap: anywhere !important;
+/* 全局智能表格单元格：默认自动检测并强制单行显示，超出自动显示省略号并配合 tooltip */
+.el-table.smart-table .cell,
+.el-table.smart-table .cell > *,
+.el-table.smart-table .cell .el-tooltip {
+  max-width: 100% !important;
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
   line-height: 1.45 !important;
   padding: 8px 10px !important;
   text-align: center !important;
 }
 
-.el-table.smart-table .cell > * {
-  max-width: 100%;
-  white-space: normal;
-}
-
-.el-table.smart-table .el-button {
-  white-space: nowrap;
+/* 仅在特定需要多行换行的字段（如长文本备注栏）手动添加 multiline-cell 类名 */
+.el-table.smart-table td.multiline-cell .cell,
+.el-table.smart-table th.multiline-cell .cell {
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
 }
 
 .el-table.smart-table .el-input,
@@ -195,12 +203,6 @@ body.el-popup-parent--hidden .el-main {
 .el-table.smart-table .el-textarea,
 .el-table.smart-table .el-textarea__inner {
   width: 100%;
-}
-
-.el-table.smart-table tr,
-.el-table.smart-table td,
-.el-table.smart-table th {
-  height: auto !important;
 }
 
 /* ==================== 响应式布局适配 ==================== */
@@ -213,11 +215,34 @@ body.el-popup-parent--hidden .el-main {
     margin-top: 6vh !important;
   }
 
+  .el-drawer.ltr,
+  .el-drawer.rtl {
+    width: min(94vw, 500px) !important;
+  }
+
   .el-message-box {
     width: min(94vw, 420px) !important;
   }
 
   .el-form-item { margin-bottom: 14px }
+
+  .two-col {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .two-col .col-item {
+    width: 100% !important;
+    flex: none !important;
+  }
+
+  .history-card-item .card-header,
+  .user-card-item .card-header,
+  [data-card-item] .card-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
 
   /* 表格移动端适配 */
   .el-table.smart-table .el-table__inner-wrapper,
@@ -362,7 +387,6 @@ body.el-popup-parent--hidden .el-main {
 [data-card-item],
 .customer-card,
 .user-card-item,
-.message-card-item,
 .history-card-item {
   height: 100%;
   display: flex;
@@ -372,7 +396,6 @@ body.el-popup-parent--hidden .el-main {
 /* 卡片头部 */
 [data-card-item] .card-header,
 .user-card-item .card-header,
-.message-card-item .card-header,
 .history-card-item .card-header {
   display: flex;
   justify-content: space-between;
@@ -396,7 +419,6 @@ body.el-popup-parent--hidden .el-main {
 [data-card-item] .card-header h3,
 .customer-card .company-name,
 .user-card-item .username,
-.message-card-item .contact-info,
 .history-card-item .quotation-name {
   margin: 0;
   font-size: 18px;
@@ -436,13 +458,16 @@ body.el-popup-parent--hidden .el-main {
 
 @media (max-width: 768px) {
   .customer-card .tags {
-    grid-template-columns: repeat(6, 1fr);
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
   }
-}
 
-@media (max-width: 480px) {
-  .customer-card .tags {
-    grid-template-columns: repeat(2, 1fr);
+  .customer-card .tags .el-tag {
+    width: auto !important;
+    flex: 0 0 auto;
+    padding: 0 8px;
   }
 }
 
@@ -450,7 +475,6 @@ body.el-popup-parent--hidden .el-main {
 [data-card-item] .card-body,
 .customer-card .card-body,
 .user-card-item .card-body,
-.message-card-item .card-body,
 .history-card-item .card-body {
   flex: 1;
   display: flex;
@@ -463,7 +487,6 @@ body.el-popup-parent--hidden .el-main {
 [data-card-item] .info-row,
 .customer-card .info-row,
 .user-card-item .info-row,
-.message-card-item .info-row,
 .history-card-item .info-row {
   display: flex;
   align-items: flex-start;
@@ -475,23 +498,23 @@ body.el-popup-parent--hidden .el-main {
 [data-card-item] .info-row .label,
 .customer-card .info-row .label,
 .user-card-item .info-row .label,
-.message-card-item .info-row .label,
 .history-card-item .info-row .label {
   color: #909399;
   white-space: nowrap;
-  min-width: 100px;
+  min-width: 85px;
   font-weight: 500;
+  flex-shrink: 0;
 }
 
 /* 信息值 */
 [data-card-item] .info-row .value,
 .customer-card .info-row .value,
 .user-card-item .info-row .value,
-.message-card-item .info-row .value,
 .history-card-item .info-row .value {
   color: #606266;
   flex: 1;
-  word-break: break-all;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 /* 特殊文本样式 */
@@ -501,31 +524,18 @@ body.el-popup-parent--hidden .el-main {
   font-style: italic;
 }
 
-.message-card-item .info-row .content-text {
-  color: #303133;
-  font-size: 13px;
-  line-height: 1.8;
-  max-height: 80px;
-  overflow-y: auto;
-}
-
 /* 卡片底部 */
 [data-card-item] .card-footer,
-.customer-card .card-footer,
-.user-card-item .card-footer,
-.message-card-item .card-footer,
-.history-card-item .card-footer {
+.customer-card .card-footer {
   padding-top: 12px;
   border-top: 1px solid #f0f2f5;
 }
 
 /* 操作按钮组 */
 [data-card-item] .action-buttons,
-.customer-card .action-buttons,
-.user-card-item .card-footer,
-.message-card-item .card-footer,
-.history-card-item .card-footer {
+.customer-card .action-buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
 }

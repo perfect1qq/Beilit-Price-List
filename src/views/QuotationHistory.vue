@@ -58,12 +58,12 @@
                       </template>
 
                       <el-table :data="group.records" stripe border :header-cell-style="TABLE_HEADER_STYLE"
-                        class="smart-table" style="width: 100%">
-                        <el-table-column label="名称" min-width="120" show-overflow-tooltip align="center">
+                        class="smart-table nowrap-table" style="width: 100%">
+                        <AutoFitColumn :data="group.records" label="名称" :getter="(row: any) => row.name || row.companyName || '-'" :min="200" :max="460">
                           <template #default="{ row }">
                             {{ row.name || row.companyName || "-" }}
                           </template>
-                        </el-table-column>
+                        </AutoFitColumn>
                         <el-table-column prop="ownerName" label="提交人" min-width="80" align="center" v-if="isAdmin" />
                         <el-table-column prop="finalPrice" label="成交价" min-width="90" align="center">
                           <template #default="{ row }">¥ {{ formatMoney(row.finalPrice) }}</template>
@@ -144,7 +144,6 @@ import { usePermissions } from "@/composables/usePermissions";
 import { formatMoney } from "@/utils/number";
 import { TABLE_HEADER_STYLE } from "@/constants/table";
 import QuotationEditor from "@/components/quotation/QuotationEditor.vue";
-import CardHeader from "@/components/common/CardHeader.vue";
 import { useQuotationHistoryPage } from "@/composables/useQuotationHistoryPage";
 import type { HistoryRecord } from "@/composables/useQuotationHistory";
 
@@ -323,9 +322,10 @@ watch(
   background-color: #fff;
   font-weight: 700;
   font-size: 15px;
-  height: 50px;
-  line-height: 50px;
-  padding: 0 20px;
+  height: auto !important;
+  min-height: 50px;
+  line-height: 1.4;
+  padding: 12px 16px;
   border-bottom: none;
   color: #1e293b;
 }
@@ -340,7 +340,7 @@ watch(
 }
 
 :deep(.year-collapse .el-collapse-item__content) {
-  padding: 16px 20px;
+  padding: 16px 16px;
 }
 
 .company-collapse-inner {
@@ -359,9 +359,10 @@ watch(
 :deep(.company-collapse-inner .el-collapse-item__header) {
   background-color: transparent;
   font-size: 14px;
-  height: 44px;
-  line-height: 44px;
-  padding: 0 16px;
+  height: auto !important;
+  min-height: 44px;
+  line-height: 1.4;
+  padding: 10px 14px;
   border-bottom: none;
   color: #334155;
 }
@@ -388,21 +389,21 @@ watch(
   gap: 12px;
   width: 100%;
   padding-right: 8px;
+  line-height: 1.4;
 }
 
 .group-title-main {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
+  flex-wrap: wrap;
 }
 
 .group-company {
   font-weight: 700;
   color: #1e293b;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  word-break: break-all;
 }
 
 .group-title-meta {
@@ -435,24 +436,6 @@ watch(
   font-size: 13px;
 }
 
-:deep(.smart-table .el-table__body td) {
-  font-size: 13px;
-  padding: 10px 12px;
-}
-
-/* ========== 操作按钮 ========== */
-
-.action-btns {
-  display: flex;
-  gap: 6px;
-  justify-content: center;
-  align-items: center;
-}
-
-.action-btns .el-button {
-  padding: 5px 12px;
-}
-
 /* ========== 表单 ========== */
 
 :deep(.el-form-item) {
@@ -469,7 +452,10 @@ watch(
 
 @media (max-width: 768px) {
   .history-toolbar {
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 8px;
   }
 
   .history-toolbar :deep(.el-input),
@@ -479,7 +465,14 @@ watch(
   }
 
   .toolbar {
+    flex-direction: column;
+    align-items: stretch;
     gap: 8px;
+  }
+
+  .toolbar :deep(.el-button) {
+    width: 100%;
+    margin: 0 !important;
   }
 
   .year-pager-wrap {
@@ -490,10 +483,21 @@ watch(
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
+    padding: 6px 0;
+  }
+
+  .group-title-main {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .group-company {
+    white-space: normal;
   }
 
   .group-title-meta {
     white-space: normal;
+    font-size: 12px;
   }
 }
 </style>

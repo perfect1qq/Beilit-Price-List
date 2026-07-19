@@ -44,7 +44,7 @@
             <div class="section-title">中型货架重量表</div>
           </template>
 
-          <el-table :data="displaySummaryRows" border stripe class="table smart-table"
+          <el-table :data="displaySummaryRows" border stripe class="table smart-table nowrap-table"
             :header-cell-style="TABLE_HEADER_STYLE">
             <el-table-column prop="index" label="序号" width="70" align="center" />
 

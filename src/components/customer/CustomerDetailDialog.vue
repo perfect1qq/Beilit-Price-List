@@ -36,9 +36,6 @@
       <div class="orders-section">
         <div class="section-header">
           <span class="section-title">合作/复购项目记录 ({{ customer.orders?.length || 0 }})</span>
-          <el-button v-if="canCreate" type="primary" size="small" :icon="Plus" @click="handleAddOrder">
-            新增复购项目
-          </el-button>
         </div>
 
         <div v-if="(customer.orders?.length ?? 0) > 0" class="orders-list">
@@ -155,11 +152,6 @@ const emit = defineEmits(['update:modelValue', 'open', 'add-follow-up', 'delete-
 const orderFormVisible = ref(false)
 const currentOrder = ref<CustomerOrderData | null>(null)
 const orderDialogRef = ref<InstanceType<typeof OrderFormDialog> | null>(null)
-
-const handleAddOrder = () => {
-  currentOrder.value = null
-  orderFormVisible.value = true
-}
 
 const handleEditOrder = (order: CustomerOrderData) => {
   currentOrder.value = order

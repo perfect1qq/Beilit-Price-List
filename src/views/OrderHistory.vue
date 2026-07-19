@@ -27,20 +27,20 @@
 
       <!-- 数据表格 -->
       <el-table :data="orderList" v-loading="loading" border style="width: 100%" stripe>
-        <el-table-column prop="orderNo" label="订单编号" width="160" show-overflow-tooltip>
+        <AutoFitColumn :data="orderList" prop="orderNo" label="订单编号" :min="140" :max="220" use-width>
           <template #default="{ row }">
             <span class="order-no-link" @click="viewOrder(row.id)">{{ row.orderNo }}</span>
           </template>
-        </el-table-column>
-        <el-table-column prop="customerName" label="客户名称" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="deliveryAddress" label="送货地址" min-width="150" show-overflow-tooltip />
-        <el-table-column prop="orderDate" label="订单日期" width="120" show-overflow-tooltip />
-        <el-table-column prop="ownerName" label="创建者" width="100" show-overflow-tooltip />
-        <el-table-column prop="createdAt" label="录入时间" width="160" show-overflow-tooltip>
+        </AutoFitColumn>
+        <AutoFitColumn :data="orderList" prop="customerName" label="客户名称" :min="160" :max="350" />
+        <AutoFitColumn :data="orderList" prop="deliveryAddress" label="送货地址" :min="150" :max="400" />
+        <AutoFitColumn :data="orderList" prop="orderDate" label="订单日期" :min="110" :max="160" use-width />
+        <AutoFitColumn :data="orderList" prop="ownerName" label="创建者" :min="90" :max="140" use-width />
+        <AutoFitColumn :data="orderList" label="录入时间" :getter="(row: any) => formatDateTime(row.createdAt)" :min="150" :max="200" use-width>
           <template #default="{ row }">
             {{ formatDateTime(row.createdAt) }}
           </template>
-        </el-table-column>
+        </AutoFitColumn>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <div class="action-buttons">
@@ -533,6 +533,35 @@ onMounted(() => {
   height: 60px;
   display: flex;
   align-items: flex-end;
+}
+
+@media (max-width: 768px) {
+  .order-history {
+    padding: 8px;
+  }
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .header-content :deep(.el-button) {
+    width: 100%;
+  }
+  .filter-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .filter-row :deep(.el-input) {
+    width: 100% !important;
+  }
+  .filter-row :deep(.el-button) {
+    width: 100%;
+    margin: 0 !important;
+  }
+  .pagination-container {
+    justify-content: center;
+  }
 }
 
 @media print {

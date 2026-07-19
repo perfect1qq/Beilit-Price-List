@@ -153,6 +153,7 @@ const roleLabel = computed(() => {
 
 .card-footer {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
   padding-top: 10px;

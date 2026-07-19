@@ -868,6 +868,21 @@ onMounted(async () => {
   align-items: flex-end;
 }
 
+@media (max-width: 768px) {
+  .accessories-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .sheet-title {
+    font-size: 20px;
+  }
+  .meta-table, .items-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+}
+
 /* 打印样式适配 */
 @media print {
   /* 隐藏左侧输入栏、头部以及系统侧边栏导航 */

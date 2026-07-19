@@ -59,35 +59,35 @@
         :summary-method="getSummaries" :cell-style="{ textAlign: 'center' }"
         :header-cell-style="{ textAlign: 'center' }" class="smart-table">
 
-        <el-table-column label="数量" min-width="120" align="center">
+        <AutoFitColumn :data="tableData" label="数量" :min="120" :max="200">
           <template #default="{ row, $index }">
             <el-input v-model="row.quantity" @input="calculateRow(row)" @paste="handlePaste($event, $index)"
               input-style="text-align: center" />
           </template>
-        </el-table-column>
+        </AutoFitColumn>
 
-        <el-table-column label="单价（人民币）" min-width="150" align="center">
+        <AutoFitColumn :data="tableData" label="单价（人民币）" :min="150" :max="260">
           <template #default="{ row, $index }">
             <el-input v-model="row.unitPriceRmb" @input="calculateRow(row)" @paste="handlePaste($event, $index)"
               input-style="text-align: center">
               <template #prefix>¥</template>
             </el-input>
           </template>
-        </el-table-column>
+        </AutoFitColumn>
 
-        <el-table-column label="单价（美元）" min-width="150" align="center">
+        <AutoFitColumn :data="tableData" label="单价（美元）" :min="150" :max="260">
           <template #default="{ row }">
             <el-input v-model="row.unitPriceUsd" @input="calculateTotals(row)" input-style="text-align: center">
               <template #prefix>$</template>
             </el-input>
           </template>
-        </el-table-column>
+        </AutoFitColumn>
 
-        <el-table-column label="合计" min-width="150" prop="subTotal" align="center">
+        <AutoFitColumn :data="tableData" label="合计" prop="subTotal" :min="130" :max="220">
           <template #default="{ row }">
             <span class="usd-text highlight">${{ row.subTotal || 0 }}</span>
           </template>
-        </el-table-column>
+        </AutoFitColumn>
 
         <el-table-column label="操作" width="80" align="center" fixed="right">
           <template #default="{ $index }">

@@ -337,6 +337,8 @@ const handleCopy = (e: ClipboardEvent): void => {
   display: grid;
   gap: 16px;
   transition: all 0.3s ease;
+  width: 100%;
+  min-width: 0;
 }
 
 /* 响应式列数 */
@@ -345,15 +347,15 @@ const handleCopy = (e: ClipboardEvent): void => {
 }
 
 .grid-2 {
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .grid-3 {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .grid-4 {
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .card-item {
@@ -367,6 +369,9 @@ const handleCopy = (e: ClipboardEvent): void => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   user-select: text;
   -webkit-user-select: text;
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
 }
 
 .card-item:hover {
@@ -493,7 +498,7 @@ const handleCopy = (e: ClipboardEvent): void => {
   .grid-2,
   .grid-3,
   .grid-4 {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 
   .card-item {

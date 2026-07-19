@@ -77,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, defineAsyncComponent, ref } from "vue";
+import { computed, defineAsyncComponent, ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import request from "@/utils/request";
 import { useUserStore } from "@/stores/user";
@@ -98,7 +98,7 @@ const emit = defineEmits(["toggle-mobile-sidebar"]);
 const changePassDialogRef = ref(null);
 const userName = computed(() => userStore.displayName || "管理员");
 const userInitial = computed(() => userName.value.charAt(0).toUpperCase() || "A");
-const device = ref("desktop");
+const device = ref(typeof window !== 'undefined' && window.innerWidth <= 768 ? "mobile" : "desktop");
 const homeRoute = "/home";
 
 const { changePassDialog, confirmChangePass } = useNavbarPasswordDialog({
@@ -147,6 +147,16 @@ const goHome = () => router.push(homeRoute);
 const logout = async () => {
   await logoutByUser();
 };
+
+const updateDevice = () => {
+  device.value = window.innerWidth <= 768 ? "mobile" : "desktop";
+};
+onMounted(() => {
+  window.addEventListener("resize", updateDevice);
+});
+onUnmounted(() => {
+  window.removeEventListener("resize", updateDevice);
+});
 </script>
 
 <style scoped>

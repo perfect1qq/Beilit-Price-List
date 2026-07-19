@@ -694,11 +694,6 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.customer-card .info-row .remark-text {
-  color: #909399;
-  font-size: 13px;
-  font-style: italic;
-}
 
 .quotation-info {
   display: flex;
@@ -798,5 +793,16 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .two-col {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .two-col .col-item {
+    width: 100% !important;
+    flex: none !important;
+  }
 }
 </style>

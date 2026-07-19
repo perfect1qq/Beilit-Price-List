@@ -1,5 +1,3 @@
-
-
 <template>
   <div class="search-bar" :class="{ 'is-collapsed': collapsed }">
 
@@ -145,14 +143,19 @@ const handleClear = () => {
   .search-bar {
     flex-direction: column;
     align-items: stretch;
+    width: 100%;
+    gap: 8px;
   }
 
   .search-bar .el-input {
     max-width: none;
+    width: 100%;
   }
 
-  .search-bar .el-button {
+  .search-bar .el-button,
+  .search-bar :deep(.el-button) {
     width: 100%;
+    margin: 0 !important;
   }
 }
 </style>
