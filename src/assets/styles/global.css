@@ -157,15 +157,11 @@ body.el-popup-parent--hidden .el-main {
 .el-table.smart-table .el-table__body,
 .el-table.smart-table .el-table__footer {
   width: 100% !important;
-  table-layout: auto !important;
+  table-layout: fixed !important;
 }
 
 .el-table.smart-table .el-table__inner-wrapper,
-.el-table.smart-table .el-table__header-wrapper,
-.el-table.smart-table .el-table__body-wrapper,
-.el-table.smart-table .el-table__fixed,
-.el-table.smart-table .el-table__fixed-right,
-.el-table.smart-table .el-table__fixed-left {
+.el-table.smart-table .el-table__body-wrapper {
   overflow-x: auto !important;
 }
 
@@ -246,11 +242,7 @@ body.el-popup-parent--hidden .el-main {
 
   /* 表格移动端适配 */
   .el-table.smart-table .el-table__inner-wrapper,
-  .el-table.smart-table .el-table__header-wrapper,
-  .el-table.smart-table .el-table__body-wrapper,
-  .el-table.smart-table .el-table__fixed,
-  .el-table.smart-table .el-table__fixed-right,
-  .el-table.smart-table .el-table__fixed-left {
+  .el-table.smart-table .el-table__body-wrapper {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
   }
