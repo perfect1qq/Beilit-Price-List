@@ -59,17 +59,17 @@
 
                       <el-table :data="group.records" stripe border :header-cell-style="TABLE_HEADER_STYLE"
                         class="smart-table nowrap-table" style="width: 100%">
-                        <AutoFitColumn :data="group.records" label="名称" :getter="(row: any) => row.name || row.companyName || '-'" :min="200" :max="460">
+                        <AutoFitColumn :data="group.records" label="名称" :getter="(row: any) => row.name || row.companyName || '-'" :min="130" :max="460">
                           <template #default="{ row }">
                             {{ row.name || row.companyName || "-" }}
                           </template>
                         </AutoFitColumn>
-                        <el-table-column prop="ownerName" label="提交人" min-width="80" align="center" v-if="isAdmin" />
-                        <el-table-column prop="finalPrice" label="成交价" min-width="90" align="center">
+                        <el-table-column prop="ownerName" label="提交人" min-width="70" align="center" v-if="isAdmin" />
+                        <el-table-column prop="finalPrice" label="成交价" min-width="85" align="center">
                           <template #default="{ row }">¥ {{ formatMoney(row.finalPrice) }}</template>
                         </el-table-column>
-                        <el-table-column prop="createDate" label="创建时间" min-width="100" align="center" />
-                        <el-table-column label="操作" min-width="180" align="center">
+                        <el-table-column prop="createDate" label="创建时间" min-width="95" align="center" />
+                        <el-table-column label="操作" width="155" align="center">
                           <template #default="{ row }: { row: HistoryRecord }">
                             <div class="action-btns">
                               <el-button type="primary" size="small" plain

@@ -32,16 +32,16 @@
             <span class="order-no-link" @click="viewOrder(row.id)">{{ row.orderNo }}</span>
           </template>
         </AutoFitColumn>
-        <AutoFitColumn :data="orderList" prop="customerName" label="客户名称" :min="160" :max="350" />
-        <AutoFitColumn :data="orderList" prop="deliveryAddress" label="送货地址" :min="150" :max="400" />
-        <AutoFitColumn :data="orderList" prop="orderDate" label="订单日期" :min="110" :max="160" use-width />
-        <AutoFitColumn :data="orderList" prop="ownerName" label="创建者" :min="90" :max="140" use-width />
-        <AutoFitColumn :data="orderList" label="录入时间" :getter="(row: any) => formatDateTime(row.createdAt)" :min="150" :max="200" use-width>
+        <AutoFitColumn :data="orderList" prop="customerName" label="客户名称" :min="120" :max="350" />
+        <AutoFitColumn :data="orderList" prop="deliveryAddress" label="送货地址" :min="120" :max="400" />
+        <AutoFitColumn :data="orderList" prop="orderDate" label="订单日期" :min="95" :max="160" use-width />
+        <AutoFitColumn :data="orderList" prop="ownerName" label="创建者" :min="80" :max="140" use-width />
+        <AutoFitColumn :data="orderList" label="录入时间" :getter="(row: any) => formatDateTime(row.createdAt)" :min="140" :max="200" use-width>
           <template #default="{ row }">
             {{ formatDateTime(row.createdAt) }}
           </template>
         </AutoFitColumn>
-        <el-table-column label="操作" width="200" align="center">
+        <el-table-column label="操作" width="170" align="center">
           <template #default="{ row }">
             <div class="action-buttons">
               <el-button type="primary" size="small" link :icon="View" @click="viewOrder(row.id)">

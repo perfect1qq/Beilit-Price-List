@@ -36,7 +36,7 @@ export const getColumnWidth = <T = any>(
   headerLabel: string,
   options: { min?: number; max?: number; extra?: number } = {}
 ): number => {
-  const { min = 100, max = 560, extra = 48 } = options
+  const { min = 70, max = 560, extra = 16 } = options
   let maxW = calcTextWidth(headerLabel) + extra
 
   if (Array.isArray(list) && list.length > 0) {

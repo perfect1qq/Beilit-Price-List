@@ -52,7 +52,7 @@ export interface AutoFitColumnProps {
 
 const props = withDefaults(defineProps<AutoFitColumnProps>(), {
   data: () => [],
-  min: 110,
+  min: 70,
   max: 480,
   align: 'center',
   showOverflowTooltip: true,

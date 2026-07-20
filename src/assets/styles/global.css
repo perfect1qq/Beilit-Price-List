@@ -166,12 +166,15 @@ body.el-popup-parent--hidden .el-main {
 }
 
 .el-table.smart-table th.el-table__cell,
-.el-table.smart-table td.el-table__cell {
+.el-table.smart-table td.el-table__cell,
+.el-table.nowrap-table th.el-table__cell,
+.el-table.nowrap-table td.el-table__cell {
   vertical-align: middle !important;
   height: auto !important;
+  padding: 3px 0 !important;
 }
 
-/* 全局智能表格单元格：表头和内容同步自动计算宽和压缩。能一行显示则一行显示，空间不够自动换行显示，不需要出现滚动条 */
+/* 全局智能表格单元格：表头和内容同步自动计算宽和压缩。能一行显示则一行显示，左右留白最小化以容纳更多单行文字；空间极度紧凑时自动换行显示，不需要横向滚动条 */
 .el-table.smart-table .cell,
 .el-table.smart-table th.el-table__cell .cell,
 .el-table.smart-table td.el-table__cell .cell,
@@ -182,8 +185,8 @@ body.el-popup-parent--hidden .el-main {
   white-space: normal !important;
   word-break: break-word !important;
   overflow-wrap: anywhere !important;
-  line-height: 1.45 !important;
-  padding: 8px 8px !important;
+  line-height: 1.4 !important;
+  padding: 4px 5px !important;
   text-align: center !important;
 }
 

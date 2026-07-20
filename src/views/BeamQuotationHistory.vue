@@ -15,17 +15,17 @@
           <el-table-column label="时间" width="115" align="center">
             <template #default="{ row }">{{ formatDate(row.createdAt || row.updatedAt) }}</template>
           </el-table-column>
-          <AutoFitColumn :data="historyList" prop="name" label="横梁名称" :min="220" :max="480" />
-          <AutoFitColumn :data="historyList" label="长度(mm)" :getter="(row: any) => getFirstItemValue(row, 'length')" :min="110" :max="160" use-width>
+          <AutoFitColumn :data="historyList" prop="name" label="横梁名称" :min="140" :max="480" />
+          <AutoFitColumn :data="historyList" label="长度(mm)" :getter="(row: any) => getFirstItemValue(row, 'length')" :min="85" :max="160" use-width>
             <template #default="{ row }">{{ getFirstItemValue(row, 'length') }}</template>
           </AutoFitColumn>
-          <AutoFitColumn :data="historyList" label="规格(mm)" :getter="(row: any) => getFirstItemValue(row, 'spec')" :min="200" :max="480">
+          <AutoFitColumn :data="historyList" label="规格(mm)" :getter="(row: any) => getFirstItemValue(row, 'spec')" :min="130" :max="480">
             <template #default="{ row }">{{ getFirstItemValue(row, 'spec') }}</template>
           </AutoFitColumn>
-          <AutoFitColumn :data="historyList" label="最大载重(kg)" :getter="(row: any) => getFirstItemValue(row, 'maxLoad')" :min="160" :max="400">
+          <AutoFitColumn :data="historyList" label="最大载重(kg)" :getter="(row: any) => getFirstItemValue(row, 'maxLoad')" :min="110" :max="400">
             <template #default="{ row }">{{ getFirstItemValue(row, 'maxLoad') }}</template>
           </AutoFitColumn>
-          <el-table-column label="操作" width="170" align="center">
+          <el-table-column label="操作" width="155" align="center">
             <template #default="{ row }">
               <div class="action-btns">
                 <template v-if="!isGuest">
