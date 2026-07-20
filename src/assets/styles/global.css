@@ -171,22 +171,23 @@ body.el-popup-parent--hidden .el-main {
   height: auto !important;
 }
 
-/* 全局智能表格单元格：默认自动检测并强制单行显示，超出自动显示省略号并配合 tooltip */
+/* 全局智能表格单元格：表头和内容同步自动计算宽和压缩。能一行显示则一行显示，空间不够自动换行显示，不需要出现滚动条 */
 .el-table.smart-table .cell,
-.el-table.smart-table .cell > *,
-.el-table.smart-table .cell .el-tooltip {
+.el-table.smart-table th.el-table__cell .cell,
+.el-table.smart-table td.el-table__cell .cell,
+.el-table.nowrap-table .cell,
+.el-table.nowrap-table th.el-table__cell .cell,
+.el-table.nowrap-table td.el-table__cell .cell {
   max-width: 100% !important;
-  white-space: nowrap !important;
-  word-break: normal !important;
-  overflow-wrap: normal !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
   line-height: 1.45 !important;
-  padding: 8px 10px !important;
+  padding: 8px 8px !important;
   text-align: center !important;
 }
 
-/* 仅在特定需要多行换行的字段（如长文本备注栏）手动添加 multiline-cell 类名 */
+/* 仅在特定需要多行换行的字段手动添加 multiline-cell 类名 */
 .el-table.smart-table td.multiline-cell .cell,
 .el-table.smart-table th.multiline-cell .cell {
   white-space: normal !important;

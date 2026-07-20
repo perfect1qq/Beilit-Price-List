@@ -108,7 +108,7 @@
               </el-table-column>
             </el-table-column>
 
-            <el-table-column v-if="editMode" label="操作" width="90" align="center" fixed="right">
+            <el-table-column v-if="editMode" label="操作" width="90" align="center">
               <template #default="{ $index }">
                 <el-button type="danger" link @click="removeSummaryRow($index)">
                   删除
@@ -169,7 +169,7 @@
               </template>
             </el-table-column>
 
-            <el-table-column v-if="editMode" label="操作" width="90" align="center" fixed="right">
+            <el-table-column v-if="editMode" label="操作" width="90" align="center">
               <template #default="{ $index }">
                 <el-button type="danger" link @click="removeDetailRow($index)">
                   删除

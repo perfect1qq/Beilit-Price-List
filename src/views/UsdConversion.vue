@@ -89,7 +89,7 @@
           </template>
         </AutoFitColumn>
 
-        <el-table-column label="操作" width="80" align="center" fixed="right">
+        <el-table-column label="操作" width="80" align="center">
           <template #default="{ $index }">
             <el-button type="danger" :icon="Delete" circle @click="removeRow($index)" />
           </template>
