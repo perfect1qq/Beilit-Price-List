@@ -472,16 +472,16 @@ const handleFormSubmit = async (data: CustomerCreatePayload & CustomerUpdatePayl
   await withSubmitLock(async () => {
     if (editingId.value) {
       const id = editingId.value;
-      const [err] = await to(customerApi.update(id, { ...data }));
+      const [err, updateResult] = await to(customerApi.update(id, { ...data }));
       if (err) {
         showError(err, "更新客户失败");
         throw err;
       }
-      // 局部更新当前卡片
+      // 局部更新当前卡片，报价单字段用 update 返回值（基于新公司名重算）
       const detail = await refreshCurrentCustomer(id);
       if (detail) {
         const current = customerList.value.find((c) => c.id === id);
-        updateLocalItem(id, buildListPatchFromDetail(detail, current));
+        updateLocalItem(id, buildListPatchFromDetail(detail, current, updateResult?.customer));
       }
       showSuccess("客户更新成功");
     } else {

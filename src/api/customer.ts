@@ -1,6 +1,9 @@
 import request from '@/utils/request'
 import { unwrap } from '@/utils/unwrap'
-import type { PaginationParams, CustomerCreatePayload, CustomerUpdatePayload, CustomerData, CustomerListResult, CustomerDetailData, FollowUpCreatePayload, FollowUpData, CustomerOrderCreatePayload, CustomerOrderUpdatePayload, CustomerOrderData } from '@/types'
+import type { PaginationParams, CustomerCreatePayload, CustomerUpdatePayload, CustomerData, CustomerListResult, CustomerListItem, CustomerDetailData, FollowUpCreatePayload, FollowUpData, CustomerOrderCreatePayload, CustomerOrderUpdatePayload, CustomerOrderData } from '@/types'
+
+// 后端 create/update 返回的 customer 对象额外包含报价单关联字段（基于公司名重算）
+type CustomerMutationResult = CustomerData & Pick<CustomerListItem, 'hasQuotation' | 'quotationId' | 'quotationCount'>
 
 interface CustomerListParams extends PaginationParams {
   cooperationStatus?: string
@@ -34,10 +37,10 @@ const getDetail = (id: number | string) =>
   request.get<{ customer: CustomerDetailData }>(`/api/customers/${id}`)
 
 const create = (data: CustomerCreatePayload) =>
-  request.post<{ customer: CustomerData }>('/api/customers', data)
+  request.post<{ customer: CustomerMutationResult }>('/api/customers', data)
 
 const update = (id: number | string, data: CustomerUpdatePayload) =>
-  request.put<{ customer: CustomerData }>(`/api/customers/${id}`, data)
+  request.put<{ customer: CustomerMutationResult }>(`/api/customers/${id}`, data)
 
 const remove = (id: number | string) =>
   request.delete<null>(`/api/customers/${id}`)

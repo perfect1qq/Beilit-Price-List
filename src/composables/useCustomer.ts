@@ -248,12 +248,18 @@ export const useFollowUp = () => {
 
 /**
  * 从客户详情派生列表项更新补丁
- * 保留报价单相关字段（hasQuotation/quotation*），仅更新跟进/复购/工期等动态字段
+ * 报价单相关字段优先使用 updateResult（编辑客户时由后端基于新公司名重算），
+ * 否则保留 current 的旧值（跟进/复购变更不影响报价单关联）
  */
-export const buildListPatchFromDetail = (detail: CustomerDetailData, current?: CustomerListItem): Partial<CustomerListItem> => {
+export const buildListPatchFromDetail = (
+  detail: CustomerDetailData,
+  current?: CustomerListItem,
+  updateResult?: { hasQuotation: boolean; quotationId: number | null; quotationCount?: number } | null
+): Partial<CustomerListItem> => {
   const followUps = detail.followUps || []
   const orders = detail.orders || []
-  const latestFollowUp = followUps.length > 0 ? followUps[followUps.length - 1] : null
+  // 后端按 createdAt 降序返回（最新在前），取第一条作为最新跟进
+  const latestFollowUp = followUps.length > 0 ? followUps[0] : null
 
   return {
     companyName: detail.companyName,
@@ -280,11 +286,20 @@ export const buildListPatchFromDetail = (detail: CustomerDetailData, current?: C
     workshopDeliveryDate: detail.workshopDeliveryDays && detail.workshopDeliveryDays > 0
       ? formatDate(addDays(detail.workshopDeliveryDays, detail.workshopDeliveryStartDate || detail.createdAt))
       : '',
-    // 保留报价单相关字段
-    hasQuotation: current?.hasQuotation ?? false,
-    quotationDate: current?.quotationDate ?? null,
-    quotationStatus: current?.quotationStatus ?? null,
-    quotationId: current?.quotationId ?? null,
-    quotationCount: current?.quotationCount
+    // 报价单字段：编辑客户时用后端重算的最新值（含 false/null/0，必须显式覆盖）；
+    // 其他场景（跟进/复购变更）保留旧值
+    ...(updateResult ? {
+      hasQuotation: updateResult.hasQuotation,
+      quotationDate: null,
+      quotationStatus: null,
+      quotationId: updateResult.quotationId,
+      quotationCount: updateResult.quotationCount
+    } : {
+      hasQuotation: current?.hasQuotation ?? false,
+      quotationDate: current?.quotationDate ?? null,
+      quotationStatus: current?.quotationStatus ?? null,
+      quotationId: current?.quotationId ?? null,
+      quotationCount: current?.quotationCount
+    })
   }
 }
