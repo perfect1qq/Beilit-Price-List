@@ -144,14 +144,6 @@
                 >
                   {{ item.cooperationStatus || "未合作" }}
                 </el-tag>
-                <el-tag
-                  v-if="item.orderCount && item.orderCount > 0"
-                  type="warning"
-                  size="small"
-                  effect="dark"
-                >
-                  合作项目: {{ item.orderCount }} 个
-                </el-tag>
                 <!-- 客户类型 -->
                 <el-tag
                   :type="item.customerType === '经销商' ? 'primary' : 'info'"
@@ -208,9 +200,9 @@
                 <span class="value">{{ item.shelfType || "-" }}</span>
               </div>
 
-              <div v-if="item.discountPoints && item.discountPoints.trim()" class="info-row">
+              <div class="info-row">
                 <span class="label">优惠点：</span>
-                <span class="value" style="color: #f56c6c; font-weight: 600;">{{ item.discountPoints }}</span>
+                <span class="value" style="color: #f56c6c; font-weight: 600;">{{ (item.discountPoints && item.discountPoints.trim()) ? item.discountPoints : '—' }}</span>
               </div>
 
               <div class="info-row">
@@ -218,25 +210,19 @@
                 <span class="value remark-text">{{ item.remark || "-" }}</span>
               </div>
 
-              <div
-                v-if="item.deliveryDays && item.deliveryDays > 0"
-                class="info-row delivery-info"
-              >
+              <div class="info-row delivery-info">
                 <span class="label">实际工期：</span>
-                <span class="delivery-days-value">{{ item.deliveryDays }}天</span>
+                <span class="delivery-days-value">{{ item.deliveryDays && item.deliveryDays > 0 ? item.deliveryDays + '天' : '—' }}</span>
                 <span class="delivery-arrow">→</span>
                 <span class="delivery-date-label">预计完成：</span>
-                <span class="delivery-date-value">{{ item.deliveryDate }}</span>
+                <span class="delivery-date-value">{{ item.deliveryDate || '—' }}</span>
               </div>
-              <div
-                v-if="item.workshopDeliveryDays && item.workshopDeliveryDays > 0"
-                class="info-row delivery-info"
-              >
+              <div class="info-row delivery-info">
                 <span class="label">车间工期：</span>
-                <span class="delivery-days-value">{{ item.workshopDeliveryDays }}天</span>
+                <span class="delivery-days-value">{{ item.workshopDeliveryDays && item.workshopDeliveryDays > 0 ? item.workshopDeliveryDays + '天' : '—' }}</span>
                 <span class="delivery-arrow">→</span>
                 <span class="delivery-date-label">预计完成：</span>
-                <span class="delivery-date-value">{{ item.workshopDeliveryDate }}</span>
+                <span class="delivery-date-value">{{ item.workshopDeliveryDate || '—' }}</span>
               </div>
 
               <div v-if="item.latestFollowUp" class="info-row follow-up-info">
@@ -261,6 +247,16 @@
                   >{{ Number(item.followUpCount) }} 条记录</el-tag
                 >
               </div>
+              <div
+                v-else
+                class="info-row follow-up-info follow-up-empty"
+                @click.stop="handleViewFollowUps(item as CustomerListItem)"
+              >
+                <span class="label">最新跟进：</span>
+                <div class="follow-up-content">
+                  <span class="follow-up-text follow-up-empty-text">暂无跟进记录，点击添加跟进</span>
+                </div>
+              </div>
             </div>
 
             <div class="card-footer">
@@ -269,17 +265,18 @@
                   type="primary"
                   size="small"
                   round
-                  @click.stop="handleViewDetail(item as CustomerListItem)"
-                  >详情</el-button
+                  plain
+                  @click.stop="handleViewFollowUps(item as CustomerListItem)"
+                  >跟进记录</el-button
                 >
                 <el-button
-                  v-if="canCreate && item.cooperationStatus === '已合作'"
+                  v-if="item.cooperationStatus === '已合作'"
                   type="primary"
                   size="small"
                   round
                   plain
                   @click.stop="handleRepurchase(item as CustomerListItem)"
-                  >复购</el-button
+                  >复购记录</el-button
                 >
                 <el-button
                   v-if="item.hasQuotation && (item.quotationId || (item.quotationCount && item.quotationCount > 0))"
@@ -330,32 +327,25 @@
       append-to-body
     />
 
-    <CustomerDetailDialog
-      v-model="detailVisible"
-      :customer="currentCustomer"
+    <OrderHistoryDrawer
+      v-model="orderHistoryVisible"
+      :customer-id="currentCustomer?.id || 0"
+      :customer-name="currentCustomer?.companyName || ''"
+      :cooperation-status="currentCustomer?.cooperationStatus || ''"
+      :orders="currentCustomer?.orders || []"
       :can-create="canCreate"
       :is-guest="isGuest"
-      append-to-body
-      @open="() => handleDetailOpen()"
-      @add-follow-up="() => showAddFollowUpDialog()"
-      @delete-follow-up="(item: FollowUpData) => handleDeleteFollowUp(item, loadList)"
       @order-change="handleOrderChange"
     />
 
-    <FollowUpFormDialog
-      v-model="followUpDialogVisible"
-      :form-data="followUpFormData"
-      @submit="(data: FollowUpCreatePayload) => handleFollowUpSubmit(data, loadList)"
-      append-to-body
-    />
-
-    <OrderFormDialog
-      ref="orderDialogRef"
-      v-model="orderFormVisible"
-      :customer-id="currentOrderCustomerId"
-      :order-data="null"
-      @submit="handleOrderSubmit"
-      append-to-body
+    <FollowUpHistoryDrawer
+      v-model="followUpHistoryVisible"
+      :customer-id="currentCustomer?.id || 0"
+      :customer-name="currentCustomer?.companyName || ''"
+      :follow-ups="currentCustomer?.followUps || []"
+      :can-create="canCreate"
+      :is-guest="isGuest"
+      @follow-up-change="handleFollowUpChange"
     />
   </div>
 </template>
@@ -364,7 +354,7 @@
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessageBox } from "element-plus";
-import { Plus, Search } from "@element-plus/icons-vue";
+import { Plus } from "@element-plus/icons-vue";
 import customerApi from "@/api/customer";
 import { to } from "@/utils/async";
 import { formatDate } from "@/utils/date";
@@ -375,14 +365,12 @@ import {
   useCustomerForm,
   useFollowUp,
   useCustomerStats,
+  buildListPatchFromDetail,
 } from "@/composables/useCustomer";
 import type {
   CustomerCreatePayload,
   CustomerUpdatePayload,
-  CustomerOrderCreatePayload,
-  CustomerOrderUpdatePayload,
   FollowUpData,
-  FollowUpCreatePayload,
 } from "@/types";
 import type { CustomerListItem } from "@/composables/useCustomer";
 
@@ -390,9 +378,8 @@ import SearchBar from "@/components/common/SearchBar.vue";
 import CardHeader from "@/components/common/CardHeader.vue";
 import CardList from "@/components/common/CardList.vue";
 import CustomerFormDialog from "@/components/customer/CustomerFormDialog.vue";
-import CustomerDetailDialog from "@/components/customer/CustomerDetailDialog.vue";
-import FollowUpFormDialog from "@/components/customer/FollowUpFormDialog.vue";
-import OrderFormDialog from "@/components/customer/OrderFormDialog.vue";
+import OrderHistoryDrawer from "@/components/customer/OrderHistoryDrawer.vue";
+import FollowUpHistoryDrawer from "@/components/customer/FollowUpHistoryDrawer.vue";
 
 const router = useRouter();
 const { isGuest, canCreate, canEdit, canDelete } = usePermissions();
@@ -413,6 +400,7 @@ const {
   handleSearch,
   handleResetFilter,
   updateLocalItem,
+  removeLocalItem,
 } = useCustomerList();
 
 const { stats, loadStats } = useCustomerStats();
@@ -430,68 +418,71 @@ const {
 } = useCustomerForm();
 
 const {
-  detailVisible,
   currentCustomer,
-  followUpDialogVisible,
-  followUpFormData,
-  handleViewDetail,
-  handleDetailOpen,
-  showAddFollowUpDialog,
-  handleFollowUpSubmit,
-  handleDeleteFollowUp,
+  refreshCurrentCustomer,
 } = useFollowUp();
 
-const handleOrderChange = () => {
-  loadList();
-  loadStats();
-  if (currentCustomer.value?.id) {
-    handleViewDetail({ id: currentCustomer.value.id } as CustomerListItem);
+const handleOrderChange = async () => {
+  const id = currentCustomer.value?.id;
+  if (!id) return;
+  const detail = await refreshCurrentCustomer(id);
+  if (detail) {
+    const current = customerList.value.find((c) => c.id === id);
+    updateLocalItem(id, buildListPatchFromDetail(detail, current));
   }
 };
 
-// 复购项目相关状态
-const orderFormVisible = ref(false);
-const currentOrderCustomerId = ref<number>(0);
-const orderDialogRef = ref<InstanceType<typeof OrderFormDialog> | null>(null);
+// 复购记录抽屉
+const orderHistoryVisible = ref(false);
 
-const handleRepurchase = (item: CustomerListItem) => {
-  currentOrderCustomerId.value = item.id ?? 0;
-  orderFormVisible.value = true;
+const handleRepurchase = async (item: CustomerListItem) => {
+  try {
+    const res = await customerApi.getDetail(item.id);
+    currentCustomer.value = res?.customer || null;
+    orderHistoryVisible.value = true;
+  } catch (err) {
+    showError(err, "加载复购记录失败");
+  }
 };
 
-const handleOrderSubmit = async (payload: {
-  isEdit: boolean;
-  data: CustomerOrderCreatePayload | CustomerOrderUpdatePayload;
-  orderId?: number;
-}) => {
-  if (!currentOrderCustomerId.value) return;
-  await withSubmitLock(async () => {
-    const [err] = await to(
-      customerApi.addOrder(
-        currentOrderCustomerId.value,
-        payload.data as CustomerOrderCreatePayload
-      )
-    );
-    if (err) {
-      showError(err, "复购项目添加失败");
-      throw err;
-    }
-    showSuccess("复购项目添加成功");
-    orderFormVisible.value = false;
-    loadList();
-    loadStats();
-  });
+// 跟进记录抽屉
+const followUpHistoryVisible = ref(false);
+
+const handleViewFollowUps = async (item: CustomerListItem) => {
+  try {
+    const res = await customerApi.getDetail(item.id);
+    currentCustomer.value = res?.customer || null;
+    followUpHistoryVisible.value = true;
+  } catch (err) {
+    showError(err, "加载跟进记录失败");
+  }
+};
+
+const handleFollowUpChange = async () => {
+  const id = currentCustomer.value?.id;
+  if (!id) return;
+  const detail = await refreshCurrentCustomer(id);
+  if (detail) {
+    const current = customerList.value.find((c) => c.id === id);
+    updateLocalItem(id, buildListPatchFromDetail(detail, current));
+  }
 };
 
 const handleFormSubmit = async (data: CustomerCreatePayload & CustomerUpdatePayload) => {
   await withSubmitLock(async () => {
     if (editingId.value) {
-      const [err] = await to(customerApi.update(editingId.value, { ...data }));
+      const id = editingId.value;
+      const [err] = await to(customerApi.update(id, { ...data }));
       if (err) {
         showError(err, "更新客户失败");
         throw err;
       }
-      loadList();
+      // 局部更新当前卡片
+      const detail = await refreshCurrentCustomer(id);
+      if (detail) {
+        const current = customerList.value.find((c) => c.id === id);
+        updateLocalItem(id, buildListPatchFromDetail(detail, current));
+      }
       showSuccess("客户更新成功");
     } else {
       const [err] = await to(customerApi.create({ ...data }));
@@ -524,7 +515,7 @@ const handleDelete = async (row: { id?: number | string; companyName: string }) 
     return;
   }
   showSuccess("客户删除成功");
-  loadList();
+  removeLocalItem(row.id as number);
   loadStats();
 };
 
@@ -746,6 +737,21 @@ onMounted(() => {
 .follow-up-time {
   color: #909399;
   font-size: 12px;
+}
+
+/* 无跟进记录时的提示块 */
+.follow-up-empty {
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.follow-up-empty:hover {
+  background-color: #eff6ff;
+}
+
+.follow-up-empty-text {
+  color: #3b82f6;
+  font-weight: 500;
 }
 
 .delivery-info {

@@ -1,12 +1,11 @@
 import { ref, reactive } from 'vue'
-import { ElMessageBox } from 'element-plus'
 import customerApi from '@/api/customer'
 import { to } from '@/utils/async'
-import { showError, showSuccess } from '@/utils/message'
+import { showError } from '@/utils/message'
 import { usePagination } from '@/composables/usePagination'
 import { useFormSubmit } from '@/composables/useFormSubmit'
 import { formatDate, addDays } from '@/utils/date'
-import type { CustomerListItem as ApiCustomerListItem, CustomerCreatePayload, CustomerUpdatePayload, FollowUpData, FollowUpCreatePayload, CustomerDetailData } from '@/types'
+import type { CustomerListItem as ApiCustomerListItem, CustomerCreatePayload, CustomerUpdatePayload, CustomerDetailData } from '@/types'
 
 export interface CustomerListItem extends ApiCustomerListItem {
   deliveryDate?: string
@@ -228,74 +227,64 @@ export const useCustomerStats = () => {
 }
 
 export const useFollowUp = () => {
-  const detailVisible = ref(false)
   const currentCustomer = ref<CustomerDetailData | null>(null)
-  const followUpDialogVisible = ref(false)
-  const followUpFormData = reactive<FollowUpCreatePayload>({ content: '', nextTime: '' })
-  const { withSubmitLock } = useFormSubmit()
 
-  const handleViewDetail = async (row: CustomerListItem) => {
-    currentCustomer.value = null
-    detailVisible.value = true
+  const refreshCurrentCustomer = async (id: number): Promise<CustomerDetailData | null> => {
     try {
-      const res = await customerApi.getDetail(row.id)
+      const res = await customerApi.getDetail(id)
       currentCustomer.value = res?.customer || null
+      return currentCustomer.value
     } catch (err) {
-      showError(err, '加载客户详情失败')
-      detailVisible.value = false
+      showError(err, '刷新客户数据失败')
+      return null
     }
   }
 
-  const handleDetailOpen = () => { currentCustomer.value = null }
-
-  const showAddFollowUpDialog = () => {
-    followUpFormData.content = ''
-    followUpFormData.nextTime = ''
-    followUpDialogVisible.value = true
+  return {
+    currentCustomer,
+    refreshCurrentCustomer
   }
+}
 
-  const handleFollowUpSubmit = async (data: FollowUpCreatePayload, onSuccess: () => void) => {
-    await withSubmitLock(async () => {
-      const customerId = currentCustomer.value?.id
-      if (!customerId) { showError('客户信息不存在', '添加跟进记录失败'); return }
-      const [err] = await to(customerApi.addFollowUp(customerId, data))
-      if (err) { showError(err, '添加跟进记录失败'); throw err }
-      showSuccess('跟进记录添加成功')
-      followUpDialogVisible.value = false
-
-      const [, res] = await to(customerApi.getDetail(customerId))
-      if (res?.customer) currentCustomer.value = res.customer
-      onSuccess()
-    })
-  }
-
-  const handleDeleteFollowUp = async (item: FollowUpData, onSuccess: () => void) => {
-    const [confirmErr] = await to(ElMessageBox.confirm(
-      '确定要删除这条跟进记录吗？', '删除确认',
-      { type: 'warning', confirmButtonText: '确定删除', cancelButtonText: '取消' }
-    ))
-    if (confirmErr) return
-
-    const [err] = await to(customerApi.deleteFollowUp(item.id))
-    if (err) { showError(err, '删除跟进记录失败'); return }
-    showSuccess('跟进记录删除成功')
-
-    const customerId = currentCustomer.value?.id
-    if (!customerId) { showError('客户信息不存在', '刷新跟进记录失败'); return }
-    const [, res] = await to(customerApi.getDetail(customerId))
-    if (res?.customer) currentCustomer.value = res.customer
-    onSuccess()
-  }
+/**
+ * 从客户详情派生列表项更新补丁
+ * 保留报价单相关字段（hasQuotation/quotation*），仅更新跟进/复购/工期等动态字段
+ */
+export const buildListPatchFromDetail = (detail: CustomerDetailData, current?: CustomerListItem): Partial<CustomerListItem> => {
+  const followUps = detail.followUps || []
+  const orders = detail.orders || []
+  const latestFollowUp = followUps.length > 0 ? followUps[followUps.length - 1] : null
 
   return {
-    detailVisible,
-    currentCustomer,
-    followUpDialogVisible,
-    followUpFormData,
-    handleViewDetail,
-    handleDetailOpen,
-    showAddFollowUpDialog,
-    handleFollowUpSubmit,
-    handleDeleteFollowUp
+    companyName: detail.companyName,
+    customerName: detail.customerName,
+    contactInfo: detail.contactInfo,
+    cooperationStatus: detail.cooperationStatus,
+    customerType: detail.customerType,
+    deliveryDays: detail.deliveryDays,
+    deliveryStartDate: detail.deliveryStartDate,
+    workshopDeliveryDays: detail.workshopDeliveryDays,
+    workshopDeliveryStartDate: detail.workshopDeliveryStartDate,
+    shelfType: detail.shelfType,
+    discountPoints: detail.discountPoints,
+    remark: detail.remark,
+    paymentStatus: detail.paymentStatus,
+    orderStatus: detail.orderStatus,
+    installationStatus: detail.installationStatus,
+    followUpCount: followUps.length,
+    orderCount: orders.length,
+    latestFollowUp,
+    deliveryDate: detail.deliveryDays && detail.deliveryDays > 0
+      ? formatDate(addDays(detail.deliveryDays, detail.deliveryStartDate || detail.createdAt))
+      : '',
+    workshopDeliveryDate: detail.workshopDeliveryDays && detail.workshopDeliveryDays > 0
+      ? formatDate(addDays(detail.workshopDeliveryDays, detail.workshopDeliveryStartDate || detail.createdAt))
+      : '',
+    // 保留报价单相关字段
+    hasQuotation: current?.hasQuotation ?? false,
+    quotationDate: current?.quotationDate ?? null,
+    quotationStatus: current?.quotationStatus ?? null,
+    quotationId: current?.quotationId ?? null,
+    quotationCount: current?.quotationCount
   }
 }
