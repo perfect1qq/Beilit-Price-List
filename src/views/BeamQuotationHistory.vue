@@ -41,7 +41,7 @@
         <el-empty v-if="!historyList.length" description="暂无数据" />
 
         <div class="pager-wrap">
-          <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]"
+          <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :page-sizes="[15, 20, 50]"
             :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
             @current-change="handleCurrentChange" />
         </div>
@@ -92,6 +92,9 @@ const {
     return res ?? { list: [], total: 0, page: targetPage, pageSize: pageSize.value }
   }
 })
+
+// 横梁载重单默认每页 15 条
+pageSize.value = 15
 
 const enterDetail = (row: Record<string, unknown>, mode: string) => {
   editingId.value = row.id as number | string
