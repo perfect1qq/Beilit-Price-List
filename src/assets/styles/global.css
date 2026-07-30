@@ -575,3 +575,21 @@ body.el-popup-parent--hidden .el-main {
   max-width: 200px;
   z-index: 10;
 }
+
+/* ==================== 全局滚动条隐藏（无感滚动） ==================== */
+/* WebKit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+/* Firefox 及标准浏览器 */
+* {
+  scrollbar-width: none !important;
+}
+
+/* Element Plus 滚动条组件隐藏 */
+.el-scrollbar__bar {
+  display: none !important;
+}

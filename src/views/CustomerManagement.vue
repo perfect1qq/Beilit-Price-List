@@ -107,10 +107,6 @@
           placeholder="搜索公司名称、客户姓名、联系方式、货架类型"
           @search="handleSearch"
         />
-
-        <div class="filter-group">
-          <el-button @click="handleResetFilter">清空</el-button>
-        </div>
       </div>
 
       <CardList
@@ -127,7 +123,29 @@
         <template #card="{ item }">
           <div class="customer-card">
             <div class="card-header">
-              <h3 class="company-name">{{ item.companyName }}</h3>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <h3 class="company-name" style="margin: 0; line-height: 1.2;">{{ item.companyName }}</h3>
+                <div class="header-actions" style="display: flex; gap: 8px;">
+                  <template v-if="!isGuest">
+                    <el-button
+                      v-if="canEdit"
+                      type="warning"
+                      size="small"
+                      plain
+                      @click.stop="handleEdit(item as CustomerListItem)"
+                      >编辑</el-button
+                    >
+                    <el-button
+                      v-if="canDelete"
+                      type="danger"
+                      size="small"
+                      plain
+                      @click.stop="handleDelete(item as CustomerListItem)"
+                      >删除</el-button
+                    >
+                  </template>
+                </div>
+              </div>
               <div class="tags">
                 <!-- 报价状态 -->
                 <el-tag
@@ -279,31 +297,14 @@
                   >复购记录</el-button
                 >
                 <el-button
-                  v-if="item.hasQuotation && (item.quotationId || (item.quotationCount && item.quotationCount > 0))"
+                  v-if="item.hasQuotation"
                   type="success"
                   size="small"
                   round
                   @click.stop="handleGoToQuotation(item as CustomerListItem)"
-                  >查看报价单{{ item.quotationCount && item.quotationCount > 1 ? ` (${item.quotationCount})` : '' }}</el-button
+                  >查看报价单{{ Number(item.quotationCount) > 1 ? ` (${item.quotationCount})` : '' }}</el-button
                 >
-                <template v-if="!isGuest">
-                  <el-button
-                    v-if="canEdit"
-                    type="warning"
-                    size="small"
-                    plain
-                    @click.stop="handleEdit(item as CustomerListItem)"
-                    >编辑</el-button
-                  >
-                  <el-button
-                    v-if="canDelete"
-                    type="danger"
-                    size="small"
-                    plain
-                    @click.stop="handleDelete(item as CustomerListItem)"
-                    >删除</el-button
-                  >
-                </template>
+
               </div>
             </div>
           </div>
@@ -317,14 +318,13 @@
       </CardList>
     </el-card>
 
-    <CustomerFormDialog
+    <CustomerFormDrawer
       v-model="dialogVisible"
       :form-data="formData"
       :is-edit="editingId !== null"
       :delivery-start-date="editingDeliveryStartDate"
       :workshop-delivery-start-date="editingWorkshopDeliveryStartDate"
       @submit="handleFormSubmit"
-      append-to-body
     />
 
     <OrderHistoryDrawer
@@ -377,7 +377,7 @@ import type { CustomerListItem } from "@/composables/useCustomer";
 import SearchBar from "@/components/common/SearchBar.vue";
 import CardHeader from "@/components/common/CardHeader.vue";
 import CardList from "@/components/common/CardList.vue";
-import CustomerFormDialog from "@/components/customer/CustomerFormDialog.vue";
+import CustomerFormDrawer from "@/components/customer/CustomerFormDrawer.vue";
 import OrderHistoryDrawer from "@/components/customer/OrderHistoryDrawer.vue";
 import FollowUpHistoryDrawer from "@/components/customer/FollowUpHistoryDrawer.vue";
 
@@ -528,18 +528,11 @@ const getCustomerTypeTagType = (type?: string | null) => {
   return map[type || ""] || "info";
 };
 
-const handleGoToQuotation = (item: { quotationId?: number | string | null; quotationCount?: number; companyName: string }) => {
-  if (item.quotationCount && item.quotationCount > 1) {
-    router.push({
-      path: "/quotation/history",
-      query: { expandCompany: item.companyName } as Record<string, string>,
-    });
-  } else if (item.quotationId != null) {
-    router.push({
-      path: "/quotation/history",
-      query: { id: String(item.quotationId), mode: "view" } as Record<string, string>,
-    });
-  }
+const handleGoToQuotation = (item: { companyName: string }) => {
+  router.push({
+    path: "/quotation/history",
+    query: { expandCompany: item.companyName } as Record<string, string>,
+  });
 };
 
 const handleStatClick = (type: string) => {

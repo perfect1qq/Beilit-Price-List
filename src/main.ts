@@ -34,3 +34,17 @@ registerAuthRuntimeHandlers()
 app.mount('#app')
 
 warmupCriticalViews()
+
+// 全局分页滚动到顶部监听
+document.addEventListener('click', (e) => {
+  const target = e.target as HTMLElement
+  if (target && target.closest('.el-pagination')) {
+    // 忽略点击被禁用的按钮或当前激活的页码
+    if (target.closest('.is-disabled') || target.closest('li.is-active')) {
+      return
+    }
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }, 50)
+  }
+})

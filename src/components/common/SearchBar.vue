@@ -1,6 +1,5 @@
 <template>
   <div class="search-bar" :class="{ 'is-collapsed': collapsed }">
-
     <el-input
       v-model="keyword"
       :placeholder="placeholder"
@@ -8,29 +7,15 @@
       :prefix-icon="SearchIcon"
       :size="size"
       :disabled="disabled"
-      @keyup.enter="handleSearch"
       @clear="handleClear"
+      @keyup.enter="handleEnter"
     />
-
-
-    <el-button
-      :type="buttonType"
-      :size="size"
-      :icon="SearchIcon"
-      :loading="loading"
-      :disabled="disabled"
-      @click="handleSearch"
-    >
-      {{ searchText }}
-    </el-button>
-
-
     <slot name="extra" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch } from 'vue'
 import { Search as SearchIcon } from '@element-plus/icons-vue'
 
 const props = defineProps({
@@ -49,26 +34,11 @@ const props = defineProps({
     type: Boolean,
     default: true
   },
-  /** 输入框/按钮尺寸 */
+  /** 输入框尺寸 */
   size: {
     type: String,
     default: 'default',
     validator: (val: unknown) => ['large', 'default', 'small'].includes(val as string)
-  },
-  /** 按钮类型 */
-  buttonType: {
-    type: String,
-    default: 'primary'
-  },
-  /** 按钮文字 */
-  buttonText: {
-    type: String,
-    default: ''
-  },
-  /** 是否加载中 */
-  loading: {
-    type: Boolean,
-    default: false
   },
   /** 是否禁用 */
   disabled: {
@@ -92,26 +62,29 @@ watch(() => props.modelValue, (newVal) => {
   keyword.value = newVal
 })
 
-/** 搜索按钮文字（支持自定义） */
-const searchText = computed(() => props.buttonText || '搜索')
+let timeout: ReturnType<typeof setTimeout> | null = null;
 
-/**
- * 处理搜索事件
- * 触发搜索并同步值到父组件
- */
-const handleSearch = () => {
-  emit('update:modelValue', keyword.value)
+watch(keyword, (newVal, oldVal) => {
+  if (newVal !== oldVal) {
+    emit('update:modelValue', newVal)
+    if (timeout) clearTimeout(timeout)
+    timeout = setTimeout(() => {
+      emit('search', newVal)
+    }, 400)
+  }
+})
+
+const handleEnter = () => {
+  if (timeout) clearTimeout(timeout)
   emit('search', keyword.value)
 }
 
-/**
- * 处理清除事件
- * 清空输入框并触发清除回调
- */
 const handleClear = () => {
   keyword.value = ''
   emit('update:modelValue', '')
   emit('clear')
+  if (timeout) clearTimeout(timeout)
+  emit('search', '')
 }
 </script>
 
@@ -150,12 +123,6 @@ const handleClear = () => {
   .search-bar .el-input {
     max-width: none;
     width: 100%;
-  }
-
-  .search-bar .el-button,
-  .search-bar :deep(.el-button) {
-    width: 100%;
-    margin: 0 !important;
   }
 }
 </style>

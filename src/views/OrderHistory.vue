@@ -12,16 +12,12 @@
 
       <!-- 搜索过滤条 -->
       <div class="filter-row">
-        <el-input
+        <SearchBar
           v-model="keyword"
           placeholder="搜索订单号、客户名称、联系人或送货地址..."
-          :prefix-icon="Search"
-          clearable
-          @clear="handleSearch"
-          @keyup.enter="handleSearch"
+          @search="handleSearch"
           style="width: 320px;"
         />
-        <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
         <el-button @click="resetSearch">重置</el-button>
       </div>
 
@@ -171,6 +167,7 @@ import { showSuccess, showError } from '@/utils/message'
 import { usePermissions } from '@/composables/usePermissions'
 import { useUserStore } from '@/stores/user'
 import orderApi, { type OrderData, type OrderItem, type AccessoryItem } from '@/api/order'
+import SearchBar from '@/components/common/SearchBar.vue'
 
 const router = useRouter()
 const userStore = useUserStore()

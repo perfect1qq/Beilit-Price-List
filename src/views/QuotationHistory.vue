@@ -216,6 +216,8 @@ watch(
           }
         }
         activeCompanyPanels.value = foundCompanies;
+      } else {
+        activeCompanyPanels.value = [];
       }
       return;
     }

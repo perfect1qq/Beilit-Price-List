@@ -11,7 +11,7 @@
       </transition>
     </div>
 
-    <el-scrollbar wrap-class="scrollbar-wrapper">
+    <el-scrollbar wrap-class="scrollbar-wrapper" style="height: calc(100% - 60px);">
       <el-menu :key="menuKey" :default-active="activeMenu" :default-openeds="openMenus" :collapse="isCollapse"
         :background-color="variables.menuBg" :text-color="variables.menuText"
         :active-text-color="variables.menuActiveText" :unique-opened="false" :collapse-transition="false"
@@ -191,6 +191,10 @@ const menuKey = computed(() => `${activeMenu.value}-${openMenus.value.join(',')}
 
 .scrollbar-wrapper {
   overflow-x: hidden !important;
+}
+
+:deep(.el-scrollbar__bar) {
+  display: none !important;
 }
 
 .el-menu {
