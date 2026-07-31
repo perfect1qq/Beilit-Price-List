@@ -307,7 +307,7 @@ const loadHistory = () => {
   if (data) {
     try {
       historyList.value = JSON.parse(data);
-    } catch (e) {
+    } catch (_e) {
       historyList.value = [];
     }
   }
@@ -388,7 +388,7 @@ const clearAllHistory = async () => {
     historyList.value = [];
     saveHistory();
     showSuccess("历史记录已清空");
-  } catch (e) {
+  } catch (_e) {
     // User cancelled
   }
 };

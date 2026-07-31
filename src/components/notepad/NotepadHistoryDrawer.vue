@@ -10,7 +10,7 @@
         </div>
       </el-timeline-item>
     </el-timeline>
-    <el-empty v-else />
+    <el-empty v-else description="暂无修改历史" />
   </el-drawer>
 </template>
 

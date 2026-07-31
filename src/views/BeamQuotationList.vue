@@ -7,13 +7,13 @@
             <div class="toolbar">
               <template v-if="!isGuest">
                 <el-button type="primary" :icon="Plus" @click="addRow">添加一行</el-button>
-                <el-button type="success" :icon="DocumentAdd" :loading="saving" @click="handleSave">提交保存</el-button>
+                <el-button type="success" :icon="Check" :loading="saving" @click="handleSave">提交保存</el-button>
               </template>
 
               <div class="name-group">
                 <span class="label">横梁名称:</span>
                 <el-form-item prop="recordName" :rules="beamNameRule">
-                  <el-input v-model="recordName" placeholder="必填" style="width: 280px" />
+                  <el-input v-model="recordName" placeholder="必填" style="width: 280px" :disabled="isGuest" />
                 </el-form-item>
               </div>
             </div>
@@ -21,7 +21,7 @@
         </CardHeader>
       </template>
 
-      <el-form ref="formRef" :model="{ recordName, items }">
+      <el-form ref="formRef" :model="{ recordName, items }" :disabled="isGuest">
 
         <el-table :data="items" border stripe style="width: 100%" :header-cell-style="TABLE_HEADER_STYLE"
           class="smart-table">
@@ -69,7 +69,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 defineOptions({ name: 'BeamQuotationList' })
-import { Plus, Delete, DocumentAdd } from '@element-plus/icons-vue'
+import { Plus, Delete, Check } from '@element-plus/icons-vue'
 import beamApi from '../api/beam'
 import { to } from '@/utils/async'
 import { showWarning, showError, showSuccess } from '@/utils/message'

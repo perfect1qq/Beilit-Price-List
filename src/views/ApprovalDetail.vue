@@ -10,7 +10,7 @@
             {{ approveButtonText }}
           </el-button>
           <el-button v-if="!isHistoryRoute && meta.status === 'pending'" type="danger" :loading="actionLoading"
-            @click="reject">驳回退回</el-button>
+            @click="reject">驳回</el-button>
           <el-button v-if="!isHistoryRoute && meta.status !== 'approved'" type="warning" :loading="actionLoading"
             :disabled="!editMode" @click="save">保存当前修改</el-button>
         </template>

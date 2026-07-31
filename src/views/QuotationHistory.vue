@@ -75,9 +75,9 @@
                               <el-button type="primary" size="small" plain
                                 @click="openDetail(row, 'view')">查看</el-button>
                               <template v-if="!isGuest">
-                                <el-button type="warning" size="small" plain :loading="isActionLoading(row.id)"
+                                <el-button v-if="canModify(row)" type="warning" size="small" plain :loading="isActionLoading(row.id)"
                                   @click="openDetail(row, 'edit')">修改</el-button>
-                                <el-button type="danger" size="small" plain :loading="isActionLoading(row.id)"
+                                <el-button v-if="canDelete(row)" type="danger" size="small" plain :loading="isActionLoading(row.id)"
                                   @click="deleteHistory(row)">删除</el-button>
                               </template>
                             </div>
@@ -109,8 +109,8 @@
               <div class="toolbar">
                 <el-button @click="backToList">返回列表</el-button>
                 <el-button v-if="!isViewMode" type="primary" plain :icon="Plus" @click="addRow">手动添加一行</el-button>
-                <el-button v-if="!isViewMode" :icon="Refresh" @click="clearRows">清空当前表格</el-button>
-                <el-button v-if="!isViewMode" type="success" :icon="DocumentAdd" @click="handleSubmit"
+                <el-button v-if="!isViewMode" :icon="Delete" @click="clearRows">清空当前表格</el-button>
+                <el-button v-if="!isViewMode" type="success" :icon="Check" @click="handleSubmit"
                   :loading="isSubmitting">确认保存报价单</el-button>
               </div>
             </template>
@@ -126,7 +126,7 @@
           @handle-manual-final-price-change="handleManualFinalPriceChange"
           @restore-auto-final-price="restoreAutoFinalPrice" @update-row-total="updateRowTotal" @remove-row="removeRow">
           <template #parse-action>
-            <el-button v-if="!isViewMode" type="primary" :icon="DocumentAdd" @click="handleParseText"
+            <el-button v-if="!isViewMode" type="primary" :icon="MagicStick" @click="handleParseText"
               :loading="parsing">智能解析粘贴内容</el-button>
           </template>
         </QuotationEditor>
@@ -139,8 +139,9 @@
 import { computed, watch, nextTick } from "vue";
 import { useRoute } from "vue-router";
 defineOptions({ name: "QuotationHistory" });
-import { DocumentAdd, Plus, Refresh } from "@element-plus/icons-vue";
+import { Delete, Check, MagicStick, Plus } from "@element-plus/icons-vue";
 import { usePermissions } from "@/composables/usePermissions";
+import { useUserStore } from "@/stores/user";
 import { formatMoney } from "@/utils/number";
 import { TABLE_HEADER_STYLE } from "@/constants/table";
 import QuotationEditor from "@/components/quotation/QuotationEditor.vue";
@@ -148,7 +149,9 @@ import { useQuotationHistoryPage } from "@/composables/useQuotationHistoryPage";
 import type { HistoryRecord } from "@/composables/useQuotationHistory";
 
 const { isAdmin, isGuest } = usePermissions();
+const userStore = useUserStore();
 const route = useRoute();
+const currentUserId = computed(() => userStore.user?.id);
 
 const {
   parsing,
@@ -199,6 +202,17 @@ const {
 const totalRecords = computed(() =>
   groupedHistoryList.value.reduce((sum, group) => sum + group.count, 0)
 );
+
+// 已通过状态：仅管理员可修改/删除；其它状态：管理员或本人可操作
+const canModify = (row: HistoryRecord) => {
+  if (row.status === "approved") return isAdmin.value;
+  return isAdmin.value || row.ownerId === currentUserId.value;
+};
+
+const canDelete = (row: HistoryRecord) => {
+  if (row.status === "approved") return isAdmin.value;
+  return isAdmin.value || row.ownerId === currentUserId.value;
+};
 
 
 watch(

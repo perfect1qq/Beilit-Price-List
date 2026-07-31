@@ -23,13 +23,13 @@
           <div class="order-item-header">
             <span class="order-name">{{ order.orderName }}</span>
             <div class="order-tags">
-              <el-tag size="small" :type="order.orderStatus === '已下单' ? 'success' : 'info'">
+              <el-tag size="small" :type="order.orderStatus === '已下单' ? 'primary' : 'info'">
                 {{ order.orderStatus }}
               </el-tag>
               <el-tag size="small" :type="order.paymentStatus === '已结款' ? 'success' : order.paymentStatus === '待催款' ? 'danger' : 'info'">
                 {{ order.paymentStatus }}
               </el-tag>
-              <el-tag size="small" :type="order.installationStatus === '已安装' ? 'success' : 'warning'">
+              <el-tag size="small" :type="order.installationStatus === '已安装' ? 'success' : 'info'">
                 {{ order.installationStatus }}
               </el-tag>
             </div>
@@ -67,8 +67,8 @@
             <span class="footer-meta">操作人：{{ order.operatorName }}</span>
             <span class="footer-meta">{{ formatDate(order.createdAt) }}</span>
             <div v-if="!isGuest" class="footer-actions">
-              <el-button type="primary" link size="small" @click="handleEdit(order)">编辑</el-button>
-              <el-button type="danger" link size="small" @click="handleDelete(order)">删除</el-button>
+              <el-button type="warning" link size="small" :icon="Edit" @click="handleEdit(order)">编辑</el-button>
+              <el-button type="danger" link size="small" :icon="Delete" @click="handleDelete(order)">删除</el-button>
             </div>
           </div>
         </div>
@@ -90,11 +90,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { PropType } from 'vue'
-import { Plus } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Edit, Delete } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import OrderFormDialog from './OrderFormDialog.vue'
 import customerApi from '@/api/customer'
 import { formatDate, addDays } from '@/utils/date'
+import { confirmAndDelete } from '@/utils/dialog'
 import type { CustomerOrderData, CustomerOrderCreatePayload, CustomerOrderUpdatePayload } from '@/types'
 
 const props = defineProps({
@@ -135,20 +136,12 @@ const handleEdit = (order: CustomerOrderData) => {
 }
 
 const handleDelete = async (order: CustomerOrderData) => {
-  try {
-    await ElMessageBox.confirm(`确定要删除复购项目“${order.orderName}”吗？`, '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-    await customerApi.deleteOrder(order.id)
-    ElMessage.success('删除成功')
-    emit('order-change')
-  } catch (err) {
-    if (err !== 'cancel') {
-      ElMessage.error('删除失败')
-    }
-  }
+  const ok = await confirmAndDelete(
+    `确定要删除复购项目“${order.orderName}”吗？`,
+    () => customerApi.deleteOrder(order.id),
+    { successMsg: '删除成功' }
+  )
+  if (ok) emit('order-change')
 }
 
 const handleOrderSubmit = async (payload: { isEdit: boolean; data: CustomerOrderCreatePayload | CustomerOrderUpdatePayload; orderId?: number }) => {

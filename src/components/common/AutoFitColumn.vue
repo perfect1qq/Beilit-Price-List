@@ -67,7 +67,7 @@ const computedWidth = computed(() => {
   if (props.width != null) return props.width
   if (props.minWidth != null && (!props.data || !props.data.length)) return props.minWidth
   if (props.data && (props.prop || props.getter || props.label)) {
-    const accessor = props.getter || props.prop || ((row: any) => '')
+    const accessor = props.getter || props.prop || ((_row: any) => '')
     return getColumnWidth(props.data, accessor as any, props.label || '', {
       min: props.min,
       max: props.max

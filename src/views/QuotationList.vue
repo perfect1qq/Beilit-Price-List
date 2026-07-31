@@ -11,12 +11,12 @@
 
               <template v-if="!isGuest">
 
-                <el-button :icon="Refresh" @click="clearRows" :disabled="isViewMode">
+                <el-button :icon="Delete" @click="clearRows" :disabled="isViewMode">
                   清空当前表格
                 </el-button>
 
 
-                <el-button type="success" :icon="DocumentAdd" @click="handleSubmit" :loading="isSubmitting"
+                <el-button type="success" :icon="Check" @click="handleSubmit" :loading="isSubmitting"
                   :disabled="isViewMode">
                   确认保存报价单
                 </el-button>
@@ -42,7 +42,7 @@
         @restore-auto-final-price="restoreAutoFinalPrice" @update-row-total="updateRowTotal" @remove-row="removeRow">
 
         <template #parse-action>
-          <el-button v-if="!isViewMode" type="primary" :icon="DocumentAdd" @click="handleParseText" :loading="parsing">
+          <el-button v-if="!isViewMode" type="primary" :icon="MagicStick" @click="handleParseText" :loading="parsing">
             智能解析粘贴内容
           </el-button>
         </template>
@@ -61,9 +61,10 @@
 import { ref, reactive, watch } from 'vue'
 defineOptions({ name: 'QuotationList' })
 import {
-  DocumentAdd,
+  Delete,
+  Check,
+  MagicStick,
   Plus,
-  Refresh,
 } from '@element-plus/icons-vue'
 import quotationApi from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'

@@ -40,13 +40,13 @@
         <el-table-column label="操作" width="220" align="center">
           <template #default="{ row }">
             <div class="action-btns">
-              <el-button type="primary" size="small" plain @click="viewOrder(row.id)">
+              <el-button type="primary" size="small" plain :icon="View" @click="viewOrder(row.id)">
                 查看
               </el-button>
-              <el-button type="warning" size="small" plain @click="editOrder(row.id)" v-if="!isGuest && canModify(row)">
+              <el-button type="warning" size="small" plain :icon="Edit" @click="editOrder(row.id)" v-if="!isGuest && canModify(row)">
                 编辑
               </el-button>
-              <el-button type="danger" size="small" plain @click="confirmDelete(row)" v-if="!isGuest && canModify(row)">
+              <el-button type="danger" size="small" plain :icon="Delete" @click="confirmDelete(row)" v-if="!isGuest && canModify(row)">
                 删除
               </el-button>
             </div>
@@ -161,7 +161,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { Plus, Search, View, Edit, Delete, Printer, Download } from '@element-plus/icons-vue'
+import { Plus, View, Edit, Delete } from "@element-plus/icons-vue"
 import { ElMessageBox } from 'element-plus'
 import { showSuccess, showError } from '@/utils/message'
 import { usePermissions } from '@/composables/usePermissions'
@@ -295,10 +295,6 @@ const confirmDelete = async (row: OrderData) => {
       showError(err, '删除订单失败')
     }
   }
-}
-
-const printCurrentOrder = () => {
-  window.print()
 }
 
 onMounted(() => {

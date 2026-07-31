@@ -30,8 +30,8 @@
 
     <template #footer>
       <div class="drawer-btns">
-        <el-button @click="$emit('update:visible', false)">舍弃修改</el-button>
-        <el-button type="primary" :loading="saving" @click="$emit('save')">确 认 保 存</el-button>
+        <el-button :icon="Close" @click="$emit('update:visible', false)">舍弃修改</el-button>
+        <el-button type="primary" :icon="Check" :loading="saving" @click="$emit('save')">确 认 保 存</el-button>
       </div>
     </template>
   </el-drawer>
@@ -41,6 +41,7 @@
 import { ref, computed } from "vue";
 import type { PropType } from "vue";
 import type { FormInstance } from "element-plus";
+import { Close, Check } from "@element-plus/icons-vue";
 import { memoTitleRule, memoLabelRule, memoContentRule } from "@/utils/formRules";
 import type { MemoCreatePayload } from "@/types";
 

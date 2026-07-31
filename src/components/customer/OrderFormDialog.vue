@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="modelValue"
-    :title="isEdit ? '编辑合作/复购项目' : '新增合作/复购项目'"
+    :title="isEdit ? '编辑复购项目' : '新增复购项目'"
     width="540px"
     destroy-on-close
     @update:model-value="emit('update:modelValue', $event)"
@@ -121,7 +121,7 @@ const submitting = ref(false)
 const isEdit = computed(() => !!props.orderData && !!props.orderData.id)
 
 const localData = reactive({
-  orderName: '合作项目',
+  orderName: '复购项目',
   orderAmount: '' as string | number | null,
   orderStatus: '已下单',
   paymentStatus: '待催款',
@@ -142,7 +142,7 @@ watch(
   (val) => {
     if (val) {
       if (props.orderData) {
-        localData.orderName = props.orderData.orderName || '合作项目'
+        localData.orderName = props.orderData.orderName || '复购项目'
         localData.orderAmount = props.orderData.orderAmount ?? ''
         localData.orderStatus = props.orderData.orderStatus || '已下单'
         localData.paymentStatus = (props.orderData.paymentStatus && props.orderData.paymentStatus !== '未有款项') ? props.orderData.paymentStatus : '待催款'
@@ -151,7 +151,7 @@ watch(
         localData.workshopDeliveryDays = props.orderData.workshopDeliveryDays ?? null
         localData.remark = props.orderData.remark || ''
       } else {
-        localData.orderName = '复购/合作项目'
+        localData.orderName = '复购项目'
         localData.orderAmount = ''
         localData.orderStatus = '已下单'
         localData.paymentStatus = '待催款'
@@ -176,8 +176,12 @@ watch(
 
 const handleSubmit = async () => {
   if (!formRef.value) return
-  const valid = await formRef.value.validate()
-  if (!valid) return
+  try {
+    await formRef.value.validate()
+  } catch {
+    // 校验失败：Element Plus 已自动显示字段级错误，无需额外提示
+    return
+  }
 
   const payload: CustomerOrderCreatePayload | CustomerOrderUpdatePayload = {
     orderName: localData.orderName.trim(),
@@ -185,8 +189,9 @@ const handleSubmit = async () => {
     orderStatus: localData.orderStatus,
     paymentStatus: localData.paymentStatus,
     installationStatus: localData.installationStatus,
-    deliveryDays: localData.deliveryDays === null || localData.deliveryDays === undefined || localData.deliveryDays < 0 ? null : Number(localData.deliveryDays),
-    workshopDeliveryDays: localData.workshopDeliveryDays === null || localData.workshopDeliveryDays === undefined || localData.workshopDeliveryDays < 0 ? null : Number(localData.workshopDeliveryDays),
+    // 工期清空（''、null、undefined、负数、0）一律存 null，避免误存 0 天
+    deliveryDays: (localData.deliveryDays === null || localData.deliveryDays === undefined || localData.deliveryDays === '' || Number(localData.deliveryDays) <= 0) ? null : Number(localData.deliveryDays),
+    workshopDeliveryDays: (localData.workshopDeliveryDays === null || localData.workshopDeliveryDays === undefined || localData.workshopDeliveryDays === '' || Number(localData.workshopDeliveryDays) <= 0) ? null : Number(localData.workshopDeliveryDays),
     remark: localData.remark.trim(),
   }
 

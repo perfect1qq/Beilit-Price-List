@@ -150,7 +150,9 @@ service.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     pendingControllers.set(requestKey, controller)
 
     if (config.signal) {
-      config.signal?.addEventListener?.('abort', () => controller.abort(), { once: true })
+      const abortHandler = () => controller.abort()
+      config.signal.addEventListener('abort', abortHandler, { once: true })
+      ;(config as any).__abortHandler = abortHandler
     }
     ;(config as unknown as Record<string, unknown>).signal = controller.signal
   }
@@ -180,6 +182,10 @@ service.interceptors.response.use(
       pendingControllers.delete(requestKey)
     }
 
+    if (config.signal && (config as any).__abortHandler) {
+      config.signal.removeEventListener('abort', (config as any).__abortHandler)
+    }
+
     const payload = response?.data
 
     if (payload?.success === false) {
@@ -204,6 +210,10 @@ service.interceptors.response.use(
     if (config && !config.skipCancel) {
       const requestKey = generateRequestKey(error.config!)
       pendingControllers.delete(requestKey)
+    }
+
+    if (config && config.signal && (config as any).__abortHandler) {
+      config.signal.removeEventListener('abort', (config as any).__abortHandler)
     }
 
     if (config) {

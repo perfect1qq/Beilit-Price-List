@@ -11,7 +11,7 @@
         </div>
       </el-timeline-item>
     </el-timeline>
-    <el-empty v-else />
+    <el-empty v-else description="暂无历史记录" />
   </el-drawer>
 </template>
 

@@ -15,12 +15,7 @@
         <div
           class="stat-card"
           :class="{
-            active:
-              !filterCooperationStatus &&
-              !filterPaymentStatus &&
-              !filterOrderStatus &&
-              !filterInstallationStatus &&
-              !filterCustomerType,
+            active: activeStat === ''
           }"
           @click="handleStatClick('')"
         >
@@ -29,7 +24,7 @@
         </div>
         <div
           class="stat-card stat-undealt"
-          :class="{ active: filterCooperationStatus === '未合作' }"
+          :class="{ active: activeStat === '未成交' }"
           @click="handleStatClick('未成交')"
         >
           <div class="stat-value">{{ stats.undealt }}</div>
@@ -37,7 +32,7 @@
         </div>
         <div
           class="stat-card stat-dealt"
-          :class="{ active: filterCooperationStatus === '已合作' && !filterOrderStatus }"
+          :class="{ active: activeStat === '成交' }"
           @click="handleStatClick('成交')"
         >
           <div class="stat-value">{{ stats.dealt }}</div>
@@ -45,7 +40,7 @@
         </div>
         <div
           class="stat-card stat-pending"
-          :class="{ active: filterPaymentStatus === '待催款' }"
+          :class="{ active: activeStat === '待催款' }"
           @click="handleStatClick('待催款')"
         >
           <div class="stat-value">{{ stats.pending }}</div>
@@ -53,7 +48,7 @@
         </div>
         <div
           class="stat-card stat-settled"
-          :class="{ active: filterPaymentStatus === '已结款' }"
+          :class="{ active: activeStat === '已结款' }"
           @click="handleStatClick('已结款')"
         >
           <div class="stat-value">{{ stats.settled }}</div>
@@ -61,7 +56,7 @@
         </div>
         <div
           class="stat-card stat-not-ordered"
-          :class="{ active: filterOrderStatus === '未下单' }"
+          :class="{ active: activeStat === '未下单' }"
           @click="handleStatClick('未下单')"
         >
           <div class="stat-value">{{ stats.notOrdered }}</div>
@@ -69,15 +64,15 @@
         </div>
         <div
           class="stat-card stat-ordered"
-          :class="{ active: filterOrderStatus === '已下单' && !filterInstallationStatus }"
+          :class="{ active: activeStat === '已下单' }"
           @click="handleStatClick('已下单')"
         >
           <div class="stat-value">{{ stats.ordered }}</div>
-          <div class="stat-label">下单</div>
+          <div class="stat-label">已下单</div>
         </div>
         <div
           class="stat-card stat-installed"
-          :class="{ active: filterInstallationStatus === '已安装' }"
+          :class="{ active: activeStat === '已安装' }"
           @click="handleStatClick('已安装')"
         >
           <div class="stat-value">{{ stats.installed }}</div>
@@ -85,7 +80,7 @@
         </div>
         <div
           class="stat-card stat-dealer"
-          :class="{ active: filterCustomerType === '经销商' }"
+          :class="{ active: activeStat === '经销商' }"
           @click="handleStatClick('经销商')"
         >
           <div class="stat-value">{{ stats.dealer }}</div>
@@ -93,7 +88,7 @@
         </div>
         <div
           class="stat-card stat-terminal"
-          :class="{ active: filterCustomerType === '终端' }"
+          :class="{ active: activeStat === '终端' }"
           @click="handleStatClick('终端')"
         >
           <div class="stat-value">{{ stats.terminal }}</div>
@@ -132,7 +127,8 @@
                       type="warning"
                       size="small"
                       plain
-                      @click.stop="handleEdit(item as CustomerListItem)"
+                      :icon="Edit"
+                      @click.stop="handleEdit(item)"
                       >编辑</el-button
                     >
                     <el-button
@@ -140,7 +136,8 @@
                       type="danger"
                       size="small"
                       plain
-                      @click.stop="handleDelete(item as CustomerListItem)"
+                      :icon="Delete"
+                      @click.stop="handleDelete(item)"
                       >删除</el-button
                     >
                   </template>
@@ -186,7 +183,6 @@
                 <el-tag
                   :type="item.orderStatus === '已下单' ? 'primary' : 'info'"
                   size="small"
-                  :effect="item.orderStatus === '已下单' ? 'dark' : 'plain'"
                 >
                   {{ item.orderStatus || "未下单" }}
                 </el-tag>
@@ -194,7 +190,6 @@
                 <el-tag
                   :type="item.installationStatus === '已安装' ? 'success' : 'info'"
                   size="small"
-                  :effect="item.installationStatus === '已安装' ? 'dark' : 'plain'"
                 >
                   {{ item.installationStatus || "待安装" }}
                 </el-tag>
@@ -268,7 +263,7 @@
               <div
                 v-else
                 class="info-row follow-up-info follow-up-empty"
-                @click.stop="handleViewFollowUps(item as CustomerListItem)"
+                @click.stop="handleViewFollowUps(item)"
               >
                 <span class="label">最新跟进：</span>
                 <div class="follow-up-content">
@@ -281,11 +276,11 @@
               <div class="action-buttons">
                 <el-button
                   v-if="canEdit"
-                  type="success"
+                  type="primary"
                   size="small"
                   round
                   plain
-                  @click.stop="handleInvoiceInfo(item as CustomerListItem)"
+                  @click.stop="handleInvoiceInfo(item)"
                   >开票信息</el-button
                 >
                 <el-button
@@ -293,7 +288,7 @@
                   size="small"
                   round
                   plain
-                  @click.stop="handleViewFollowUps(item as CustomerListItem)"
+                  @click.stop="handleViewFollowUps(item)"
                   >跟进记录</el-button
                 >
                 <el-button
@@ -302,15 +297,16 @@
                   size="small"
                   round
                   plain
-                  @click.stop="handleRepurchase(item as CustomerListItem)"
+                  @click.stop="handleRepurchase(item)"
                   >复购记录</el-button
                 >
                 <el-button
                   v-if="item.hasQuotation"
-                  type="success"
+                  type="primary"
                   size="small"
                   round
-                  @click.stop="handleGoToQuotation(item as CustomerListItem)"
+                  plain
+                  @click.stop="handleGoToQuotation(item)"
                   >查看报价单{{ Number(item.quotationCount) > 1 ? ` (${item.quotationCount})` : '' }}</el-button
                 >
 
@@ -328,6 +324,7 @@
     </el-card>
 
     <CustomerFormDrawer
+      ref="customerFormDrawerRef"
       v-model="dialogVisible"
       :form-data="formData"
       :is-edit="editingId !== null"
@@ -344,7 +341,7 @@
       :orders="currentCustomer?.orders || []"
       :can-create="canCreate"
       :is-guest="isGuest"
-      @order-change="handleOrderChange"
+      @order-change="handleRecordChange"
     />
 
     <FollowUpHistoryDrawer
@@ -354,7 +351,7 @@
       :follow-ups="currentCustomer?.followUps || []"
       :can-create="canCreate"
       :is-guest="isGuest"
-      @follow-up-change="handleFollowUpChange"
+      @follow-up-change="handleRecordChange"
     />
 
     <el-dialog v-model="invoiceDialogVisible" title="开票信息" width="500px">
@@ -375,10 +372,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessageBox } from "element-plus";
-import { Plus } from "@element-plus/icons-vue";
+import { Plus, Edit, Delete } from "@element-plus/icons-vue";
 import customerApi from "@/api/customer";
 import { to } from "@/utils/async";
 import { formatDate } from "@/utils/date";
@@ -422,7 +419,6 @@ const {
   total,
   loadList,
   handleSearch,
-  handleResetFilter,
   updateLocalItem,
   removeLocalItem,
 } = useCustomerList();
@@ -446,80 +442,73 @@ const {
   refreshCurrentCustomer,
 } = useFollowUp();
 
-const handleOrderChange = async () => {
-  const id = currentCustomer.value?.id;
-  if (!id) return;
+// 客户表单抽屉引用：用于父组件完成异步后关闭按钮 loading
+const customerFormDrawerRef = ref<{ resetLoading: () => void } | null>(null);
+
+// 局部同步：刷新客户详情并更新列表中对应项（跟进/复购/编辑后调用）
+const syncCustomerToList = async (
+  id: number,
+  updateResult?: Awaited<ReturnType<typeof customerApi.update>> | null,
+) => {
   const detail = await refreshCurrentCustomer(id);
   if (detail) {
     const current = customerList.value.find((c) => c.id === id);
-    updateLocalItem(id, buildListPatchFromDetail(detail, current));
+    updateLocalItem(id, buildListPatchFromDetail(detail, current, updateResult?.customer));
+  }
+};
+
+const handleRecordChange = async () => {
+  const id = currentCustomer.value?.id;
+  if (!id) return;
+  await syncCustomerToList(id);
+};
+
+const openDrawerWithDetail = async (item: CustomerListItem, drawerRef: { value: boolean }, errorMsg: string) => {
+  try {
+    const res = await customerApi.getDetail(item.id);
+    currentCustomer.value = res?.customer || null;
+    drawerRef.value = true;
+  } catch (err) {
+    showError(err, errorMsg);
   }
 };
 
 // 复购记录抽屉
 const orderHistoryVisible = ref(false);
-
-const handleRepurchase = async (item: CustomerListItem) => {
-  try {
-    const res = await customerApi.getDetail(item.id);
-    currentCustomer.value = res?.customer || null;
-    orderHistoryVisible.value = true;
-  } catch (err) {
-    showError(err, "加载复购记录失败");
-  }
-};
+const handleRepurchase = (item: CustomerListItem) => openDrawerWithDetail(item, orderHistoryVisible, "加载复购记录失败");
 
 // 跟进记录抽屉
 const followUpHistoryVisible = ref(false);
-
-const handleViewFollowUps = async (item: CustomerListItem) => {
-  try {
-    const res = await customerApi.getDetail(item.id);
-    currentCustomer.value = res?.customer || null;
-    followUpHistoryVisible.value = true;
-  } catch (err) {
-    showError(err, "加载跟进记录失败");
-  }
-};
-
-const handleFollowUpChange = async () => {
-  const id = currentCustomer.value?.id;
-  if (!id) return;
-  const detail = await refreshCurrentCustomer(id);
-  if (detail) {
-    const current = customerList.value.find((c) => c.id === id);
-    updateLocalItem(id, buildListPatchFromDetail(detail, current));
-  }
-};
+const handleViewFollowUps = (item: CustomerListItem) => openDrawerWithDetail(item, followUpHistoryVisible, "加载跟进记录失败");
 
 const handleFormSubmit = async (data: CustomerCreatePayload & CustomerUpdatePayload) => {
   await withSubmitLock(async () => {
-    if (editingId.value) {
-      const id = editingId.value;
-      const [err, updateResult] = await to(customerApi.update(id, { ...data }));
-      if (err) {
-        showError(err, "更新客户失败");
-        throw err;
+    try {
+      if (editingId.value) {
+        const id = editingId.value;
+        const [err, updateResult] = await to(customerApi.update(id, { ...data }));
+        if (err) {
+          showError(err, "更新客户失败");
+          return;
+        }
+        // 局部更新当前卡片，报价单字段用 update 返回值（基于新公司名重算）
+        await syncCustomerToList(id, updateResult);
+        showSuccess("客户更新成功");
+      } else {
+        const [err] = await to(customerApi.create({ ...data }));
+        if (err) {
+          showError(err, "创建客户失败");
+          return;
+        }
+        showSuccess("客户创建成功");
+        loadList();
       }
-      // 局部更新当前卡片，报价单字段用 update 返回值（基于新公司名重算）
-      const detail = await refreshCurrentCustomer(id);
-      if (detail) {
-        const current = customerList.value.find((c) => c.id === id);
-        updateLocalItem(id, buildListPatchFromDetail(detail, current, updateResult?.customer));
-      }
-      showSuccess("客户更新成功");
-    } else {
-      const [err] = await to(customerApi.create({ ...data }));
-      if (err) {
-        showError(err, "创建客户失败");
-        throw err;
-      }
-      showSuccess("客户创建成功");
-      loadList();
+      dialogVisible.value = false;
+      resetForm();
+      loadStats();
+    } finally {
+      customerFormDrawerRef.value?.resetLoading();
     }
-    dialogVisible.value = false;
-    resetForm();
-    loadStats();
   });
 };
 
@@ -541,15 +530,6 @@ const handleDelete = async (row: { id?: number | string; companyName: string }) 
   showSuccess("客户删除成功");
   removeLocalItem(row.id as number);
   loadStats();
-};
-
-const getCustomerTypeTagType = (type?: string | null) => {
-  const map: Record<string, string> = {
-    终端: "info",
-    经销商: "primary",
-    待确认: "warning",
-  };
-  return map[type || ""] || "info";
 };
 
 const handleGoToQuotation = (item: { companyName: string }) => {
@@ -586,13 +566,40 @@ const saveInvoiceInfo = async () => {
   }
   showSuccess("开票信息保存成功");
   invoiceDialogVisible.value = false;
-  
-  const detail = await refreshCurrentCustomer(id);
-  if (detail) {
-    const current = customerList.value.find((c) => c.id === id);
-    updateLocalItem(id, buildListPatchFromDetail(detail, current, updateResult?.customer));
-  }
+  await syncCustomerToList(id, updateResult);
 };
+
+const STATS_FILTER_MAP: Record<string, any> = {
+  '未成交': { cooperationStatus: '未合作' },
+  '成交': { cooperationStatus: '已合作' },
+  '待催款': { paymentStatus: '待催款' },
+  '已结款': { paymentStatus: '已结款' },
+  '未下单': { cooperationStatus: '已合作', orderStatus: '未下单' },
+  '已下单': { orderStatus: '已下单' },
+  '已安装': { orderStatus: '已下单', installationStatus: '已安装' },
+  '经销商': { customerType: '经销商' },
+  '终端': { customerType: '终端' },
+};
+
+const activeStat = computed(() => {
+  const c = filterCooperationStatus.value;
+  const p = filterPaymentStatus.value;
+  const o = filterOrderStatus.value;
+  const i = filterInstallationStatus.value;
+  const t = filterCustomerType.value;
+
+  if (!c && !p && !o && !i && !t) return '';
+  if (c === '未合作' && !p && !o && !i && !t) return '未成交';
+  if (c === '已合作' && !p && !o && !i && !t) return '成交';
+  if (p === '待催款' && !c && !o && !i && !t) return '待催款';
+  if (p === '已结款' && !c && !o && !i && !t) return '已结款';
+  if (c === '已合作' && o === '未下单' && !p && !i && !t) return '未下单';
+  if (o === '已下单' && !c && !p && !i && !t) return '已下单';
+  if (o === '已下单' && i === '已安装' && !c && !p && !t) return '已安装';
+  if (t === '经销商' && !c && !p && !o && !i) return '经销商';
+  if (t === '终端' && !c && !p && !o && !i) return '终端';
+  return null;
+});
 
 const handleStatClick = (type: string) => {
   filterCooperationStatus.value = "";
@@ -600,33 +607,24 @@ const handleStatClick = (type: string) => {
   filterOrderStatus.value = "";
   filterInstallationStatus.value = "";
   filterCustomerType.value = "";
-  if (type === "未成交") {
-    filterCooperationStatus.value = "未合作";
-  } else if (type === "成交") {
-    filterCooperationStatus.value = "已合作";
-  } else if (type === "待催款") {
-    filterPaymentStatus.value = "待催款";
-  } else if (type === "已结款") {
-    filterPaymentStatus.value = "已结款";
-  } else if (type === "已下单") {
-    filterOrderStatus.value = "已下单";
-  } else if (type === "未下单") {
-    filterCooperationStatus.value = "已合作";
-    filterOrderStatus.value = "未下单";
-  } else if (type === "已安装") {
-    filterOrderStatus.value = "已下单";
-    filterInstallationStatus.value = "已安装";
-  } else if (type === "经销商") {
-    filterCustomerType.value = "经销商";
-  } else if (type === "终端") {
-    filterCustomerType.value = "终端";
+  
+  const map = STATS_FILTER_MAP[type];
+  if (map) {
+    if (map.cooperationStatus) filterCooperationStatus.value = map.cooperationStatus;
+    if (map.paymentStatus) filterPaymentStatus.value = map.paymentStatus;
+    if (map.orderStatus) filterOrderStatus.value = map.orderStatus;
+    if (map.installationStatus) filterInstallationStatus.value = map.installationStatus;
+    if (map.customerType) filterCustomerType.value = map.customerType;
   }
+  
   handleSearch();
 };
 
-onMounted(() => {
-  loadList();
-  loadStats();
+onMounted(async () => {
+  await Promise.allSettled([
+    loadList(),
+    loadStats()
+  ]);
 });
 </script>
 
@@ -695,7 +693,7 @@ onMounted(() => {
 }
 
 .stat-ordered .stat-value {
-  color: #8b5cf6;
+  color: #409eff;
 }
 
 .stat-not-ordered .stat-value {

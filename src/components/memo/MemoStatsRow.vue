@@ -12,7 +12,7 @@
       @click="$emit('filter-click', 'todo')"
     >
       <div class="stat-value">{{ stats.todoTotal }}</div>
-      <div class="stat-label">未完成</div>
+      <div class="stat-label">待办</div>
     </div>
     <div
       :class="['stat-card', 'stat-done', { active: activeFilter === 'done' }]"
@@ -90,10 +90,10 @@ defineEmits(["filter-click"]);
 }
 
 .stat-done .stat-value {
-  color: #22c55e;
+  color: #10b981;
 }
 
 .stat-pinned .stat-value {
-  color: #8b5cf6;
+  color: #f59e0b;
 }
 </style>

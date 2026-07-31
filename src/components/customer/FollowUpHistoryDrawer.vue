@@ -33,7 +33,7 @@
             </div>
             <div class="fu-header-right">
               <span class="fu-time">{{ formatDateTime(item.createdAt || '') }}</span>
-              <el-button v-if="!isGuest" type="danger" link size="small" class="fu-delete"
+              <el-button v-if="!isGuest" type="danger" link size="small" class="fu-delete" :icon="Delete"
                 @click="handleDelete(item)">
                 删除
               </el-button>
@@ -62,12 +62,13 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import type { PropType } from 'vue'
-import { Plus, Calendar } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Calendar, Delete } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 import FollowUpFormDialog from './FollowUpFormDialog.vue'
 import SearchBar from '@/components/common/SearchBar.vue'
 import customerApi from '@/api/customer'
 import { formatDate, formatDateTime } from '@/utils/date'
+import { confirmAndDelete } from '@/utils/dialog'
 import type { FollowUpData, FollowUpCreatePayload } from '@/types'
 
 const props = defineProps({
@@ -122,20 +123,17 @@ const handleFollowUpSubmit = async (data: FollowUpCreatePayload) => {
 }
 
 const handleDelete = async (item: FollowUpData) => {
-  try {
-    await ElMessageBox.confirm('确定要删除这条跟进记录吗？', '删除确认', {
-      type: 'warning',
-      confirmButtonText: '确定删除',
-      cancelButtonText: '取消'
-    })
-    await customerApi.deleteFollowUp(item.id)
-    ElMessage.success('跟进记录删除成功')
-    emit('follow-up-change')
-  } catch (err) {
-    if (err !== 'cancel') {
-      ElMessage.error('删除跟进记录失败')
+  const ok = await confirmAndDelete(
+    '确定要删除这条跟进记录吗？',
+    () => customerApi.deleteFollowUp(item.id),
+    {
+      title: '删除确认',
+      confirmText: '确定删除',
+      successMsg: '跟进记录删除成功',
+      errorMsg: '删除跟进记录失败'
     }
-  }
+  )
+  if (ok) emit('follow-up-change')
 }
 </script>
 

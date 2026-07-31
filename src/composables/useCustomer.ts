@@ -2,14 +2,10 @@ import { ref, reactive } from 'vue'
 import customerApi from '@/api/customer'
 import { to } from '@/utils/async'
 import { showError } from '@/utils/message'
-import { usePagination } from '@/composables/usePagination'
+import { useListQueryState } from '@/composables/useListQueryState'
 import { useFormSubmit } from '@/composables/useFormSubmit'
 import { formatDate, addDays } from '@/utils/date'
-import type { CustomerListItem as ApiCustomerListItem, CustomerCreatePayload, CustomerUpdatePayload, CustomerDetailData } from '@/types'
-
-export interface CustomerListItem extends ApiCustomerListItem {
-  deliveryDate?: string
-}
+import type { CustomerListItem, CustomerCreatePayload, CustomerUpdatePayload, CustomerDetailData } from '@/types'
 
 export interface CustomerStats {
   total: number
@@ -51,39 +47,42 @@ export const useCustomerList = () => {
   const filterOrderStatus = ref('')
   const filterInstallationStatus = ref('')
 
-  const { page, pageSize, total, resetToFirstPage } = usePagination({
-    defaultPage: 1,
-    defaultPageSize: 10,
+  const { page, pageSize, total, resetToFirstPage } = useListQueryState({
+    page: 1,
+    pageSize: 10,
     onLoad: () => loadList()
   })
 
   const loadList = async () => {
     loading.value = true
-    const params: Record<string, unknown> = {
-      keyword: searchKeyword.value || undefined,
-      page: page.value,
-      pageSize: pageSize.value
+    try {
+      const params: Record<string, unknown> = {
+        keyword: searchKeyword.value || undefined,
+        page: page.value,
+        pageSize: pageSize.value
+      }
+      if (filterCooperationStatus.value?.trim()) params.cooperationStatus = filterCooperationStatus.value.trim()
+      if (filterCustomerType.value?.trim()) params.customerType = filterCustomerType.value.trim()
+      if (filterPaymentStatus.value?.trim()) params.paymentStatus = filterPaymentStatus.value.trim()
+      if (filterOrderStatus.value?.trim()) params.orderStatus = filterOrderStatus.value.trim()
+      if (filterInstallationStatus.value?.trim()) params.installationStatus = filterInstallationStatus.value.trim()
+
+      const [err, res] = await to(customerApi.list(params))
+      if (err) { showError(err, '加载客户列表失败'); return }
+
+      customerList.value = (res?.list || []).map((c: ApiCustomerListItem) => ({
+        ...c,
+        deliveryDate: c.deliveryDays && c.deliveryDays > 0
+          ? formatDate(addDays(c.deliveryDays, c.deliveryStartDate || c.createdAt))
+          : '',
+        workshopDeliveryDate: c.workshopDeliveryDays && c.workshopDeliveryDays > 0
+          ? formatDate(addDays(c.workshopDeliveryDays, c.workshopDeliveryStartDate || c.createdAt))
+          : ''
+      }))
+      total.value = Number(res?.total ?? 0)
+    } finally {
+      loading.value = false
     }
-    if (filterCooperationStatus.value?.trim()) params.cooperationStatus = filterCooperationStatus.value.trim()
-    if (filterCustomerType.value?.trim()) params.customerType = filterCustomerType.value.trim()
-    if (filterPaymentStatus.value?.trim()) params.paymentStatus = filterPaymentStatus.value.trim()
-    if (filterOrderStatus.value?.trim()) params.orderStatus = filterOrderStatus.value.trim()
-    if (filterInstallationStatus.value?.trim()) params.installationStatus = filterInstallationStatus.value.trim()
-
-    const [err, res] = await to(customerApi.list(params))
-    if (err) { showError(err, '加载客户列表失败'); loading.value = false; return }
-
-    customerList.value = (res?.list || []).map((c: ApiCustomerListItem) => ({
-      ...c,
-      deliveryDate: c.deliveryDays && c.deliveryDays > 0
-        ? formatDate(addDays(c.deliveryDays, c.deliveryStartDate || c.createdAt))
-        : '',
-      workshopDeliveryDate: c.workshopDeliveryDays && c.workshopDeliveryDays > 0
-        ? formatDate(addDays(c.workshopDeliveryDays, c.workshopDeliveryStartDate || c.createdAt))
-        : ''
-    }))
-    total.value = Number(res?.total ?? 0)
-    loading.value = false
   }
 
   const handleSearch = () => { resetToFirstPage(); loadList() }

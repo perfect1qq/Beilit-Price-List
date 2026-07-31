@@ -9,10 +9,10 @@
             </el-icon>
           </template>
         </el-input>
-        <el-button v-if="!batchMode" type="primary" :icon="Plus" circle class="add-btn" @click="createNote" />
-        <el-button v-else type="danger" :icon="Delete" circle class="add-btn" :disabled="!checkedIds.size"
-          @click="batchDeleteNotes" />
-        <el-tooltip :content="batchMode ? '取消多选' : '多选删除'" placement="top">
+        <el-button v-if="!isGuest && !batchMode" type="primary" :icon="Plus" circle class="add-btn" @click="createNote" />
+        <el-button v-else-if="!isGuest && batchMode" type="danger" :icon="Delete" circle class="add-btn"
+          :disabled="!checkedIds.size" @click="batchDeleteNotes" />
+        <el-tooltip v-if="!isGuest" :content="batchMode ? '取消多选' : '多选删除'" placement="top">
           <el-button :type="batchMode ? 'warning' : 'default'" :icon="batchMode ? Close : Operation" circle
             class="add-btn" @click="toggleBatchMode" />
         </el-tooltip>
@@ -76,27 +76,28 @@
       <template v-if="currentNote">
         <div class="editor-header">
           <div class="header-left">
-            <el-input v-model="editTitle" placeholder="笔记标题" class="title-input" size="large" @blur="doAutoSave" />
+            <el-input v-model="editTitle" placeholder="笔记标题" class="title-input" size="large" :readonly="isGuest"
+              @blur="doAutoSave" />
           </div>
           <div class="header-right">
             <el-select v-model="editFolder" placeholder="文件夹" size="default" class="folder-select"
-              @change="onFolderChange">
+              :disabled="isGuest" @change="onFolderChange">
               <el-option v-for="f in folders" :key="f" :label="f" :value="f" />
               <el-option label="+ 新建文件夹" value="__new__" />
             </el-select>
             <el-input v-if="editFolder === '__new__'" v-model="newFolderName" placeholder="文件夹名称" size="default"
               class="new-folder-input" @blur="confirmNewFolder" @keyup.enter="confirmNewFolder" />
-            <el-tooltip content="保存" placement="top">
+            <el-tooltip v-if="!isGuest" content="保存" placement="top">
               <el-button type="primary" :icon="Check" circle size="default" @click="doSave" :disabled="!isDirty()" />
             </el-tooltip>
-            <el-tooltip :content="currentNote.pinned ? '取消置顶' : '置顶'" placement="top">
+            <el-tooltip v-if="!isGuest" :content="currentNote.pinned ? '取消置顶' : '置顶'" placement="top">
               <el-button :type="currentNote.pinned ? 'warning' : 'default'" :icon="Star" circle size="default"
                 @click="togglePinNote" />
             </el-tooltip>
             <el-tooltip content="历史记录" placement="top">
               <el-button :icon="Clock" circle size="default" @click="openHistory" />
             </el-tooltip>
-            <el-tooltip content="删除" placement="top">
+            <el-tooltip v-if="!isGuest" content="删除" placement="top">
               <el-button type="danger" :icon="Delete" circle size="default" @click="deleteNote" />
             </el-tooltip>
           </div>
@@ -104,7 +105,7 @@
 
         <div class="editor-body">
           <el-input v-model="editContent" type="textarea" :autosize="{ minRows: 20 }" placeholder="开始记录..."
-            class="content-textarea" @blur="doAutoSave" />
+            :readonly="isGuest" class="content-textarea" @blur="doAutoSave" />
         </div>
 
         <div class="editor-footer">
@@ -143,8 +144,11 @@ import {
 } from '@element-plus/icons-vue'
 import NotepadHistoryDrawer from '@/components/notepad/NotepadHistoryDrawer.vue'
 import { useNotepad } from '@/composables/useNotepad'
+import { usePermissions } from '@/composables/usePermissions'
 
 defineOptions({ name: 'NotepadView' })
+
+const { isGuest } = usePermissions()
 
 const {
   keyword,

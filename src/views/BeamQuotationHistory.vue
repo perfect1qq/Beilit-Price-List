@@ -29,9 +29,9 @@
             <template #default="{ row }">
               <div class="action-btns">
                 <template v-if="!isGuest">
-                  <el-button type="warning" size="small" plain :loading="isActionLoading(row.id)"
-                    @click="enterDetail(row, 'edit')">修改</el-button>
-                  <el-button v-if="isAdmin" type="danger" size="small" plain :loading="isActionLoading(row.id)"
+                  <el-button type="warning" size="small" plain :icon="Edit" :loading="isActionLoading(row.id)"
+                    @click="enterDetail(row, 'edit')">编辑</el-button>
+                  <el-button v-if="isAdmin" type="danger" size="small" plain :icon="Delete" :loading="isActionLoading(row.id)"
                     @click="handleDelete(row)">删除</el-button>
                 </template>
               </div>
@@ -56,6 +56,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted } from 'vue'
 defineOptions({ name: 'BeamQuotationHistory' })
+import { Edit, Delete } from '@element-plus/icons-vue'
 import { to } from '@/utils/async'
 import { showError, showSuccess, showWarning } from '@/utils/message'
 import { usePermissions } from '@/composables/usePermissions'

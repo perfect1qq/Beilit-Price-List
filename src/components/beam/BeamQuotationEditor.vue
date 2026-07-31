@@ -3,8 +3,8 @@
     <template #header>
       <CardHeader title="横梁载重单详情">
         <template #actions>
-          <el-button @click="$emit('back')">返回列表</el-button>
-          <el-button v-if="mode === 'edit'" type="success" @click="$emit('update')">提交修改</el-button>
+          <el-button :icon="ArrowLeft" @click="$emit('back')">返回列表</el-button>
+          <el-button v-if="mode === 'edit'" type="success" :icon="Check" @click="$emit('update')">提交修改</el-button>
         </template>
       </CardHeader>
     </template>
@@ -65,7 +65,7 @@
 <script setup lang="ts">
 import type { PropType } from 'vue'
 import { computed } from 'vue'
-import { Plus, Delete } from '@element-plus/icons-vue'
+import { Plus, Delete, ArrowLeft, Check } from '@element-plus/icons-vue'
 import { beamNameRule, recordNameRule, positiveDecimalRule, noSpaceRawValidator } from '@/utils/formRules'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 import CardHeader from '@/components/common/CardHeader.vue'

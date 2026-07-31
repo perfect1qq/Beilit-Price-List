@@ -12,7 +12,7 @@
               <section class="column todo-column">
                 <div class="column-head">
                   <span class="col-indicator todo"></span>
-                  <span class="col-name">待处理</span>
+                  <span class="col-name">待办</span>
                   <span class="col-num">{{ todoList.length }}</span>
                 </div>
 
@@ -26,7 +26,7 @@
                         </div>
                       </template>
                       <div class="task-list">
-                        <MemoCard v-for="item in group.items" :key="item.id" :item="item" board-mode
+                        <MemoCard v-for="item in group.items" :key="item.id" :item="item" board-mode :is-guest="isGuest"
                           @toggle-completed="toggleCompleted" @edit="openEdit" @toggle-pinned="togglePinned"
                           @history="openHistory" @remove="removeMemo" />
                       </div>
@@ -42,7 +42,7 @@
               <section class="column">
                 <div class="column-head">
                   <span class="col-indicator done"></span>
-                  <span class="col-name">已圆满</span>
+                  <span class="col-name">已完成</span>
                   <span class="col-num">{{ doneList.length }}</span>
                 </div>
 
@@ -56,19 +56,19 @@
                         </div>
                       </template>
                       <div class="task-list">
-                        <MemoCard v-for="item in group.items" :key="item.id" :item="item" board-mode
+                        <MemoCard v-for="item in group.items" :key="item.id" :item="item" board-mode :is-guest="isGuest"
                           @toggle-completed="toggleCompleted" @edit="openEdit" @toggle-pinned="togglePinned"
                           @history="openHistory" @remove="removeMemo" />
                       </div>
                     </el-collapse-item>
                   </el-collapse>
 
-                  <el-empty v-if="!pagedDoneGroups.length" description="继续加油" :image-size="80" />
+                  <el-empty v-if="!pagedDoneGroups.length" description="暂无已完成任务" :image-size="80" />
                 </div>
 
-                <div v-if="total > 0" class="pager-wrap">
+                <div v-if="doneList.length > 0" class="pager-wrap">
                   <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]"
-                    :total="total" layout="total, prev, pager, next" @current-change="handlePageChange"
+                    :total="doneList.length" layout="total, prev, pager, next" @current-change="handlePageChange"
                     @size-change="handleSizeChange" />
                 </div>
               </section>
@@ -85,7 +85,7 @@
                       </div>
                     </template>
                     <div class="task-list">
-                      <MemoCard v-for="item in group.items" :key="item.id" :item="item" board-mode
+                      <MemoCard v-for="item in group.items" :key="item.id" :item="item" board-mode :is-guest="isGuest"
                         @toggle-completed="toggleCompleted" @edit="openEdit" @toggle-pinned="togglePinned"
                         @history="openHistory" @remove="removeMemo" />
                     </div>
@@ -137,7 +137,6 @@ const {
   pageSize,
   activeFilter,
   stats,
-  highlightId,
   editorVisible,
   editorMode,
   form,

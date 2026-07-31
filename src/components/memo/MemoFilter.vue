@@ -2,7 +2,7 @@
   <header class="memo-header">
     <div class="header-top">
       <div class="header-left">
-        <h1 class="memo-title">待办任务</h1>
+        <h1 class="memo-title">备忘录</h1>
       </div>
 
       <div v-if="!isGuest" class="header-actions">

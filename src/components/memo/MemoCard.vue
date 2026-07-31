@@ -11,7 +11,7 @@
       <div class="card-main" @click="$emit('edit', item)">
         <div class="card-header">
           <span class="card-title">{{ item.title }}</span>
-          <el-tag v-if="boardMode && item.pinned" size="small" type="danger" effect="dark" round>
+          <el-tag v-if="boardMode && item.pinned" size="small" type="warning" effect="dark" round>
             置顶
           </el-tag>
           <el-tag v-if="!boardMode && item.completed" size="small" type="success">DONE</el-tag>
@@ -26,16 +26,16 @@
       </div>
 
       <div v-if="boardMode" class="card-actions">
-        <el-dropdown trigger="click">
+        <el-dropdown trigger="click" :disabled="isGuest">
           <el-button link :icon="MoreFilled"></el-button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="$emit('edit', item)">编辑详情</el-dropdown-item>
-              <el-dropdown-item @click="$emit('toggle-pinned', item)">
+              <el-dropdown-item v-if="!isGuest" @click="$emit('edit', item)">编辑详情</el-dropdown-item>
+              <el-dropdown-item v-if="!isGuest" @click="$emit('toggle-pinned', item)">
                 {{ item.pinned ? '取消置顶' : '置顶任务' }}
               </el-dropdown-item>
               <el-dropdown-item @click="$emit('history', item)">查看日志</el-dropdown-item>
-              <el-dropdown-item divided style="color: #f56c6c" @click="$emit('remove', item)">
+              <el-dropdown-item v-if="!isGuest" divided style="color: #f56c6c" @click="$emit('remove', item)">
                 彻底删除
               </el-dropdown-item>
             </el-dropdown-menu>

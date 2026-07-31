@@ -255,7 +255,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Check, Printer, Plus, Delete, Refresh } from '@element-plus/icons-vue'
+import { Check, Plus, Delete, Refresh } from '@element-plus/icons-vue'
 import { showSuccess, showError } from '@/utils/message'
 import { debounce } from '@/utils/debounce'
 import orderApi, { type OrderItem, type AccessoryItem } from '@/api/order'
@@ -547,9 +547,7 @@ const cancelEdit = () => {
 }
 
 // 打印订单
-const printOrder = () => {
-  window.print()
-}
+
 
 // 初始化加载（若是编辑模式）
 onMounted(async () => {

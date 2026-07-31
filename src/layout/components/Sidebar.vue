@@ -249,4 +249,12 @@ const menuKey = computed(() => `${activeMenu.value}-${openMenus.value.join(',')}
 :deep(.el-sub-menu .el-menu-item) {
   margin: 4px 12px 4px 24px;
 }
+
+.sidebarLogoFade-enter-active {
+  transition: opacity 0.5s;
+}
+.sidebarLogoFade-enter-from,
+.sidebarLogoFade-leave-to {
+  opacity: 0;
+}
 </style>

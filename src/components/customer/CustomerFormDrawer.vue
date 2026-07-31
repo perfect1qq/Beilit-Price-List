@@ -274,14 +274,18 @@ const handleSubmit = async () => {
   if (!formRef.value) return;
   try {
     await formRef.value.validate();
-    loading.value = true;
-    emit("submit", { ...localData });
-  } catch (err) {
-    // validation failed
-  } finally {
-    setTimeout(() => { loading.value = false; }, 500);
+  } catch (_err) {
+    // 校验失败：Element Plus 已自动显示字段级错误，无需额外提示
+    return;
   }
+  loading.value = true;
+  emit("submit", { ...localData });
 };
+
+// 由父组件完成异步操作后调用，关闭按钮 loading
+defineExpose({
+  resetLoading: () => { loading.value = false; },
+});
 
 const title = computed(() => (props.isEdit ? "编辑客户" : "新增客户"));
 
