@@ -44,7 +44,7 @@
                 <template v-else>
                   <el-collapse v-model="activeCompanyPanels" class="company-collapse-inner">
                     <el-collapse-item v-for="group in getPagedCompanies(yearGroup)" :key="group.companyName"
-                      :name="group.companyName">
+                      :name="group.companyName" :id="'company-panel-' + group.companyName">
                       <template #title>
                         <div class="group-title group-title-sub">
                           <div class="group-title-main">
@@ -136,7 +136,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from "vue";
+import { computed, watch, nextTick } from "vue";
 import { useRoute } from "vue-router";
 defineOptions({ name: "QuotationHistory" });
 import { DocumentAdd, Plus, Refresh } from "@element-plus/icons-vue";
@@ -218,6 +218,14 @@ watch(
           }
         }
         activeCompanyPanels.value = foundCompanies;
+        if (foundCompanies.length > 0) {
+          nextTick(() => {
+            const element = document.getElementById('company-panel-' + foundCompanies[0]);
+            if (element) {
+              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          });
+        }
       } else {
         activeCompanyPanels.value = [];
       }
