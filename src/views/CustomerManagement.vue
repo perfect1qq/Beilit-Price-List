@@ -555,7 +555,7 @@ const getCustomerTypeTagType = (type?: string | null) => {
 const handleGoToQuotation = (item: { companyName: string }) => {
   router.push({
     path: "/quotation/history",
-    query: { expandCompany: item.companyName, keyword: item.companyName } as Record<string, string>,
+    query: { expandCompany: item.companyName } as Record<string, string>,
   });
 };
 

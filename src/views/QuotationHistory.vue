@@ -181,6 +181,7 @@ const {
   loading,
   DEFAULT_PAGE_SIZE,
   getYearPage,
+  setYearPage,
   getPagedCompanies,
   getYearTotalPages,
   handleYearPageChange,
@@ -209,10 +210,11 @@ watch(
         const target = String(expandCompany).trim().toLowerCase();
         const foundCompanies: string[] = [];
         for (const group of groups) {
-          for (const cg of group.companyGroups) {
-            if (cg.companyName.toLowerCase().includes(target)) {
-              foundCompanies.push(cg.companyName);
-            }
+          const index = group.companyGroups.findIndex(cg => cg.companyName.toLowerCase().includes(target));
+          if (index !== -1) {
+            foundCompanies.push(group.companyGroups[index].companyName);
+            const targetPage = Math.floor(index / DEFAULT_PAGE_SIZE) + 1;
+            setYearPage(group.year, targetPage);
           }
         }
         activeCompanyPanels.value = foundCompanies;
