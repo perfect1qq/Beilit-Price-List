@@ -22,7 +22,7 @@
       </div>
 
       <!-- 数据表格 -->
-      <el-table :data="orderList" v-loading="loading" border style="width: 100%" stripe>
+      <el-table :data="orderList" v-loading="loading" border style="width: 100%" stripe :header-cell-style="TABLE_HEADER_STYLE" class="smart-table nowrap-table">
         <AutoFitColumn :data="orderList" prop="orderNo" label="订单编号" :min="140" :max="220" use-width>
           <template #default="{ row }">
             <span class="order-no-link" @click="viewOrder(row.id)">{{ row.orderNo }}</span>
@@ -37,16 +37,16 @@
             {{ formatDateTime(row.createdAt) }}
           </template>
         </AutoFitColumn>
-        <el-table-column label="操作" width="170" align="center">
+        <el-table-column label="操作" width="220" align="center">
           <template #default="{ row }">
-            <div class="action-buttons">
-              <el-button type="primary" size="small" link :icon="View" @click="viewOrder(row.id)">
+            <div class="action-btns">
+              <el-button type="primary" size="small" plain @click="viewOrder(row.id)">
                 查看
               </el-button>
-              <el-button type="warning" size="small" link :icon="Edit" @click="editOrder(row.id)" v-if="!isGuest && canModify(row)">
+              <el-button type="warning" size="small" plain @click="editOrder(row.id)" v-if="!isGuest && canModify(row)">
                 编辑
               </el-button>
-              <el-button type="danger" size="small" link :icon="Delete" @click="confirmDelete(row)" v-if="!isGuest && canModify(row)">
+              <el-button type="danger" size="small" plain @click="confirmDelete(row)" v-if="!isGuest && canModify(row)">
                 删除
               </el-button>
             </div>
@@ -168,6 +168,7 @@ import { usePermissions } from '@/composables/usePermissions'
 import { useUserStore } from '@/stores/user'
 import orderApi, { type OrderData, type OrderItem, type AccessoryItem } from '@/api/order'
 import SearchBar from '@/components/common/SearchBar.vue'
+import { TABLE_HEADER_STYLE } from '@/constants/table'
 
 const router = useRouter()
 const userStore = useUserStore()

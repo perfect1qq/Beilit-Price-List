@@ -55,9 +55,8 @@
       </div>
 
 
-      <el-table :data="tableData" border style="width: 100%; margin-top: 15px;" show-summary
-        :summary-method="getSummaries" :cell-style="{ textAlign: 'center' }"
-        :header-cell-style="{ textAlign: 'center' }" class="smart-table">
+      <el-table :data="tableData" border stripe :header-cell-style="TABLE_HEADER_STYLE" class="smart-table nowrap-table" style="width: 100%; margin-top: 15px;" show-summary
+        :summary-method="getSummaries" :cell-style="{ textAlign: 'center' }">
 
         <AutoFitColumn :data="tableData" label="数量" :min="120" :max="200">
           <template #default="{ row, $index }">
@@ -147,7 +146,8 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { Plus, Delete, InfoFilled } from '@element-plus/icons-vue'
+import { Download, Plus, Delete, InfoFilled } from '@element-plus/icons-vue'
+import { TABLE_HEADER_STYLE } from '@/constants/table'
 import { useUsdCalculator } from '@/composables/useUsdCalculator'
 import CardHeader from '@/components/common/CardHeader.vue'
 
