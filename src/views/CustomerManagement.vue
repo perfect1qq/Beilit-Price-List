@@ -280,6 +280,15 @@
             <div class="card-footer">
               <div class="action-buttons">
                 <el-button
+                  v-if="canEdit"
+                  type="success"
+                  size="small"
+                  round
+                  plain
+                  @click.stop="handleInvoiceInfo(item as CustomerListItem)"
+                  >开票信息</el-button
+                >
+                <el-button
                   type="primary"
                   size="small"
                   round
@@ -347,6 +356,21 @@
       :is-guest="isGuest"
       @follow-up-change="handleFollowUpChange"
     />
+
+    <el-dialog v-model="invoiceDialogVisible" title="开票信息" width="500px">
+      <el-input
+        v-model="invoiceText"
+        type="textarea"
+        :rows="8"
+        placeholder="请在此粘贴客户发来的整段发票信息..."
+      />
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="invoiceDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="saveInvoiceInfo" :loading="savingInvoice">保存</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -531,8 +555,43 @@ const getCustomerTypeTagType = (type?: string | null) => {
 const handleGoToQuotation = (item: { companyName: string }) => {
   router.push({
     path: "/quotation/history",
-    query: { expandCompany: item.companyName } as Record<string, string>,
+    query: { expandCompany: item.companyName, keyword: item.companyName } as Record<string, string>,
   });
+};
+
+const invoiceDialogVisible = ref(false);
+const invoiceText = ref("");
+const savingInvoice = ref(false);
+
+const handleInvoiceInfo = async (item: CustomerListItem) => {
+  try {
+    const res = await customerApi.getDetail(item.id);
+    currentCustomer.value = res?.customer || null;
+    invoiceText.value = res?.customer?.invoiceInfo || "";
+    invoiceDialogVisible.value = true;
+  } catch (err) {
+    showError(err, "加载客户信息失败");
+  }
+};
+
+const saveInvoiceInfo = async () => {
+  const id = currentCustomer.value?.id;
+  if (!id) return;
+  savingInvoice.value = true;
+  const [err, updateResult] = await to(customerApi.update(id, { invoiceInfo: invoiceText.value }));
+  savingInvoice.value = false;
+  if (err) {
+    showError(err, "保存开票信息失败");
+    return;
+  }
+  showSuccess("开票信息保存成功");
+  invoiceDialogVisible.value = false;
+  
+  const detail = await refreshCurrentCustomer(id);
+  if (detail) {
+    const current = customerList.value.find((c) => c.id === id);
+    updateLocalItem(id, buildListPatchFromDetail(detail, current, updateResult?.customer));
+  }
 };
 
 const handleStatClick = (type: string) => {

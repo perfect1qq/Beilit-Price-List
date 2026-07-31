@@ -11,15 +11,21 @@
     <div class="fu-drawer">
       <div class="drawer-toolbar">
         <span class="record-count">
-          共 <b>{{ followUps.length }}</b> 条跟进记录
+          共 <b>{{ filteredFollowUps.length }}</b> 条跟进记录
         </span>
+        <SearchBar
+          v-model="searchKeyword"
+          placeholder="搜索跟进内容或操作人..."
+          style="flex: 1; margin: 0 16px; max-width: 250px;"
+          @search="searchKeyword = $event"
+        />
         <el-button v-if="canCreate" type="primary" size="small" :icon="Plus" @click="handleAdd">
           添加跟进
         </el-button>
       </div>
 
-      <div v-if="followUps.length > 0" class="fu-list">
-        <div v-for="item in followUps" :key="item.id" class="fu-card">
+      <div v-if="filteredFollowUps.length > 0" class="fu-list">
+        <div v-for="item in filteredFollowUps" :key="item.id" class="fu-card">
           <div class="fu-card-header">
             <div class="fu-operator">
               <span class="fu-avatar">{{ (item.operatorName || '?').charAt(0) }}</span>
@@ -59,6 +65,7 @@ import type { PropType } from 'vue'
 import { Plus, Calendar } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import FollowUpFormDialog from './FollowUpFormDialog.vue'
+import SearchBar from '@/components/common/SearchBar.vue'
 import customerApi from '@/api/customer'
 import { formatDate, formatDateTime } from '@/utils/date'
 import type { FollowUpData, FollowUpCreatePayload } from '@/types'
@@ -80,6 +87,17 @@ const followUpFormData = reactive<FollowUpCreatePayload>({ content: '', nextTime
 const drawerTitle = computed(() => {
   const name = props.customerName || '客户'
   return `${name} · 跟进记录`
+})
+
+const searchKeyword = ref('')
+
+const filteredFollowUps = computed(() => {
+  if (!searchKeyword.value) return props.followUps
+  const kw = searchKeyword.value.toLowerCase()
+  return props.followUps.filter(item => 
+    item.content.toLowerCase().includes(kw) || 
+    (item.operatorName && item.operatorName.toLowerCase().includes(kw))
+  )
 })
 
 const handleAdd = () => {

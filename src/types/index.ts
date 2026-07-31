@@ -170,6 +170,7 @@ export interface CustomerCreatePayload {
   paymentStatus?: string
   orderStatus?: string
   installationStatus?: string
+  invoiceInfo?: string
 }
 
 export interface CustomerUpdatePayload {
@@ -186,6 +187,7 @@ export interface CustomerUpdatePayload {
   paymentStatus?: string
   orderStatus?: string
   installationStatus?: string
+  invoiceInfo?: string
 }
 
 export interface CustomerData {
@@ -207,6 +209,7 @@ export interface CustomerData {
   paymentStatus: string
   orderStatus: string
   installationStatus: string
+  invoiceInfo: string
   createdAt: string
   updatedAt: string
 }
