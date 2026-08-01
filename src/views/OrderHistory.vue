@@ -37,7 +37,7 @@
             {{ formatDateTime(row.createdAt) }}
           </template>
         </AutoFitColumn>
-        <el-table-column label="操作" width="220" align="center">
+        <el-table-column label="操作" min-width="220" align="center">
           <template #default="{ row }">
             <div class="action-btns">
               <el-button type="primary" size="small" plain :icon="View" @click="viewOrder(row.id)">

@@ -117,7 +117,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column v-if="!hideActionColumn" label="操作" width="80" align="center">
+        <el-table-column v-if="!hideActionColumn" label="操作" min-width="80" align="center">
           <template #default="{ $index }">
             <el-button link type="danger" :icon="Delete" @click="$emit('removeRow', $index)"
               :disabled="isViewMode">删除</el-button>

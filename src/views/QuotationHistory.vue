@@ -69,7 +69,7 @@
                           <template #default="{ row }">¥ {{ formatMoney(row.finalPrice) }}</template>
                         </el-table-column>
                         <el-table-column prop="createDate" label="创建时间" min-width="95" align="center" />
-                        <el-table-column label="操作" width="220" align="center">
+                        <el-table-column label="操作" min-width="220" align="center">
                           <template #default="{ row }: { row: HistoryRecord }">
                             <div class="action-btns">
                               <el-button type="primary" size="small" plain

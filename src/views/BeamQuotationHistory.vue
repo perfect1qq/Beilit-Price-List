@@ -25,7 +25,7 @@
           <AutoFitColumn :data="historyList" label="最大载重(kg)" :getter="(row: any) => getFirstItemValue(row, 'maxLoad')" :min="110" :max="400">
             <template #default="{ row }">{{ getFirstItemValue(row, 'maxLoad') }}</template>
           </AutoFitColumn>
-          <el-table-column label="操作" width="155" align="center">
+          <el-table-column label="操作" min-width="155" align="center">
             <template #default="{ row }">
               <div class="action-btns">
                 <template v-if="!isGuest">
