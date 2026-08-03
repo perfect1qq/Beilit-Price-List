@@ -551,7 +551,7 @@ const handleDelete = async (row: { id?: number | string; companyName: string }) 
 
 const handleNavigateTo = (type: 'quotation' | 'contract' | 'order', companyName: string) => {
   const routeMap = {
-    quotation: { path: '/quotation/history', queryKey: 'expandCompany' },
+    quotation: { path: '/quotation/history', queryKey: 'keyword' },
     contract: { path: '/contract/history', queryKey: 'keyword' },
     order: { path: '/order/history', queryKey: 'keyword' }
   }
