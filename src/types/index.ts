@@ -261,6 +261,10 @@ export interface CustomerListItem extends CustomerData {
   quotationStatus: QuotationStatus | null
   quotationId: number | null
   quotationCount?: number
+  hasContract?: boolean
+  contractCount?: number
+  hasPlacementOrder?: boolean
+  placementOrderCount?: number
   followUpCount: number
   orderCount?: number
   latestFollowUp: FollowUpData | null

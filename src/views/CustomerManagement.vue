@@ -319,13 +319,13 @@
                   >查看合同{{ Number(item.contractCount) > 1 ? ` (${item.contractCount})` : '' }}</el-button
                 >
                 <el-button
-                  v-if="Number(item.orderCount) > 0"
+                  v-if="item.hasPlacementOrder"
                   type="primary"
                   size="small"
                   round
                   plain
                   @click.stop="handleNavigateTo('order', item.companyName)"
-                  >查看下单{{ Number(item.orderCount) > 1 ? ` (${item.orderCount})` : '' }}</el-button
+                  >查看下单{{ Number(item.placementOrderCount) > 1 ? ` (${item.placementOrderCount})` : '' }}</el-button
                 >
               </div>
             </div>

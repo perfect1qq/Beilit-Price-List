@@ -253,7 +253,7 @@ export const useFollowUp = () => {
 export const buildListPatchFromDetail = (
   detail: CustomerDetailData,
   current?: CustomerListItem,
-  updateResult?: { hasQuotation: boolean; quotationId: number | null; quotationCount?: number; hasContract: boolean; contractCount?: number } | null
+  updateResult?: { hasQuotation: boolean; quotationId: number | null; quotationCount?: number; hasContract: boolean; contractCount?: number; hasPlacementOrder?: boolean; placementOrderCount?: number } | null
 ): Partial<CustomerListItem> => {
   const followUps = detail.followUps || []
   const orders = detail.orders || []
@@ -291,7 +291,9 @@ export const buildListPatchFromDetail = (
       quotationId: updateResult.quotationId,
       quotationCount: updateResult.quotationCount,
       hasContract: updateResult.hasContract,
-      contractCount: updateResult.contractCount
+      contractCount: updateResult.contractCount,
+      hasPlacementOrder: updateResult.hasPlacementOrder,
+      placementOrderCount: updateResult.placementOrderCount
     } : {
       hasQuotation: current?.hasQuotation ?? false,
       quotationDate: current?.quotationDate ?? null,
@@ -299,7 +301,9 @@ export const buildListPatchFromDetail = (
       quotationId: current?.quotationId ?? null,
       quotationCount: current?.quotationCount ?? 0,
       hasContract: current?.hasContract ?? false,
-      contractCount: current?.contractCount ?? 0
+      contractCount: current?.contractCount ?? 0,
+      hasPlacementOrder: current?.hasPlacementOrder ?? false,
+      placementOrderCount: current?.placementOrderCount ?? 0
     })
   }
 }
