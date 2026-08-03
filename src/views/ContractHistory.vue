@@ -43,7 +43,7 @@
                 <template #default="scope">
                   <div v-if="parseAttachments(scope.row.attachments).length">
                     <div v-for="file in parseAttachments(scope.row.attachments)" :key="file.url" style="margin-bottom: 4px;">
-                      <el-link type="primary" :href="file.url" target="_blank" :download="file.name" :underline="false">
+                      <el-link type="primary" @click.prevent="handleDownload(file)" :underline="false">
                         <el-icon style="margin-right: 4px"><Document /></el-icon>{{ file.name }}
                       </el-link>
                     </div>
@@ -100,6 +100,28 @@ const parseAttachments = (attachmentsStr: string) => {
     return JSON.parse(attachmentsStr)
   } catch (e) {
     return []
+  }
+}
+
+const handleDownload = async (file: { url: string, name: string }) => {
+  try {
+    ElMessage.info(`开始下载 ${file.name}...`)
+    const response = await fetch(file.url)
+    if (!response.ok) throw new Error('网络请求失败')
+    const blob = await response.blob()
+    const blobUrl = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = blobUrl
+    a.download = file.name || 'download'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(blobUrl)
+    ElMessage.success('下载完成')
+  } catch (error) {
+    console.error('Download failed, falling back to window.open:', error)
+    // 降级处理：直接在新标签页打开
+    window.open(file.url, '_blank')
   }
 }
 
