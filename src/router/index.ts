@@ -30,6 +30,9 @@ const MemoManagement = () => import('../views/MemoManagement.vue')
 const UsdConversion = () => import('../views/UsdConversion.vue')
 const CustomerManagement = () => import('../views/CustomerManagement.vue')
 const NotepadView = () => import('../views/NotepadView.vue')
+const ContractLayout = () => import('../views/ContractLayout.vue')
+const ContractNew = () => import('../views/ContractNew.vue')
+const ContractHistory = () => import('../views/ContractHistory.vue')
 
 const routes: RouteRecordRaw[] = [
   {
@@ -181,6 +184,25 @@ const routes: RouteRecordRaw[] = [
         name: 'Notepad',
         component: NotepadView,
         meta: { title: '记事本' },
+      },
+      {
+        path: 'contract',
+        component: ContractLayout,
+        meta: { title: '合同管理' },
+        children: [
+          {
+            path: '',
+            name: 'ContractNew',
+            component: ContractNew,
+            meta: { title: '新增合同' },
+          },
+          {
+            path: 'history',
+            name: 'ContractHistory',
+            component: ContractHistory,
+            meta: { title: '合同历史' },
+          }
+        ]
       },
     ],
   },
