@@ -100,6 +100,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { MagicStick, UploadFilled } from '@element-plus/icons-vue'
 import contractApi from '@/api/contract'
+import request from '@/utils/request'
 
 const route = useRoute()
 const router = useRouter()
@@ -519,8 +520,15 @@ const handleUploadError = (err: any, file: any, fileList: any[]) => {
   }
 }
 
-const handleRemove = (file: any, fileList: any[]) => {
-  // el-upload v-model:file-list会自动更新列表，这里无需手动处理
+const handleRemove = async (file: any, fileList: any[]) => {
+  // 精准击杀：如果是在当前编辑页面刚刚上传的新文件，移除时直接向后端发送物理删除请求
+  if (file.response && file.response.data && file.response.data.url) {
+    try {
+      await request.delete('/api/upload/file', { data: { url: file.response.data.url } })
+    } catch (e) {
+      console.error('Failed to precision kill orphaned file', e)
+    }
+  }
 }
 
 const saveContract = async () => {

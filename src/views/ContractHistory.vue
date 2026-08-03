@@ -105,22 +105,18 @@ const parseAttachments = (attachmentsStr: string) => {
 
 const handleDownload = async (file: { url: string, name: string }) => {
   try {
-    ElMessage.info(`开始下载 ${file.name}...`)
-    const response = await fetch(file.url)
-    if (!response.ok) throw new Error('网络请求失败')
-    const blob = await response.blob()
-    const blobUrl = window.URL.createObjectURL(blob)
+    ElMessage.info(`正在准备下载 ${file.name}...`)
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
+    const downloadUrl = `${baseUrl}/api/upload/download?url=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name || 'download')}`
+    
     const a = document.createElement('a')
-    a.href = blobUrl
-    a.download = file.name || 'download'
+    a.href = downloadUrl
+    a.style.display = 'none'
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
-    window.URL.revokeObjectURL(blobUrl)
-    ElMessage.success('下载完成')
   } catch (error) {
     console.error('Download failed, falling back to window.open:', error)
-    // 降级处理：直接在新标签页打开
     window.open(file.url, '_blank')
   }
 }
