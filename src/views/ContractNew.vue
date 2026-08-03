@@ -77,7 +77,7 @@
             :headers="uploadHeaders"
             :on-success="handleUploadSuccess"
             :on-remove="handleRemove"
-            :file-list="attachments"
+            v-model:file-list="attachments"
             multiple
           >
             <el-button type="primary" plain>点击上传附件</el-button>
@@ -493,27 +493,20 @@ const insertPageBreak = () => {
 
 const handleUploadSuccess = (res: any, file: any, fileList: any[]) => {
   if (res.success || res.code === 200 || res.code === 'OK') {
-    // 确保使用服务器返回的真实 URL
-    attachments.value = fileList.map(f => {
-      const url = f.response?.data?.url || f.url
-      return {
-        name: f.name,
-        url: url,
-        size: f.response?.data?.size || f.size || 0
-      }
-    })
+    // el-upload v-model:file-list会自动更新列表，这里只提示成功
     ElMessage.success('附件上传成功')
   } else {
     ElMessage.error(res.message || '上传失败')
+    // 失败时从列表中移除
+    const index = attachments.value.findIndex(f => f.uid === file.uid)
+    if (index !== -1) {
+      attachments.value.splice(index, 1)
+    }
   }
 }
 
 const handleRemove = (file: any, fileList: any[]) => {
-  attachments.value = fileList.map(f => ({
-    name: f.name,
-    url: f.response?.data?.url || f.url,
-    size: f.response?.data?.size || f.size
-  }))
+  // el-upload v-model:file-list会自动更新列表，这里无需手动处理
 }
 
 const saveContract = async () => {
@@ -528,20 +521,27 @@ const saveContract = async () => {
 
   saving.value = true
   try {
+    const finalAttachments = attachments.value.map(f => ({
+      name: f.name,
+      url: f.response?.data?.url || f.url,
+      size: f.response?.data?.size || f.size || 0
+    }))
+
     if (isEdit.value) {
       await contractApi.update(contractId.value, {
         companyName: companyName.value,
         title: title.value,
         content: html,
-        attachments: JSON.stringify(attachments.value)
+        attachments: JSON.stringify(finalAttachments)
       })
       ElMessage.success('合同更新成功')
+      router.push('/contract/history')
     } else {
       await contractApi.create({
         companyName: companyName.value,
         title: title.value,
         content: html,
-        attachments: JSON.stringify(attachments.value)
+        attachments: JSON.stringify(finalAttachments)
       })
       ElMessage.success('合同创建成功')
       router.push('/contract/history')
