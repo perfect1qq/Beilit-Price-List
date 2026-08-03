@@ -73,7 +73,7 @@
         <el-form-item label="合同附件">
           <el-upload
             class="upload-demo"
-            action="/api/upload/file"
+            :action="uploadUrl"
             :headers="uploadHeaders"
             :on-success="handleUploadSuccess"
             :on-remove="handleRemove"
@@ -115,6 +115,8 @@ const fontSize = ref(3)
 const fontColor = ref('#000000')
 const fontNames = ['宋体', '黑体', '微软雅黑', '楷体', '仿宋', 'Arial', 'Times New Roman']
 const sizeLabels = ['极小', '较小', '小', '中', '大', '较大', '极大']
+
+const uploadUrl = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '') + '/api/upload/file'
 
 const uploadHeaders = {
   Authorization: `Bearer ${localStorage.getItem('token') || ''}`
@@ -491,11 +493,15 @@ const insertPageBreak = () => {
 
 const handleUploadSuccess = (res: any, file: any, fileList: any[]) => {
   if (res.success || res.code === 200 || res.code === 'OK') {
-    attachments.value = fileList.map(f => ({
-      name: f.name,
-      url: f.response?.data?.url || f.url,
-      size: f.response?.data?.size || f.size
-    }))
+    // 确保使用服务器返回的真实 URL
+    attachments.value = fileList.map(f => {
+      const url = f.response?.data?.url || f.url
+      return {
+        name: f.name,
+        url: url,
+        size: f.response?.data?.size || f.size || 0
+      }
+    })
     ElMessage.success('附件上传成功')
   } else {
     ElMessage.error(res.message || '上传失败')

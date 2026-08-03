@@ -51,10 +51,10 @@
                   <span v-else style="color: #999">无</span>
                 </template>
               </el-table-column>
-              <el-table-column label="操作" width="150" align="center">
+              <el-table-column label="操作" width="180" align="center">
                 <template #default="scope">
-                  <el-button link type="primary" @click="editContract(scope.row)">查看/编辑</el-button>
-                  <el-button link type="danger" @click="deleteContract(scope.row)">删除</el-button>
+                  <el-button type="primary" size="small" plain @click="editContract(scope.row)">查看/编辑</el-button>
+                  <el-button type="danger" size="small" plain @click="deleteContract(scope.row)">删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
