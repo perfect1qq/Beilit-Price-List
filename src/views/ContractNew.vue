@@ -73,14 +73,20 @@
         <el-form-item label="合同附件">
           <el-upload
             class="upload-demo"
+            drag
             :action="uploadUrl"
+            :with-credentials="true"
             :headers="uploadHeaders"
             :on-success="handleUploadSuccess"
+            :on-error="handleUploadError"
             :on-remove="handleRemove"
             v-model:file-list="attachments"
             multiple
           >
-            <el-button type="primary" plain>点击上传附件</el-button>
+            <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+            <div class="el-upload__text">
+              将文件拖到此处，或 <em>点击上传</em>
+            </div>
           </el-upload>
         </el-form-item>
       </el-form>
@@ -92,7 +98,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { MagicStick } from '@element-plus/icons-vue'
+import { MagicStick, UploadFilled } from '@element-plus/icons-vue'
 import contractApi from '@/api/contract'
 
 const route = useRoute()
@@ -502,6 +508,14 @@ const handleUploadSuccess = (res: any, file: any, fileList: any[]) => {
     if (index !== -1) {
       attachments.value.splice(index, 1)
     }
+  }
+}
+
+const handleUploadError = (err: any, file: any, fileList: any[]) => {
+  ElMessage.error(err.message || '上传失败，请检查网络或配置')
+  const index = attachments.value.findIndex(f => f.uid === file.uid)
+  if (index !== -1) {
+    attachments.value.splice(index, 1)
   }
 }
 
