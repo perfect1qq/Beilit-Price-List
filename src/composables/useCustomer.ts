@@ -253,11 +253,10 @@ export const useFollowUp = () => {
 export const buildListPatchFromDetail = (
   detail: CustomerDetailData,
   current?: CustomerListItem,
-  updateResult?: { hasQuotation: boolean; quotationId: number | null; quotationCount?: number } | null
+  updateResult?: { hasQuotation: boolean; quotationId: number | null; quotationCount?: number; hasContract: boolean; contractCount?: number } | null
 ): Partial<CustomerListItem> => {
   const followUps = detail.followUps || []
   const orders = detail.orders || []
-  // 后端按 createdAt 降序返回（最新在前），取第一条作为最新跟进
   const latestFollowUp = followUps.length > 0 ? followUps[0] : null
 
   return {
@@ -285,20 +284,22 @@ export const buildListPatchFromDetail = (
     workshopDeliveryDate: detail.workshopDeliveryDays && detail.workshopDeliveryDays > 0
       ? formatDate(addDays(detail.workshopDeliveryDays, detail.workshopDeliveryStartDate || detail.createdAt))
       : '',
-    // 报价单字段：编辑客户时用后端重算的最新值（含 false/null/0，必须显式覆盖）；
-    // 其他场景（跟进/复购变更）保留旧值
     ...(updateResult ? {
       hasQuotation: updateResult.hasQuotation,
       quotationDate: null,
       quotationStatus: null,
       quotationId: updateResult.quotationId,
-      quotationCount: updateResult.quotationCount
+      quotationCount: updateResult.quotationCount,
+      hasContract: updateResult.hasContract,
+      contractCount: updateResult.contractCount
     } : {
       hasQuotation: current?.hasQuotation ?? false,
       quotationDate: current?.quotationDate ?? null,
       quotationStatus: current?.quotationStatus ?? null,
       quotationId: current?.quotationId ?? null,
-      quotationCount: current?.quotationCount
+      quotationCount: current?.quotationCount ?? 0,
+      hasContract: current?.hasContract ?? false,
+      contractCount: current?.contractCount ?? 0
     })
   }
 }

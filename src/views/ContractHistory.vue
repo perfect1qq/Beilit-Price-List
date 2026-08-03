@@ -79,12 +79,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Document } from '@element-plus/icons-vue'
 import contractApi, { type ContractData } from '@/api/contract'
 
 const router = useRouter()
+const route = useRoute()
 
 const loading = ref(false)
 const rawData = ref<ContractData[]>([])
@@ -194,6 +195,9 @@ const deleteContract = async (row: ContractData) => {
 }
 
 onMounted(() => {
+  if (route.query.keyword) {
+    keyword.value = String(route.query.keyword)
+  }
   fetchData()
 })
 </script>

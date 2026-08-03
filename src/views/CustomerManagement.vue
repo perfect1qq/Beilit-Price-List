@@ -309,7 +309,15 @@
                   @click.stop="handleGoToQuotation(item)"
                   >查看报价单{{ Number(item.quotationCount) > 1 ? ` (${item.quotationCount})` : '' }}</el-button
                 >
-
+                <el-button
+                  v-if="item.hasContract"
+                  type="primary"
+                  size="small"
+                  round
+                  plain
+                  @click.stop="handleGoToContract(item)"
+                  >查看合同{{ Number(item.contractCount) > 1 ? ` (${item.contractCount})` : '' }}</el-button
+                >
               </div>
             </div>
           </div>
@@ -536,6 +544,13 @@ const handleGoToQuotation = (item: { companyName: string }) => {
   router.push({
     path: "/quotation/history",
     query: { expandCompany: item.companyName } as Record<string, string>,
+  });
+};
+
+const handleGoToContract = (item: { companyName: string }) => {
+  router.push({
+    path: "/contract/history",
+    query: { keyword: item.companyName } as Record<string, string>,
   });
 };
 
