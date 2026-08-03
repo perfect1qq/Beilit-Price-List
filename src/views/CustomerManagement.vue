@@ -306,7 +306,7 @@
                   size="small"
                   round
                   plain
-                  @click.stop="handleGoToQuotation(item)"
+                  @click.stop="handleNavigateTo('quotation', item.companyName)"
                   >查看报价单{{ Number(item.quotationCount) > 1 ? ` (${item.quotationCount})` : '' }}</el-button
                 >
                 <el-button
@@ -315,8 +315,17 @@
                   size="small"
                   round
                   plain
-                  @click.stop="handleGoToContract(item)"
+                  @click.stop="handleNavigateTo('contract', item.companyName)"
                   >查看合同{{ Number(item.contractCount) > 1 ? ` (${item.contractCount})` : '' }}</el-button
+                >
+                <el-button
+                  v-if="Number(item.orderCount) > 0"
+                  type="primary"
+                  size="small"
+                  round
+                  plain
+                  @click.stop="handleNavigateTo('order', item.companyName)"
+                  >查看下单{{ Number(item.orderCount) > 1 ? ` (${item.orderCount})` : '' }}</el-button
                 >
               </div>
             </div>
@@ -540,19 +549,20 @@ const handleDelete = async (row: { id?: number | string; companyName: string }) 
   loadStats();
 };
 
-const handleGoToQuotation = (item: { companyName: string }) => {
-  router.push({
-    path: "/quotation/history",
-    query: { expandCompany: item.companyName } as Record<string, string>,
-  });
-};
-
-const handleGoToContract = (item: { companyName: string }) => {
-  router.push({
-    path: "/contract/history",
-    query: { keyword: item.companyName } as Record<string, string>,
-  });
-};
+const handleNavigateTo = (type: 'quotation' | 'contract' | 'order', companyName: string) => {
+  const routeMap = {
+    quotation: { path: '/quotation/history', queryKey: 'expandCompany' },
+    contract: { path: '/contract/history', queryKey: 'keyword' },
+    order: { path: '/order/history', queryKey: 'keyword' }
+  }
+  const config = routeMap[type]
+  if (config) {
+    router.push({
+      path: config.path,
+      query: { [config.queryKey]: companyName } as Record<string, string>
+    })
+  }
+}
 
 const invoiceDialogVisible = ref(false);
 const invoiceText = ref("");

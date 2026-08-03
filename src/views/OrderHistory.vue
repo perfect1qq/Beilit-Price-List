@@ -160,7 +160,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { Plus, View, Edit, Delete } from "@element-plus/icons-vue"
 import { ElMessageBox } from 'element-plus'
 import { showSuccess, showError } from '@/utils/message'
@@ -171,6 +171,7 @@ import SearchBar from '@/components/common/SearchBar.vue'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const { isGuest, isAdmin } = usePermissions()
 
@@ -298,6 +299,9 @@ const confirmDelete = async (row: OrderData) => {
 }
 
 onMounted(() => {
+  if (route.query.keyword) {
+    keyword.value = String(route.query.keyword)
+  }
   loadList()
 })
 </script>
