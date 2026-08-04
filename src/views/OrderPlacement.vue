@@ -300,7 +300,7 @@ const orderForm = reactive({
   fax: '',
   contactPerson: '',
   deliveryAddress: '',
-  orderDate: formatDate(new Date()),
+  orderDate: '',
   deliveryDays: '',
   items: [{ id: Date.now(), name: '', spec: '', qty: '', material: '', color: '', other: '' }],
   accessories: [] as AccessoryItem[],
