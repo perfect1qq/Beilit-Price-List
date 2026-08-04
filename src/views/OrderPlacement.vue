@@ -318,16 +318,23 @@ const uploadHeaders = {
 
 const handleUploadSuccess = (res: any, file: any, fileList: any[]) => {
   if (res.code === 200 && res.data?.url) {
-    file.url = res.data.url
+    // 不要手动去改 file.url，会破坏 el-upload 的内部状态导致变红
     showSuccess('文件上传成功')
   } else {
-    file.status = 'fail'
     showError(new Error(res.message || '上传失败'), '文件上传失败')
+    const index = fileList.findIndex(f => f.uid === file.uid)
+    if (index !== -1) {
+      fileList.splice(index, 1)
+    }
   }
 }
 
 const handleUploadError = (err: any, file: any, fileList: any[]) => {
   showError(err, '文件上传失败')
+  const index = fileList.findIndex(f => f.uid === file.uid)
+  if (index !== -1) {
+    fileList.splice(index, 1)
+  }
 }
 
 const handleRemoveFile = async (file: any) => {
