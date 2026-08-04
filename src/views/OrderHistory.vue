@@ -142,7 +142,7 @@
           <div class="attachments-list">
             <div v-for="(file, index) in currentOrderAttachments" :key="index" class="attachment-item">
               <el-icon><Document /></el-icon>
-              <el-link type="primary" @click.prevent="handleDownload(file)" :underline="false">
+              <el-link type="primary" @click.prevent="handleDownload(file)" underline="never">
                 {{ file.name || '未命名附件' }}
               </el-link>
             </div>

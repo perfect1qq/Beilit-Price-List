@@ -261,7 +261,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Check, Plus, Delete, UploadFilled } from '@element-plus/icons-vue'
+import { Check, Plus, Delete, Refresh, UploadFilled } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { to } from '@/utils/async'
 import { showError, showSuccess } from '@/utils/message'

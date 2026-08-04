@@ -43,7 +43,7 @@
                 <template #default="scope">
                   <div v-if="parseAttachments(scope.row.attachments).length">
                     <div v-for="file in parseAttachments(scope.row.attachments)" :key="file.url" style="margin-bottom: 4px;">
-                      <el-link type="primary" @click.prevent="handleDownload(file)" :underline="false">
+                      <el-link type="primary" @click.prevent="handleDownload(file)" underline="never">
                         <el-icon style="margin-right: 4px"><Document /></el-icon>{{ file.name }}
                       </el-link>
                     </div>
