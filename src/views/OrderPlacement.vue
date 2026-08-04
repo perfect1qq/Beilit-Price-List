@@ -317,7 +317,7 @@ const uploadHeaders = {
 }
 
 const handleUploadSuccess = (res: any, file: any, fileList: any[]) => {
-  if (res.code === 200 && res.data?.url) {
+  if ((res.success || res.code === 200 || res.code === 'OK') && res.data?.url) {
     // 不要手动去改 file.url，会破坏 el-upload 的内部状态导致变红
     showSuccess('文件上传成功')
   } else {

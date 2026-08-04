@@ -226,19 +226,31 @@ const currentOrderAttachments = computed<any[]>(() => {
 })
 
 const handleDownload = async (file: { url: string, name: string }) => {
+  let msg: any = null
   try {
-    ElMessage.info(`正在准备下载 ${file.name}...`)
+    msg = ElMessage.info({ message: `正在准备下载 ${file.name}...`, duration: 0 })
     const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
     const downloadUrl = `${baseUrl}/api/upload/download?url=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name || 'download')}`
     
+    const response = await fetch(downloadUrl)
+    if (!response.ok) throw new Error('Network response was not ok')
+    
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = downloadUrl
-    a.style.display = 'none'
+    a.href = url
+    a.download = file.name || 'download'
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+    
+    if (msg) msg.close()
+    ElMessage.success(`文件 ${file.name} 下载成功`)
   } catch (error) {
     console.error('Download failed, falling back to window.open:', error)
+    if (msg) msg.close()
+    ElMessage.warning(`下载可能会在后台进行或已被拦截，尝试新窗口打开...`)
     window.open(file.url, '_blank')
   }
 }

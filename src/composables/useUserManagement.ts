@@ -9,7 +9,7 @@ import type { EditableUserInfo, UserRole } from '@/types'
 
 export const useUserManagement = () => {
   const loading = ref(false)
-  const users = shallowRef<EditableUserInfo[]>([])
+  const users = ref<EditableUserInfo[]>([])
   const search = ref('')
   const userStore = useUserStore()
   const currentUser = computed(() => userStore.user || { id: 0, username: '', name: '', role: 'guest' as const })
