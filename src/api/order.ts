@@ -29,6 +29,7 @@ export interface OrderData {
   deliveryDays?: string | null
   items: string
   accessories?: string | null
+  attachments?: string | null
   rawText?: string | null
   remark?: string | null
   ownerId: number

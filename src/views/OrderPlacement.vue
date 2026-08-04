@@ -133,6 +133,27 @@
               <el-form-item label="总备注">
                 <el-input v-model="orderForm.remark" type="textarea" :autosize="{ minRows: 2 }" placeholder="备注条款..." />
               </el-form-item>
+
+              <!-- 附件上传 -->
+              <div class="section-title">
+                <span>附件材料</span>
+              </div>
+              <el-upload
+                class="upload-demo"
+                drag
+                :action="uploadUrl"
+                v-model:file-list="fileList"
+                :headers="uploadHeaders"
+                :on-success="handleUploadSuccess"
+                :on-error="handleUploadError"
+                :on-remove="handleRemoveFile"
+                multiple
+              >
+                <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+                <div class="el-upload__text">
+                  将文件拖到此处，或 <em>点击上传</em>
+                </div>
+              </el-upload>
             </el-form>
           </div>
         </el-card>
@@ -255,8 +276,10 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Check, Plus, Delete, Refresh } from '@element-plus/icons-vue'
-import { showSuccess, showError } from '@/utils/message'
+import { Check, Plus, Delete, UploadFilled } from '@element-plus/icons-vue'
+import request from '@/utils/request'
+import { to } from '@/utils/async'
+import { showError, showSuccess } from '@/utils/message'
 import { debounce } from '@/utils/debounce'
 import orderApi, { type OrderItem, type AccessoryItem } from '@/api/order'
 
@@ -277,12 +300,46 @@ const orderForm = reactive({
   fax: '',
   contactPerson: '',
   deliveryAddress: '',
-  orderDate: '',
+  orderDate: formatDate(new Date()),
   deliveryDays: '',
-  items: [] as OrderItem[],
+  items: [{ id: Date.now(), name: '', spec: '', qty: '', material: '', color: '', other: '' }],
   accessories: [] as AccessoryItem[],
   remark: ''
 })
+
+// === 上传相关配置 ===
+const fileList = ref<any[]>([])
+const uploadUrl = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '') + '/api/upload/file'
+// @ts-ignore
+const token = JSON.parse(localStorage.getItem('AUTH_STORE') || '{}')?.token || ''
+const uploadHeaders = {
+  Authorization: token ? `Bearer ${token}` : ''
+}
+
+const handleUploadSuccess = (res: any, file: any, fileList: any[]) => {
+  if (res.code === 200 && res.data?.url) {
+    file.url = res.data.url
+    showSuccess('文件上传成功')
+  } else {
+    file.status = 'fail'
+    showError(new Error(res.message || '上传失败'), '文件上传失败')
+  }
+}
+
+const handleUploadError = (err: any, file: any, fileList: any[]) => {
+  showError(err, '文件上传失败')
+}
+
+const handleRemoveFile = async (file: any) => {
+  if (file.response?.data?.url || file.url) {
+    try {
+      await request.delete('/api/upload/file', { data: { url: file.response?.data?.url || file.url } })
+    } catch (e) {
+      console.warn('删除物理文件失败', e)
+    }
+  }
+}
+// ===================
 
 const hasParsedData = computed(() => {
   return orderForm.customerName || orderForm.items.length > 0 || orderForm.accessories.length > 0
@@ -519,7 +576,11 @@ const saveOrder = async () => {
       orderDate: orderForm.orderDate,
       deliveryDays: orderForm.deliveryDays,
       items: JSON.stringify(orderForm.items),
-      accessories: JSON.stringify(orderForm.accessories),
+      accessories: orderForm.accessories.length > 0 ? JSON.stringify(orderForm.accessories) : null,
+      attachments: fileList.value.length > 0 ? JSON.stringify(fileList.value.map(f => ({
+        name: f.name,
+        url: f.response?.data?.url || f.url
+      }))) : null,
       rawText: rawText.value,
       remark: orderForm.remark
     }
@@ -574,9 +635,29 @@ onMounted(async () => {
           orderDate: order.orderDate || '',
           deliveryDays: order.deliveryDays || '',
           remark: order.remark || '',
-          items: order.items ? JSON.parse(order.items) : [],
+          items: order.items ? JSON.parse(order.items).map((it: any) => ({
+            ...it,
+            id: it.id || Date.now() + Math.random(),
+            other: it.other
+          })) : [],
           accessories: order.accessories ? JSON.parse(order.accessories) : []
         })
+        
+        if (res.order.accessories) {
+          orderForm.accessories = JSON.parse(res.order.accessories)
+        }
+        if (res.order.attachments) {
+          try {
+            const files = JSON.parse(res.order.attachments)
+            fileList.value = files.map((f: any) => ({
+              name: f.name,
+              url: f.url,
+              status: 'success'
+            }))
+          } catch (e) {
+            console.warn('解析附件失败', e)
+          }
+        }
         
         rawText.value = order.rawText || ''
       } catch (err: any) {

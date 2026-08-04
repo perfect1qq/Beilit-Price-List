@@ -137,6 +137,18 @@
           </div>
         </div>
 
+        <div class="attachments-section" v-if="currentOrderAttachments.length > 0">
+          <div class="block-title">【附件材料】</div>
+          <div class="attachments-list">
+            <div v-for="(file, index) in currentOrderAttachments" :key="index" class="attachment-item">
+              <el-icon><Document /></el-icon>
+              <el-link type="primary" @click.prevent="handleDownload(file)" :underline="false">
+                {{ file.name || '未命名附件' }}
+              </el-link>
+            </div>
+          </div>
+        </div>
+
         <div class="sheet-footer">
           <el-row>
             <el-col :span="12">
@@ -161,8 +173,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Plus, View, Edit, Delete } from "@element-plus/icons-vue"
-import { ElMessageBox } from 'element-plus'
+import { Plus, View, Edit, Delete, Document } from "@element-plus/icons-vue"
+import { ElMessageBox, ElMessage } from 'element-plus'
 import { showSuccess, showError } from '@/utils/message'
 import { usePermissions } from '@/composables/usePermissions'
 import { useUserStore } from '@/stores/user'
@@ -203,6 +215,33 @@ const currentOrderAccessories = computed<AccessoryItem[]>(() => {
     return []
   }
 })
+
+const currentOrderAttachments = computed<any[]>(() => {
+  if (!currentOrder.value?.attachments) return []
+  try {
+    return JSON.parse(currentOrder.value.attachments)
+  } catch {
+    return []
+  }
+})
+
+const handleDownload = async (file: { url: string, name: string }) => {
+  try {
+    ElMessage.info(`正在准备下载 ${file.name}...`)
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
+    const downloadUrl = `${baseUrl}/api/upload/download?url=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name || 'download')}`
+    
+    const a = document.createElement('a')
+    a.href = downloadUrl
+    a.style.display = 'none'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  } catch (error) {
+    console.error('Download failed, falling back to window.open:', error)
+    window.open(file.url, '_blank')
+  }
+}
 
 // 检查是否有编辑权限
 const canModify = (row: OrderData) => {
@@ -620,5 +659,24 @@ onMounted(() => {
   tr {
     page-break-inside: avoid !important;
   }
+}
+.attachments-section {
+  margin: 16px 20px;
+}
+.attachments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 0 10px;
+}
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.attachment-item .el-icon {
+  color: #909399;
 }
 </style>
