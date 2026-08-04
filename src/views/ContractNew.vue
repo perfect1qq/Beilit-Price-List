@@ -71,23 +71,7 @@
         </el-form-item>
 
         <el-form-item label="合同附件">
-          <el-upload
-            class="upload-demo"
-            drag
-            :action="uploadUrl"
-            :with-credentials="true"
-            :headers="uploadHeaders"
-            :on-success="handleUploadSuccess"
-            :on-error="handleUploadError"
-            :on-remove="handleRemove"
-            v-model:file-list="attachments"
-            multiple
-          >
-            <el-icon class="el-icon--upload"><upload-filled /></el-icon>
-            <div class="el-upload__text">
-              将文件拖到此处，或 <em>点击上传</em>
-            </div>
-          </el-upload>
+          <FileUpload v-model="attachments" />
         </el-form-item>
       </el-form>
     </el-card>
@@ -98,9 +82,10 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { MagicStick, UploadFilled } from '@element-plus/icons-vue'
+import { MagicStick } from '@element-plus/icons-vue'
 import contractApi from '@/api/contract'
 import request from '@/utils/request'
+import FileUpload from '@/components/common/FileUpload.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -123,11 +108,7 @@ const fontColor = ref('#000000')
 const fontNames = ['宋体', '黑体', '微软雅黑', '楷体', '仿宋', 'Arial', 'Times New Roman']
 const sizeLabels = ['极小', '较小', '小', '中', '大', '较大', '极大']
 
-const uploadUrl = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '') + '/api/upload/file'
 
-const uploadHeaders = {
-  Authorization: `Bearer ${localStorage.getItem('token') || ''}`
-}
 
 // 执行格式化命令
 const execCmd = (cmd: string, val?: string) => {
@@ -498,38 +479,7 @@ const insertPageBreak = () => {
   ElMessage.success('已插入分页符')
 }
 
-const handleUploadSuccess = (res: any, file: any, fileList: any[]) => {
-  if (res.success || res.code === 200 || res.code === 'OK') {
-    // el-upload v-model:file-list会自动更新列表，这里只提示成功
-    ElMessage.success('附件上传成功')
-  } else {
-    ElMessage.error(res.message || '上传失败')
-    // 失败时从列表中移除
-    const index = attachments.value.findIndex(f => f.uid === file.uid)
-    if (index !== -1) {
-      attachments.value.splice(index, 1)
-    }
-  }
-}
 
-const handleUploadError = (err: any, file: any, fileList: any[]) => {
-  ElMessage.error(err.message || '上传失败，请检查网络或配置')
-  const index = attachments.value.findIndex(f => f.uid === file.uid)
-  if (index !== -1) {
-    attachments.value.splice(index, 1)
-  }
-}
-
-const handleRemove = async (file: any, fileList: any[]) => {
-  // 精准击杀：如果是在当前编辑页面刚刚上传的新文件，移除时直接向后端发送物理删除请求
-  if (file.response && file.response.data && file.response.data.url) {
-    try {
-      await request.delete('/api/upload/file', { data: { url: file.response.data.url } })
-    } catch (e) {
-      console.error('Failed to precision kill orphaned file', e)
-    }
-  }
-}
 
 const saveContract = async () => {
   if (!title.value.trim()) {
