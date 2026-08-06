@@ -1,0 +1,1 @@
+import{r as t}from"./vendor-vue-DbwCLwoH.js";const p=(o={})=>{const{page:s=1,pageSize:u=10,keyword:l="",withTotal:d=!1,onLoad:a}=o,e=t(Number(s)),r=t(Number(u)),g=t(String(l)),i=t(0);return{page:e,pageSize:r,keyword:g,total:i,handleCurrentChange:n=>{e.value=n,a&&a(e.value)},handleSizeChange:n=>{r.value=n,e.value=1,a&&a(e.value)},resetToFirstPage:()=>{e.value=1}}};export{p as u};
