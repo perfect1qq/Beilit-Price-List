@@ -91,7 +91,7 @@
                   <div class="year-pager-wrap" v-if="getYearTotalPages(yearGroup.companyGroups.length) > 1">
                     <el-pagination :current-page="getYearPage(yearGroup.year)" :page-size="DEFAULT_PAGE_SIZE"
                       :total="yearGroup.companyGroups.length" layout="prev, pager, next, jumper"
-                      @current-change="(val: number) => handleYearPageChange(yearGroup.year, val)" small />
+                      @current-change="(val: number) => handleYearPageChange(yearGroup.year, val)" size="small" />
                   </div>
                 </template>
               </el-collapse-item>

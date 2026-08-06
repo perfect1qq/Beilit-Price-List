@@ -2,6 +2,7 @@ import { computed, ref, type Ref, type ComputedRef } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import mediumShelfWeightApi from '@/api/mediumShelfWeight'
 import { to } from '@/utils/async'
+import { useFormSubmit } from '@/composables/useFormSubmit'
 import { showError, showSuccess, showWarning, showInfo } from '@/utils/message'
 import type { MediumShelfWeightData } from '@/types'
 
@@ -95,7 +96,7 @@ const formatConfigText = (text: string): string => {
 
 export const useMediumShelfWeight = (): MediumShelfWeightReturn => {
   const loading = ref(false)
-  const saving = ref(false)
+  const { submitLoading: saving, withSubmitLock } = useFormSubmit({ lockDuration: 300 })
   const errorMsg = ref('')
   const editMode = ref(false)
   const configTitle = ref('中型货架重量表')
@@ -229,28 +230,27 @@ export const useMediumShelfWeight = (): MediumShelfWeightReturn => {
   const saveData = async (): Promise<void> => {
     if (!validateRows()) return
 
-    saving.value = true
-    const payload = {
-      summaryRows: reindexRows(cloneRows(draftSummaryRows.value)),
-      detailRows: reindexRows(cloneRows(draftDetailRows.value))
-    }
-    const [err, res] = await to(mediumShelfWeightApi.saveConfig({
-      title: configTitle.value,
-      payload
-    }))
-    if (err) {
-      const e = err as { response?: { data?: { message?: string } } }
-      const msg = e?.response?.data?.message || '保存失败'
-      showError(msg)
-      saving.value = false
-      return
-    }
-    applyConfig((res as { config?: MediumShelfWeightData }).config as MediumShelfWeightData)
-    editMode.value = false
-    draftSummaryRows.value = []
-    draftDetailRows.value = []
-    showSuccess('保存成功')
-    saving.value = false
+    await withSubmitLock(async () => {
+      const payload = {
+        summaryRows: reindexRows(cloneRows(draftSummaryRows.value)),
+        detailRows: reindexRows(cloneRows(draftDetailRows.value))
+      }
+      const [err, res] = await to(mediumShelfWeightApi.saveConfig({
+        title: configTitle.value,
+        payload
+      }))
+      if (err) {
+        const e = err as { response?: { data?: { message?: string } } }
+        const msg = e?.response?.data?.message || '保存失败'
+        showError(msg)
+        return
+      }
+      applyConfig((res as { config?: MediumShelfWeightData }).config as MediumShelfWeightData)
+      editMode.value = false
+      draftSummaryRows.value = []
+      draftDetailRows.value = []
+      showSuccess('保存成功')
+    })
   }
 
   return {

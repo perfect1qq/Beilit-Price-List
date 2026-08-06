@@ -23,14 +23,29 @@ const props = defineProps({
 
 const emit = defineEmits(['update:page', 'update:pageSize', 'page-change', 'size-change'])
 
+const MAX_PAGE_SIZE = 200
+
+const clampPage = (val: number): number => {
+  const n = Number(val)
+  if (!Number.isFinite(n) || n < 1) return 1
+  const maxPage = Math.max(1, Math.ceil(props.total / props.pageSize))
+  return Math.min(n, maxPage)
+}
+
+const clampPageSize = (val: number): number => {
+  const n = Number(val)
+  if (!Number.isFinite(n) || n < 1) return props.pageSizes[0] ?? 10
+  return Math.min(n, MAX_PAGE_SIZE)
+}
+
 const currentPageProxy = computed({
   get: () => props.page,
-  set: (val) => emit('update:page', Number(val) || 1)
+  set: (val) => emit('update:page', clampPage(val))
 })
 
 const pageSizeProxy = computed({
   get: () => props.pageSize,
-  set: (val) => emit('update:pageSize', Number(val) || 10)
+  set: (val) => emit('update:pageSize', clampPageSize(val))
 })
 
 const handleCurrentChange = (val: number) => {

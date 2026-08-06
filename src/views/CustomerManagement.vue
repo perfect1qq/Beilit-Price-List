@@ -124,6 +124,14 @@
                   <template v-if="!isGuest">
                     <el-button
                       v-if="canEdit"
+                      type="primary"
+                      size="small"
+                      plain
+                      @click.stop="handleInvoiceInfo(item)"
+                      >开票信息</el-button
+                    >
+                    <el-button
+                      v-if="canEdit"
                       type="warning"
                       size="small"
                       plain
@@ -274,15 +282,6 @@
 
             <div class="card-footer">
               <div class="action-buttons">
-                <el-button
-                  v-if="canEdit"
-                  type="primary"
-                  size="small"
-                  round
-                  plain
-                  @click.stop="handleInvoiceInfo(item)"
-                  >开票信息</el-button
-                >
                 <el-button
                   type="primary"
                   size="small"

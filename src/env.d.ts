@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 
 declare module '*.vue' {
   import type { DefineComponent } from 'vue'
@@ -16,4 +17,14 @@ declare module 'axios' {
     _isRefreshRequest?: boolean
     __retryCount?: number
   }
+}
+
+interface ImportMetaEnv {
+  readonly VITE_API_BASE_URL: string
+  readonly VITE_ALLOW_PUBLIC_REGISTER: string
+  readonly VITE_APP_TITLE?: string
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv
 }

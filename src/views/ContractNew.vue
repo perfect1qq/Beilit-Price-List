@@ -83,8 +83,10 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { MagicStick } from '@element-plus/icons-vue'
+import * as dompurify from 'dompurify'
+const DOMPurify = (dompurify as any).default || dompurify
 import contractApi from '@/api/contract'
-import request from '@/utils/request'
+import { useFormSubmit } from '@/composables/useFormSubmit'
 import FileUpload from '@/components/common/FileUpload.vue'
 
 const route = useRoute()
@@ -94,7 +96,7 @@ const isEdit = ref(false)
 const contractId = ref<number>(0)
 const companyName = ref('')
 const title = ref('')
-const saving = ref(false)
+const { submitLoading: saving, withSubmitLock } = useFormSubmit({ lockDuration: 300 })
 const attachments = ref<any[]>([])
 
 // 编辑器 DOM 引用
@@ -134,52 +136,26 @@ const autoResize = () => {
 
 // 粘贴处理：清理 Word 特有标记，保留内联样式与表格结构；纯文本粘贴时把换行转成 <p>
 const onPaste = (e: ClipboardEvent) => {
-  const html = e.clipboardData?.getData('text/html')
+  e.preventDefault()
+  let html = e.clipboardData?.getData('text/html') || ''
   const text = e.clipboardData?.getData('text/plain') || ''
-
-  e.preventDefault() // 阻止默认粘贴，统一由我们处理
-
-  // 无 HTML 时，把纯文本的换行转成 <p> 块，避免文字堆在一行被挤成竖排
+  
   if (!html) {
-    if (text) {
-      const lines = text.split(/\r?\n/)
-      const insertHtml = lines.map(l => `<p>${l.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') || ' '}</p>`).join('')
-      document.execCommand('insertHTML', false, insertHtml)
-      onEditorInput()
-      setTimeout(autoResize, 50)
-    }
+    document.execCommand('insertText', false, text)
+    onEditorInput()
     return
   }
 
-  // 先在字符串层面清理 mso- 样式声明：值不能包含引号/分号，避免吃掉 style 属性闭合引号破坏 HTML 结构
-  let cleanedHtml = html
-  cleanedHtml = cleanedHtml.replace(/mso-[a-z-]+:\s*[^;"']*(?=;|"|')/gi, ' ')
-  cleanedHtml = cleanedHtml.replace(/tab-stops:[^;"']*(?=;|"|')/gi, ' ')
+  // Sanitize completely via DOMPurify, allowing necessary styles and tags.
+  const safeHtml = DOMPurify.sanitize(html, { 
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'span', 'div', 'table', 'tbody', 'tr', 'td', 'u', 's', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+    ALLOWED_ATTR: ['style', 'class', 'colspan', 'rowspan']
+  })
 
-  // 用临时容器清理 Word 特有标记，保留标准内联样式
   const temp = document.createElement('div')
-  temp.innerHTML = cleanedHtml
-  // 移除 Word 容器标签前，先 unwrap：把内部有用的 table/tr/td/p 等内容移到外层，避免连 table 一起被删
-  temp.querySelectorAll('xml, w\\:worddocument').forEach(el => {
-    while (el.firstChild) el.parentNode.insertBefore(el.firstChild, el)
-    el.remove()
-  })
-  // 移除 Word 条件注释、style 标签、命名空间占位标签、meta、link
-  temp.querySelectorAll('style, o\\:p, meta, link').forEach(el => el.remove())
-  // 清理 class 属性
-  temp.querySelectorAll('[class]').forEach(el => el.removeAttribute('class'))
-  // 清理 style 中残留的 mso- 样式声明，保留标准 CSS 属性
-  temp.querySelectorAll('[style]').forEach(el => {
-    const style = el.getAttribute('style') || ''
-    const cleaned = style
-      .replace(/mso-[^;]+;?\s*/gi, '')
-      .replace(/tab-stops:[^;]+;?\s*/gi, '')
-      .trim()
-    if (cleaned) el.setAttribute('style', cleaned)
-    else el.removeAttribute('style')
-  })
+  temp.innerHTML = safeHtml
 
-  // 规范化块结构：div 转 p，含 <br> 的 p 按行拆分
+  // 尝试清理空 div
   temp.querySelectorAll('div').forEach(div => {
     if (!div.querySelector('div, p, table')) {
       const p = document.createElement('p')
@@ -204,7 +180,6 @@ const onPaste = (e: ClipboardEvent) => {
     })
   })
 
-  // 用 execCommand 在光标位置插入清理后的 HTML，保留内联样式（含 table 结构）
   document.execCommand('insertHTML', false, temp.innerHTML)
   onEditorInput()
   setTimeout(autoResize, 50)
@@ -325,7 +300,6 @@ const smartFormat = () => {
   const STYLE_PARTIES = `font-size: 12pt; margin: 8px 0; ${FONT}`
   const STYLE_PREAMBLE = `font-size: 12pt; text-indent: 2em; line-height: 1.8; margin: 5px 0; ${FONT}`
   const STYLE_SECTION_TITLE = `font-size: 14pt; font-weight: bold; margin: 16px 0 8px; ${FONT}`
-  const STYLE_SUBHEAD = `font-size: 12pt; font-weight: bold; margin: 10px 0 5px; ${FONT}`
   const STYLE_LIST = `font-size: 12pt; margin: 5px 0 5px 2em; line-height: 1.8; ${FONT}`
   const STYLE_SUB_ITEM = `font-size: 12pt; margin: 5px 0 5px 4em; line-height: 1.8; ${FONT}`
   const STYLE_BANK_INFO = `font-size: 12pt; margin: 3px 0 3px 2em; line-height: 1.8; ${FONT}`
@@ -451,7 +425,7 @@ onMounted(async () => {
       companyName.value = res.contract.companyName || ''
       title.value = res.contract.title
       if (editorRef.value && res.contract.content) {
-        editorRef.value.innerHTML = res.contract.content
+        editorRef.value.innerHTML = DOMPurify.sanitize(res.contract.content)
       }
       isEmpty.value = false
       try {
@@ -491,38 +465,37 @@ const saveContract = async () => {
     return ElMessage.warning('请输入合同内容')
   }
 
-  saving.value = true
-  try {
-    const finalAttachments = attachments.value.map(f => ({
-      name: f.name,
-      url: f.response?.data?.url || f.url,
-      size: f.response?.data?.size || f.size || 0
-    }))
+  await withSubmitLock(async () => {
+    try {
+      const finalAttachments = attachments.value.map(f => ({
+        name: f.name,
+        url: f.response?.data?.url || f.url,
+        size: f.response?.data?.size || f.size || 0
+      }))
 
-    if (isEdit.value) {
-      await contractApi.update(contractId.value, {
-        companyName: companyName.value,
-        title: title.value,
-        content: html,
-        attachments: JSON.stringify(finalAttachments)
-      })
-      ElMessage.success('合同更新成功')
-      router.push('/contract/history')
-    } else {
-      await contractApi.create({
-        companyName: companyName.value,
-        title: title.value,
-        content: html,
-        attachments: JSON.stringify(finalAttachments)
-      })
-      ElMessage.success('合同创建成功')
-      router.push('/contract/history')
+      if (isEdit.value) {
+        await contractApi.update(contractId.value, {
+          companyName: companyName.value,
+          title: title.value,
+          content: html,
+          attachments: JSON.stringify(finalAttachments)
+        })
+        ElMessage.success('合同更新成功')
+        router.push('/contract/history')
+      } else {
+        await contractApi.create({
+          companyName: companyName.value,
+          title: title.value,
+          content: html,
+          attachments: JSON.stringify(finalAttachments)
+        })
+        ElMessage.success('合同创建成功')
+        router.push('/contract/history')
+      }
+    } catch (e: any) {
+      ElMessage.error(e.message || '保存失败')
     }
-  } catch (e: any) {
-    ElMessage.error(e.message || '保存失败')
-  } finally {
-    saving.value = false
-  }
+  })
 }
 </script>
 

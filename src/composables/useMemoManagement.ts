@@ -6,8 +6,10 @@ import memoApi from '@/api/memo'
 import { to } from '@/utils/async'
 import { showError, showSuccess, showWarning } from '@/utils/message'
 import { useCancelableLoader } from '@/composables/useCancelableLoader'
+import { useFormSubmit } from '@/composables/useFormSubmit'
 import { useListQueryState } from '@/composables/useListQueryState'
 import { usePermissions } from '@/composables/usePermissions'
+import { DEFAULT_PAGE_SIZE, LIST_ALL_PAGE_SIZE } from '@/constants/table'
 import type { MemoData, MemoCreatePayload, MemoHistoryItem, MemoListResult } from '@/types'
 
 type MemoFilter = 'all' | 'todo' | 'done' | 'pinned'
@@ -66,8 +68,8 @@ export const useMemoManagement = () => {
   const { isGuest } = usePermissions()
   const list = shallowRef<MemoData[]>([])
   const { loading, run: runListLoad, isLatest } = useCancelableLoader()
-  const saving = ref(false)
-  const { keyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
+  const { submitLoading: saving, withSubmitLock } = useFormSubmit({ lockDuration: 300 })
+  const { keyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: DEFAULT_PAGE_SIZE, keyword: '' })
   const activeFilter = ref<MemoFilter>('all')
   const stats = reactive({ total: 0, todoTotal: 0, doneTotal: 0, pinnedTotal: 0 })
 
@@ -149,7 +151,7 @@ export const useMemoManagement = () => {
     await runListLoad(async ({ seq }) => {
       const params: Record<string, unknown> = {
         page: 1,
-        pageSize: 100000,
+        pageSize: LIST_ALL_PAGE_SIZE,
         keyword: keyword.value.trim(),
         filter: activeFilter.value,
         tz: Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -213,41 +215,35 @@ export const useMemoManagement = () => {
       }
     }
 
-    saving.value = true
-    if (editorMode.value === 'create') {
-      const [err] = await to(memoApi.create(form))
-      if (err) {
-        saving.value = false
-        return
-      }
-      showSuccess('新增成功')
-      editorVisible.value = false
-      stats.total += 1
-      if (form.completed) {
-        stats.doneTotal += 1
+    await withSubmitLock(async () => {
+      if (editorMode.value === 'create') {
+        const [err] = await to(memoApi.create(form))
+        if (err) return
+        showSuccess('新增成功')
+        editorVisible.value = false
+        stats.total += 1
+        if (form.completed) {
+          stats.doneTotal += 1
+        } else {
+          stats.todoTotal += 1
+        }
+        if (form.pinned) {
+          stats.pinnedTotal += 1
+        }
+        page.value = 1
+        await loadList()
       } else {
-        stats.todoTotal += 1
+        const [err, res] = await to(memoApi.update(editingId.value as number, form))
+        if (err) return
+        showSuccess('修改完成')
+        editorVisible.value = false
+        const idx = list.value.findIndex((m: MemoData) => m.id === editingId.value)
+        if (idx !== -1 && res) {
+          const updated = { ...list.value[idx], ...res }
+          list.value = [...list.value.slice(0, idx), updated, ...list.value.slice(idx + 1)]
+        }
       }
-      if (form.pinned) {
-        stats.pinnedTotal += 1
-      }
-      page.value = 1
-      await loadList()
-    } else {
-      const [err, res] = await to(memoApi.update(editingId.value as number, form))
-      if (err) {
-        saving.value = false
-        return
-      }
-      showSuccess('修改完成')
-      editorVisible.value = false
-      const idx = list.value.findIndex((m: MemoData) => m.id === editingId.value)
-      if (idx !== -1 && res) {
-        const updated = { ...list.value[idx], ...res }
-        list.value = [...list.value.slice(0, idx), updated, ...list.value.slice(idx + 1)]
-      }
-    }
-    saving.value = false
+    })
   }
 
   const toggleCompleted = async (item: MemoData) => {

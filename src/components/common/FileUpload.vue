@@ -65,8 +65,23 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { FolderOpened, Picture, Document, DataLine, Delete } from '@element-plus/icons-vue'
+import type { UploadFile, UploadFiles } from 'element-plus'
 import { showError, showSuccess } from '@/utils/message'
 import request from '@/utils/request'
+
+/** 上传接口返回数据结构 */
+interface UploadResponseData {
+  url?: string
+  size?: number
+  [key: string]: unknown
+}
+
+interface UploadResponse {
+  success?: boolean
+  code?: number | string
+  message?: string
+  data?: UploadResponseData
+}
 
 const props = defineProps({
   modelValue: {
@@ -81,11 +96,11 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue'])
 
-const innerFileList = ref<any[]>([...props.modelValue])
+const innerFileList = ref<UploadFile[]>([...props.modelValue as UploadFile[]])
 
 watch(() => props.modelValue, (newVal) => {
   if (JSON.stringify(newVal) !== JSON.stringify(innerFileList.value)) {
-    innerFileList.value = newVal
+    innerFileList.value = newVal as UploadFile[]
   }
 }, { deep: true })
 
@@ -94,11 +109,8 @@ watch(innerFileList, (newVal) => {
 }, { deep: true })
 
 const uploadUrl = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '') + '/api/upload/file'
-// @ts-ignore
-const token = JSON.parse(localStorage.getItem('AUTH_STORE') || '{}')?.token || ''
-const uploadHeaders = {
-  Authorization: token ? `Bearer ${token}` : ''
-}
+// 认证通过 httpOnly Cookie（withCredentials: true）自动携带，无需手动设置 Authorization 头
+const uploadHeaders = {}
 
 const getFileType = (name: string) => {
   if (!name) return 'unknown'
@@ -109,7 +121,7 @@ const getFileType = (name: string) => {
   return 'unknown'
 }
 
-const handleUploadSuccess = (res: any, file: any, fileList: any[]) => {
+const handleUploadSuccess = (res: UploadResponse, file: UploadFile, fileList: UploadFiles) => {
   if ((res.success || res.code === 200 || res.code === 'OK') && res.data?.url) {
     showSuccess('文件上传成功')
   } else {
@@ -121,7 +133,7 @@ const handleUploadSuccess = (res: any, file: any, fileList: any[]) => {
   }
 }
 
-const handleUploadError = (err: any, file: any, fileList: any[]) => {
+const handleUploadError = (err: unknown, file: UploadFile, fileList: UploadFiles) => {
   showError(err, '文件上传失败')
   const index = fileList.findIndex(f => f.uid === file.uid)
   if (index !== -1) {
@@ -129,14 +141,15 @@ const handleUploadError = (err: any, file: any, fileList: any[]) => {
   }
 }
 
-const handleRemoveFile = async (file: any) => {
+const handleRemoveFile = async (file: UploadFile) => {
   // 前端列表中移除
   const index = innerFileList.value.findIndex(f => f.uid === file.uid || f === file)
   if (index !== -1) {
     innerFileList.value.splice(index, 1)
   }
-  
-  const url = file.response?.data?.url || file.url
+
+  const response = file.response as UploadResponse | undefined
+  const url = response?.data?.url || file.url
   if (url) {
     try {
       await request.delete('/api/upload/file', { data: { url } })
@@ -146,8 +159,9 @@ const handleRemoveFile = async (file: any) => {
   }
 }
 
-const previewOrDownload = (file: any) => {
-  const url = file.response?.data?.url || file.url
+const previewOrDownload = (file: UploadFile) => {
+  const response = file.response as UploadResponse | undefined
+  const url = response?.data?.url || file.url
   if (!url) return
   const fullUrl = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '') + `/api/upload/download?url=${encodeURIComponent(url)}&name=${encodeURIComponent(file.name)}`
   window.open(fullUrl, '_blank')

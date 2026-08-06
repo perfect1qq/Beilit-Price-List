@@ -41,7 +41,7 @@
         <el-empty v-if="!historyList.length" description="暂无数据" />
 
         <div class="pager-wrap">
-          <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :page-sizes="[15, 20, 50]"
+          <el-pagination v-model:current-page="page" v-model:page-size="pageSize" :page-sizes="[10, 20, 50, 100]"
             :total="total" layout="total, sizes, prev, pager, next, jumper" @size-change="handleSizeChange"
             @current-change="handleCurrentChange" />
         </div>
@@ -62,7 +62,7 @@ import { showError, showSuccess, showWarning } from '@/utils/message'
 import { usePermissions } from '@/composables/usePermissions'
 import { useHistoryView } from '@/composables/useHistoryView'
 import { formatDate } from '@/utils/date'
-import { TABLE_HEADER_STYLE } from '@/constants/table'
+import { TABLE_HEADER_STYLE, DEFAULT_PAGE_SIZE } from '@/constants/table'
 import beamApi from '@/api/beam'
 import type { BeamQuotationItem } from '@/types'
 import BeamQuotationEditor from '@/components/beam/BeamQuotationEditor.vue'
@@ -94,8 +94,8 @@ const {
   }
 })
 
-// 横梁载重单默认每页 15 条
-pageSize.value = 15
+// 横梁载重单默认每页 20 条
+pageSize.value = DEFAULT_PAGE_SIZE
 
 const enterDetail = (row: Record<string, unknown>, mode: string) => {
   editingId.value = row.id as number | string

@@ -35,7 +35,7 @@ export interface AutoFitColumnProps {
   /** 最大上限宽度，默认 480px */
   max?: number
   /** 自定义行内容提取器函数，或传字段名；如果使用了 #default 插槽渲染自定义内容，推荐传入 getter 以精确算宽 */
-  getter?: string | ((row: any) => unknown)
+  getter?: string | ((row: Record<string, unknown>) => unknown)
   /** 对齐方式，默认居中 center */
   align?: string
   /** 是否固定列，如 'right', 'left' */
@@ -67,11 +67,13 @@ const computedWidth = computed(() => {
   if (props.width != null) return props.width
   if (props.minWidth != null && (!props.data || !props.data.length)) return props.minWidth
   if (props.data && (props.prop || props.getter || props.label)) {
-    const accessor = props.getter || props.prop || ((_row: any) => '')
-    return getColumnWidth(props.data, accessor as any, props.label || '', {
-      min: props.min,
-      max: props.max
-    })
+    const accessor: string | ((row: Record<string, unknown>) => unknown) = props.getter || props.prop || (() => '')
+    return getColumnWidth(
+      props.data as Record<string, unknown>[],
+      accessor,
+      props.label || '',
+      { min: props.min, max: props.max }
+    )
   }
   return props.minWidth
 })

@@ -465,3 +465,31 @@ export interface ApiError {
   details?: unknown
   requestId?: string
 }
+
+export interface ContractData {
+  id: number
+  companyName: string
+  title: string
+  content: string
+  attachments: string
+  ownerId: number
+  ownerName: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ContractHistoryData {
+  id: number
+  contractId: number
+  companyName: string
+  action: string
+  title: string
+  content: string
+  attachments: string
+  operatorId: number
+  operatorName: string
+  createdAt: string
+}
+
+export type ContractListResult = PaginatedResult<ContractData>
+export type ContractHistoryListResult = PaginatedResult<ContractHistoryData>

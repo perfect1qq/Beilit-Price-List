@@ -33,6 +33,7 @@ const NotepadView = () => import('../views/NotepadView.vue')
 const ContractLayout = () => import('../views/ContractLayout.vue')
 const ContractNew = () => import('../views/ContractNew.vue')
 const ContractHistory = () => import('../views/ContractHistory.vue')
+const NotFound = () => import('../views/NotFound.vue')
 
 const routes: RouteRecordRaw[] = [
   {
@@ -77,7 +78,7 @@ const routes: RouteRecordRaw[] = [
             path: 'history',
             name: 'QuotationHistory',
             component: QuotationHistory,
-            meta: { title: '报价单历史' },
+            meta: { title: '报价单历史', requiresPermission: 'quotation:write' },
           },
         ],
       },
@@ -96,7 +97,7 @@ const routes: RouteRecordRaw[] = [
             path: 'history',
             name: 'OrderHistory',
             component: OrderHistory,
-            meta: { title: '订单历史' },
+            meta: { title: '订单历史', requiresPermission: 'order:write' },
           },
         ],
       },
@@ -115,7 +116,7 @@ const routes: RouteRecordRaw[] = [
             path: 'history',
             name: 'BeamQuotationHistory',
             component: BeamQuotationHistory,
-            meta: { title: '横梁载重单历史' },
+            meta: { title: '横梁载重单历史', requiresPermission: 'beam:write' },
           },
         ],
       },
@@ -123,7 +124,7 @@ const routes: RouteRecordRaw[] = [
         path: 'quotation-statistics',
         name: 'QuotationStatistics',
         component: QuotationStatistics,
-        meta: { title: '报价单统计' },
+        meta: { title: '报价单统计', requiresPermission: 'quotation:write' },
       },
       {
         path: 'approval',
@@ -134,6 +135,7 @@ const routes: RouteRecordRaw[] = [
             path: '',
             name: 'Approval',
             component: Approval,
+            meta: { title: '审批', requiresPermission: 'approval:review' },
           },
           {
             path: 'history',
@@ -159,31 +161,31 @@ const routes: RouteRecordRaw[] = [
         path: 'medium-shelf-weight',
         name: 'MediumShelfWeight',
         component: MediumShelfWeightTable,
-        meta: { title: '中型货架重量表' },
+        meta: { title: '中型货架重量表', requiresPermission: 'quotation:write' },
       },
       {
         path: 'memo-management',
         name: 'MemoManagement',
         component: MemoManagement,
-        meta: { title: '备忘录' },
+        meta: { title: '备忘录', requiresPermission: 'memo:write' },
       },
       {
         path: 'usd-conversion',
         name: 'UsdConversion',
         component: UsdConversion,
-        meta: { title: '美金换算' },
+        meta: { title: '美金换算', requiresPermission: 'quotation:write' },
       },
       {
         path: 'customer-management',
         name: 'CustomerManagement',
         component: CustomerManagement,
-        meta: { title: '客户管理' },
+        meta: { title: '客户管理', requiresPermission: 'customer:write' },
       },
       {
         path: 'notepad',
         name: 'Notepad',
         component: NotepadView,
-        meta: { title: '记事本' },
+        meta: { title: '记事本', requiresPermission: 'notepad:write' },
       },
       {
         path: 'contract',
@@ -194,22 +196,29 @@ const routes: RouteRecordRaw[] = [
             path: '',
             name: 'ContractNew',
             component: ContractNew,
-            meta: { title: '新增合同' },
+            meta: { title: '新增合同', requiresPermission: 'contract:write' },
           },
           {
             path: 'history',
             name: 'ContractHistory',
             component: ContractHistory,
-            meta: { title: '合同历史' },
+            meta: { title: '合同历史', requiresPermission: 'contract:write' },
           }
         ]
+      },
+      // 已登录用户访问不存在的地址：展示 404 页面（保留侧边栏）
+      {
+        path: ':pathMatch(.*)*',
+        name: 'NotFound',
+        component: NotFound,
+        meta: { title: '页面不存在' },
       },
     ],
   },
   { path: '/beam-quotation-history', redirect: '/beam-quotation/history' },
   { path: '/quotation-history', redirect: '/quotation/history' },
   { path: '/Quotation-statistics', redirect: '/quotation-statistics' },
-  // 兜底路由：未登录 → 由 authGuard 重定向到 /login；已登录 → 重定向到首页
+  // 顶层兜底：未登录访问任意地址 → 由 authGuard 重定向到 /login
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 

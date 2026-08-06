@@ -30,7 +30,7 @@ export const calcTextWidth = (text: unknown, fontSize = 14): number => {
  * @param headerLabel 表头名称
  * @param options 限制配置：min 最小保底宽, max 最大上限宽, extra 内边距与图标缓冲宽(默认48px)
  */
-export const getColumnWidth = <T = any>(
+export const getColumnWidth = <T = Record<string, unknown>>(
   list: T[],
   getter: keyof T | ((row: T) => unknown),
   headerLabel: string,

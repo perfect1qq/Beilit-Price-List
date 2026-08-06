@@ -129,7 +129,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onBeforeUnmount } from 'vue'
 import type { PropType } from 'vue'
 import { Delete } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -205,6 +205,7 @@ const handleNameBlur = async () => {
 
   if (nameCheckTimer) clearTimeout(nameCheckTimer)
   nameCheckTimer = setTimeout(async () => {
+    nameCheckTimer = null
     try {
       const result = await to(quotationApi.suggestName(currentName, currentCompany || undefined, props.editingHistoryId ?? undefined))
       if (result[0] || !result[1]?.suggestedName) return
@@ -217,6 +218,13 @@ const handleNameBlur = async () => {
     }
   }, 300)
 }
+
+onBeforeUnmount(() => {
+  if (nameCheckTimer) {
+    clearTimeout(nameCheckTimer)
+    nameCheckTimer = null
+  }
+})
 </script>
 
 <style scoped>

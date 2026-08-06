@@ -1,4 +1,4 @@
-import { computed, ref, shallowRef } from 'vue'
+import { computed, ref, shallowRef, onBeforeUnmount } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import notepadApi from '@/api/notepad'
 import { to } from '@/utils/async'
@@ -246,6 +246,17 @@ export const useNotepad = () => {
   const init = () => {
     Promise.all([loadFolders(), loadNotes()])
   }
+
+  onBeforeUnmount(() => {
+    if (searchTimer) {
+      clearTimeout(searchTimer)
+      searchTimer = null
+    }
+    if (saveTimer) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+    }
+  })
 
   return {
     keyword,

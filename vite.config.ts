@@ -47,8 +47,7 @@ export default defineConfig({
         short_name: 'Beilit',
         theme_color: '#2563eb',
         icons: [
-          { src: 'logo.png', sizes: '192x192', type: 'image/png' },
-          { src: 'logo.png', sizes: '512x512', type: 'image/png' }
+          { src: 'logo.png', sizes: 'any', type: 'image/png' }
         ]
       }
     }),

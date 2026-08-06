@@ -174,13 +174,14 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Plus, View, Edit, Delete, Document } from "@element-plus/icons-vue"
-import { ElMessageBox, ElMessage } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { showSuccess, showError } from '@/utils/message'
+import { downloadFile } from '@/utils/downloadFile'
 import { usePermissions } from '@/composables/usePermissions'
 import { useUserStore } from '@/stores/user'
 import orderApi, { type OrderData, type OrderItem, type AccessoryItem } from '@/api/order'
 import SearchBar from '@/components/common/SearchBar.vue'
-import { TABLE_HEADER_STYLE } from '@/constants/table'
+import { TABLE_HEADER_STYLE, DEFAULT_PAGE_SIZE } from '@/constants/table'
 
 const router = useRouter()
 const route = useRoute()
@@ -190,7 +191,7 @@ const { isGuest, isAdmin } = usePermissions()
 const loading = ref(false)
 const keyword = ref('')
 const page = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(DEFAULT_PAGE_SIZE)
 const total = ref(0)
 const orderList = ref<OrderData[]>([])
 
@@ -225,34 +226,8 @@ const currentOrderAttachments = computed<any[]>(() => {
   }
 })
 
-const handleDownload = async (file: { url: string, name: string }) => {
-  let msg: any = null
-  try {
-    msg = ElMessage.info({ message: `正在准备下载 ${file.name}...`, duration: 0 })
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
-    const downloadUrl = `${baseUrl}/api/upload/download?url=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name || 'download')}`
-    
-    const response = await fetch(downloadUrl)
-    if (!response.ok) throw new Error('Network response was not ok')
-    
-    const blob = await response.blob()
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = file.name || 'download'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
-    
-    if (msg) msg.close()
-    ElMessage.success(`文件 ${file.name} 下载成功`)
-  } catch (error) {
-    console.error('Download failed, falling back to window.open:', error)
-    if (msg) msg.close()
-    ElMessage.warning(`下载可能会在后台进行或已被拦截，尝试新窗口打开...`)
-    window.open(file.url, '_blank')
-  }
+const handleDownload = (file: { url: string, name: string }) => {
+  downloadFile({ url: file.url, name: file.name })
 }
 
 // 检查是否有编辑权限

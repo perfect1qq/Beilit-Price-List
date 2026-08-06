@@ -15,7 +15,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onBeforeUnmount } from 'vue'
 import { Search as SearchIcon } from '@element-plus/icons-vue'
 
 const props = defineProps({
@@ -86,6 +86,13 @@ const handleClear = () => {
   if (timeout) clearTimeout(timeout)
   emit('search', '')
 }
+
+onBeforeUnmount(() => {
+  if (timeout) {
+    clearTimeout(timeout)
+    timeout = null
+  }
+})
 </script>
 
 <style scoped>

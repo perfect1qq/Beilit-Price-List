@@ -261,12 +261,13 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Check, Plus, Delete, Refresh, UploadFilled } from '@element-plus/icons-vue'
-import request from '@/utils/request'
-import { to } from '@/utils/async'
+import { Check, Plus, Delete, Refresh } from '@element-plus/icons-vue'
+import type { UploadFile } from 'element-plus'
 import { showError, showSuccess } from '@/utils/message'
 import { debounce } from '@/utils/debounce'
-import orderApi, { type OrderItem, type AccessoryItem } from '@/api/order'
+import orderApi, { type AccessoryItem } from '@/api/order'
+import { useFormSubmit } from '@/composables/useFormSubmit'
+import { parseOrderText } from '@/utils/orderTextParser'
 import FileUpload from '@/components/common/FileUpload.vue'
 
 const router = useRouter()
@@ -274,7 +275,7 @@ const route = useRoute()
 
 // 原始粘贴文本
 const rawText = ref('')
-const saving = ref(false)
+const { submitLoading: saving, withSubmitLock } = useFormSubmit({ lockDuration: 300 })
 const isEditMode = ref(false)
 const editingId = ref<number | null>(null)
 
@@ -293,7 +294,7 @@ const orderForm = reactive({
   remark: ''
 })
 
-const fileList = ref<any[]>([])
+const fileList = ref<UploadFile[]>([])
 
 const hasParsedData = computed(() => {
   return orderForm.customerName || orderForm.items.length > 0 || orderForm.accessories.length > 0
@@ -309,142 +310,10 @@ const formatDate = (date: Date) => {
 }
 
 // 解析主逻辑
-const parseText = (text: string) => {
-  const lines = text.split('\n').map(l => l.trim())
-  
-  const header = {
-    customerName: '',
-    phone: '',
-    deliveryAddress: '',
-    fax: '',
-    contactPerson: '',
-    orderDate: '',
-    deliveryDays: ''
-  }
-  const items: OrderItem[] = []
-  const accessories: AccessoryItem[] = []
-  
-  let mode: 'header' | 'items' | 'accessories' | 'footer' = 'header'
-  
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    if (!line) continue
-    
-    // 匹配分割边界
-    if (line.includes('序号') && line.includes('名称') && (line.includes('规格') || line.includes('用料'))) {
-      mode = 'items'
-      continue
-    }
-    if (line.startsWith('配件：') || line.startsWith('配件:') || (line.includes('脚板') && line.includes('='))) {
-      mode = 'accessories'
-      if (line.startsWith('配件：') || line.startsWith('配件:')) {
-        continue
-      }
-    }
-    if (line.includes('工期：') || line.includes('工期:')) {
-      mode = 'footer'
-    }
-    
-    if (mode === 'header') {
-      const segments = line.split(/\t| {2,}/).map(s => s.trim()).filter(Boolean)
-      const keys = [
-        { name: 'customerName', labels: ['客户'] },
-        { name: 'phone', labels: ['电话'] },
-        { name: 'deliveryAddress', labels: ['送货地址', '送货'] },
-        { name: 'fax', labels: ['传真'] },
-        { name: 'contactPerson', labels: ['联系人'] },
-        { name: 'orderDate', labels: ['日期'] }
-      ]
-      
-      for (const segment of segments) {
-        let matched = false
-        for (const key of keys) {
-          for (const label of key.labels) {
-            if (segment.startsWith(label)) {
-              const val = segment.slice(label.length).replace(/^[:：\s]*/, '').trim()
-              if (val) {
-                (header as any)[key.name] = val
-              } else {
-                const currentIdx = segments.indexOf(segment)
-                if (currentIdx !== -1 && currentIdx + 1 < segments.length) {
-                  const nextSeg = segments[currentIdx + 1]
-                  const isAnotherLabel = keys.some(k => k.labels.some(l => nextSeg.startsWith(l)))
-                  if (!isAnotherLabel) {
-                    (header as any)[key.name] = nextSeg
-                  }
-                }
-              }
-              matched = true
-              break
-            }
-          }
-          if (matched) break
-        }
-      }
-    } else if (mode === 'items') {
-      const match = line.match(/^(\d+)[\s\t]+(.*)/)
-      if (match) {
-        const content = match[2].trim()
-        let cols = content.split(/\t| {2,}/).map(c => c.trim())
-        
-        const name = cols[0] || ''
-        const specRaw = cols[1] || ''
-        const material = cols[2] || ''
-        const color = cols[3] || ''
-        const other = cols[4] || ''
-        
-        let spec = specRaw
-        let qty = ''
-        const specMatch = specRaw.match(/(.*?)\s*=\s*(.*)/)
-        if (specMatch) {
-          spec = specMatch[1].trim()
-          qty = specMatch[2].trim()
-        }
-        
-        items.push({
-          id: Date.now() + Math.random(),
-          name,
-          spec,
-          qty,
-          material,
-          color,
-          other
-        })
-      }
-    } else if (mode === 'accessories') {
-      const matchAcc = line.match(/(.*?)\s*=\s*(.*)/)
-      if (matchAcc) {
-        accessories.push({
-          id: Date.now() + Math.random(),
-          name: matchAcc[1].trim(),
-          qty: matchAcc[2].trim()
-        })
-      } else {
-        if (!line.includes('工期')) {
-          accessories.push({
-            id: Date.now() + Math.random(),
-            name: line.trim(),
-            qty: ''
-          })
-        }
-      }
-    }
-    
-    if (line.includes('工期')) {
-      const matchDays = line.match(/工期[\s\t:：]*([^\t\n\s]+)/)
-      if (matchDays) {
-        header.deliveryDays = matchDays[1]
-      }
-    }
-  }
-  
-  return { header, items, accessories }
-}
-
 const handleAutoParse = debounce(() => {
   if (!rawText.value.trim()) return
-  const { header, items, accessories } = parseText(rawText.value)
-  
+  const { header, items, accessories } = parseOrderText(rawText.value)
+
   orderForm.customerName = header.customerName || orderForm.customerName
   orderForm.phone = header.phone || orderForm.phone
   orderForm.fax = header.fax || orderForm.fax
@@ -452,7 +321,7 @@ const handleAutoParse = debounce(() => {
   orderForm.deliveryAddress = header.deliveryAddress || orderForm.deliveryAddress
   orderForm.orderDate = header.orderDate || orderForm.orderDate
   orderForm.deliveryDays = header.deliveryDays || orderForm.deliveryDays
-  
+
   if (items.length > 0) orderForm.items = items
   if (accessories.length > 0) orderForm.accessories = accessories
 }, 300)
@@ -462,8 +331,8 @@ const handleManualParse = () => {
     showError(new Error('请先粘贴订单文本！'), '解析失败')
     return
   }
-  const { header, items, accessories } = parseText(rawText.value)
-  
+  const { header, items, accessories } = parseOrderText(rawText.value)
+
   Object.assign(orderForm, {
     customerName: header.customerName,
     phone: header.phone,
@@ -475,7 +344,7 @@ const handleManualParse = () => {
     items,
     accessories
   })
-  
+
   showSuccess('订单文本解析成功！已填充表单')
 }
 
@@ -519,41 +388,40 @@ const saveOrder = async () => {
     return
   }
 
-  saving.value = true
-  try {
-    const payload = {
-      customerName: orderForm.customerName,
-      phone: orderForm.phone,
-      fax: orderForm.fax,
-      contactPerson: orderForm.contactPerson,
-      deliveryAddress: orderForm.deliveryAddress,
-      orderDate: orderForm.orderDate,
-      deliveryDays: orderForm.deliveryDays,
-      items: JSON.stringify(orderForm.items),
-      accessories: orderForm.accessories.length > 0 ? JSON.stringify(orderForm.accessories) : null,
-      attachments: fileList.value.length > 0 ? JSON.stringify(fileList.value.map(f => ({
-        name: f.name,
-        url: f.response?.data?.url || f.url
-      }))) : null,
-      rawText: rawText.value,
-      remark: orderForm.remark
-    }
+  await withSubmitLock(async () => {
+    try {
+      const payload = {
+        customerName: orderForm.customerName,
+        phone: orderForm.phone,
+        fax: orderForm.fax,
+        contactPerson: orderForm.contactPerson,
+        deliveryAddress: orderForm.deliveryAddress,
+        orderDate: orderForm.orderDate,
+        deliveryDays: orderForm.deliveryDays,
+        items: JSON.stringify(orderForm.items),
+        accessories: orderForm.accessories.length > 0 ? JSON.stringify(orderForm.accessories) : null,
+        attachments: fileList.value.length > 0 ? JSON.stringify(fileList.value.map(f => ({
+          name: f.name,
+          url: f.response?.data?.url || f.url
+        }))) : null,
+        rawText: rawText.value,
+        remark: orderForm.remark
+      }
 
-    if (isEditMode.value && editingId.value) {
-      await orderApi.update(editingId.value, payload)
-      showSuccess('订单更新成功！')
-    } else {
-      await orderApi.create(payload)
-      showSuccess('订单保存成功！')
+      if (isEditMode.value && editingId.value) {
+        await orderApi.update(editingId.value, payload)
+        showSuccess('订单更新成功！')
+      } else {
+        await orderApi.create(payload)
+        showSuccess('订单保存成功！')
+      }
+
+      // 跳转历史列表
+      router.push('/order/history')
+    } catch (err: any) {
+      showError(err, '保存订单失败')
     }
-    
-    // 跳转历史列表
-    router.push('/order/history')
-  } catch (err: any) {
-    showError(err, '保存订单失败')
-  } finally {
-    saving.value = false
-  }
+  })
 }
 
 // 取消编辑
@@ -602,12 +470,12 @@ onMounted(async () => {
         }
         if (res.order.attachments) {
           try {
-            const files = JSON.parse(res.order.attachments)
-            fileList.value = files.map((f: any) => ({
+            const files = JSON.parse(res.order.attachments) as Array<{ name?: string; url: string }>
+            fileList.value = files.map((f) => ({
               name: f.name,
               url: f.url,
               status: 'success'
-            }))
+            })) as UploadFile[]
           } catch (e) {
             console.warn('解析附件失败', e)
           }

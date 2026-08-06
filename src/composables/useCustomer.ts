@@ -4,6 +4,7 @@ import { to } from '@/utils/async'
 import { showError } from '@/utils/message'
 import { useListQueryState } from '@/composables/useListQueryState'
 import { useFormSubmit } from '@/composables/useFormSubmit'
+import { DEFAULT_PAGE_SIZE } from '@/constants/table'
 import { formatDate, addDays } from '@/utils/date'
 import type { CustomerListItem, CustomerCreatePayload, CustomerUpdatePayload, CustomerDetailData } from '@/types'
 
@@ -49,7 +50,7 @@ export const useCustomerList = () => {
 
   const { page, pageSize, total, resetToFirstPage } = useListQueryState({
     page: 1,
-    pageSize: 10,
+    pageSize: DEFAULT_PAGE_SIZE,
     onLoad: () => loadList()
   })
 

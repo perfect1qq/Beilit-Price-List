@@ -6,6 +6,7 @@ import { debounce } from '@/utils/debounce'
 import { to } from '@/utils/async'
 import { showError, showSuccess } from '@/utils/message'
 import { useInstantListActions } from '@/composables/useInstantListActions'
+import { DEFAULT_PAGE_SIZE } from '@/constants/table'
 
 interface ListResult {
   list?: unknown[]
@@ -52,7 +53,7 @@ export const useHistoryView = ({ api, fetchList, onEnterDetail }: HistoryViewOpt
   const historyList = shallowRef<(Record<string, unknown> & { id: number | string })[]>([])
   const loading = ref(false)
   const page = ref(1)
-  const pageSize = ref(10)
+  const pageSize = ref(DEFAULT_PAGE_SIZE)
   const total = ref(0)
   const searchKeyword = ref('')
 

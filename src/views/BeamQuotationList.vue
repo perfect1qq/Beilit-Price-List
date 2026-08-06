@@ -1,7 +1,8 @@
 <template>
   <div class="beam-quotation-page">
-    <el-card shadow="never" class="editor-card">
-      <template #header>
+    <el-form ref="formRef" :model="{ recordName, items }" :disabled="isGuest">
+      <el-card shadow="never" class="editor-card">
+        <template #header>
         <CardHeader title="横梁载重单编辑">
           <template #actions>
             <div class="toolbar">
@@ -21,10 +22,8 @@
         </CardHeader>
       </template>
 
-      <el-form ref="formRef" :model="{ recordName, items }" :disabled="isGuest">
-
-        <el-table :data="items" border stripe style="width: 100%" :header-cell-style="TABLE_HEADER_STYLE"
-          class="smart-table">
+      <el-table :data="items" border stripe style="width: 100%" :header-cell-style="TABLE_HEADER_STYLE"
+        class="smart-table">
           <el-table-column label="横梁名称" align="center">
             <template #default="{ row, $index }">
               <el-form-item :prop="'items.' + $index + '.name'" :rules="beamNameRule">
@@ -61,8 +60,8 @@
             </template>
           </el-table-column>
         </el-table>
-      </el-form>
-    </el-card>
+      </el-card>
+    </el-form>
   </div>
 </template>
 
@@ -75,6 +74,7 @@ import { to } from '@/utils/async'
 import { showWarning, showError, showSuccess } from '@/utils/message'
 import { beamNameRule, positiveDecimalRule, noSpaceRawValidator } from '@/utils/formRules'
 import { usePermissions } from '@/composables/usePermissions'
+import { useFormSubmit } from '@/composables/useFormSubmit'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 import CardHeader from '@/components/common/CardHeader.vue'
 
@@ -82,7 +82,7 @@ const { isGuest } = usePermissions()
 
 const recordName = ref('')
 const items = ref<Array<{ name: string; length: string; spec: string; maxLoad: string }>>([{ name: '', length: '', spec: '', maxLoad: '' }])
-const saving = ref(false)
+const { submitLoading: saving, withSubmitLock } = useFormSubmit({ lockDuration: 300 })
 const formRef = ref<InstanceType<typeof import('element-plus')['ElForm']> | null>(null)
 
 const addRow = () => items.value.push({ name: '', length: '', spec: '', maxLoad: '' })
@@ -95,8 +95,6 @@ const deleteRow = (index: number) => {
 }
 
 const handleSave = async () => {
-  if (saving.value) return
-
   const [validateErr] = await to(formRef.value?.validate() ?? Promise.resolve(undefined))
   if (validateErr) return
 
@@ -105,18 +103,17 @@ const handleSave = async () => {
     return showWarning('历史记录中已存在同名的横梁名称，请更换横梁名称！')
   }
 
-  saving.value = true
-  const [err] = await to(beamApi.create({ name: recordName.value, items: items.value }))
-  if (err) {
-    showError('保存失败，请检查网络或后端接口')
-    saving.value = false
-    return
-  }
-  showSuccess('新增成功')
-  formRef.value?.resetFields()
-  recordName.value = ''
-  items.value = [{ name: '', length: '', spec: '', maxLoad: '' }]
-  saving.value = false
+  await withSubmitLock(async () => {
+    const [err] = await to(beamApi.create({ name: recordName.value, items: items.value }))
+    if (err) {
+      showError('保存失败，请检查网络或后端接口')
+      return
+    }
+    showSuccess('新增成功')
+    formRef.value?.resetFields()
+    recordName.value = ''
+    items.value = [{ name: '', length: '', spec: '', maxLoad: '' }]
+  })
 }
 
 </script>

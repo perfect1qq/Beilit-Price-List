@@ -78,11 +78,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Document } from '@element-plus/icons-vue'
-import contractApi, { type ContractData } from '@/api/contract'
+import contractApi from '@/api/contract'
+import { downloadFile } from '@/utils/downloadFile'
+import type { ContractData } from '@/types'
 
 const router = useRouter()
 const route = useRoute()
@@ -99,39 +101,13 @@ const parseAttachments = (attachmentsStr: string) => {
   if (!attachmentsStr) return []
   try {
     return JSON.parse(attachmentsStr)
-  } catch (e) {
+  } catch {
     return []
   }
 }
 
-const handleDownload = async (file: { url: string, name: string }) => {
-  let msg: any = null
-  try {
-    msg = ElMessage.info({ message: `正在准备下载 ${file.name}...`, duration: 0 })
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
-    const downloadUrl = `${baseUrl}/api/upload/download?url=${encodeURIComponent(file.url)}&name=${encodeURIComponent(file.name || 'download')}`
-    
-    const response = await fetch(downloadUrl)
-    if (!response.ok) throw new Error('Network response was not ok')
-    
-    const blob = await response.blob()
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = file.name || 'download'
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
-    
-    if (msg) msg.close()
-    ElMessage.success(`文件 ${file.name} 下载成功`)
-  } catch (error) {
-    console.error('Download failed, falling back to window.open:', error)
-    if (msg) msg.close()
-    ElMessage.warning(`下载可能会在后台进行或已被拦截，尝试新窗口打开...`)
-    window.open(file.url, '_blank')
-  }
+const handleDownload = (file: { url: string, name: string }) => {
+  downloadFile({ url: file.url, name: file.name })
 }
 
 const groupedContracts = computed(() => {
@@ -167,10 +143,18 @@ let searchTimer: any = null
 const onSearch = () => {
   if (searchTimer) clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
+    searchTimer = null
     page.value = 1
     fetchData()
   }, 500)
 }
+
+onBeforeUnmount(() => {
+  if (searchTimer) {
+    clearTimeout(searchTimer)
+    searchTimer = null
+  }
+})
 
 const fetchData = async () => {
   loading.value = true

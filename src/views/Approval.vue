@@ -61,12 +61,13 @@ import CardHeader from '@/components/common/CardHeader.vue'
 import type { QuotationData } from '@/types'
 import SearchBar from '@/components/common/SearchBar.vue'
 import { showError, showSuccess } from '@/utils/message'
+import { DEFAULT_PAGE_SIZE } from '@/constants/table'
 
 const router = useRouter()
 const loading = ref(false)
 const list = ref<QuotationData[]>([])
 const total = ref(0)
-const { keyword: searchKeyword, page, pageSize } = useListQueryState({ page: 1, pageSize: 10, keyword: '' })
+const { keyword: searchKeyword, page, pageSize } = useListQueryState({ page: 1, pageSize: DEFAULT_PAGE_SIZE, keyword: '' })
 const { isActionLoading, withActionLock, replaceById, removeById } = useInstantListActions(list)
 
 const tagType = (status: string) => ({ draft: 'info', pending: 'warning', approved: 'success', rejected: 'danger', deleted: 'info' }[status] || 'info')
