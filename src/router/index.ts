@@ -26,6 +26,7 @@ const ApprovalDetail = () => import('../views/ApprovalDetail.vue')
 const ApprovalHistory = () => import('../views/ApprovalHistory.vue')
 
 const MediumShelfWeightTable = () => import('../views/MediumShelfWeightTable.vue')
+const ShelfMaterialWeight = () => import('../views/ShelfMaterialWeight.vue')
 const MemoManagement = () => import('../views/MemoManagement.vue')
 const UsdConversion = () => import('../views/UsdConversion.vue')
 const CustomerManagement = () => import('../views/CustomerManagement.vue')
@@ -162,6 +163,12 @@ const routes: RouteRecordRaw[] = [
         name: 'MediumShelfWeight',
         component: MediumShelfWeightTable,
         meta: { title: '中型货架重量表', requiresPermission: 'quotation:write' },
+      },
+      {
+        path: 'shelf-material-weight',
+        name: 'ShelfMaterialWeight',
+        component: ShelfMaterialWeight,
+        meta: { title: '货架材料重量', requiresPermission: 'quotation:write' },
       },
       {
         path: 'memo-management',

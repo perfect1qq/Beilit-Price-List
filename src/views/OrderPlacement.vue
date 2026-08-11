@@ -390,23 +390,23 @@ const saveOrder = async () => {
 
   await withSubmitLock(async () => {
     try {
-      const payload = {
-        customerName: orderForm.customerName,
-        phone: orderForm.phone,
-        fax: orderForm.fax,
-        contactPerson: orderForm.contactPerson,
-        deliveryAddress: orderForm.deliveryAddress,
-        orderDate: orderForm.orderDate,
-        deliveryDays: orderForm.deliveryDays,
-        items: JSON.stringify(orderForm.items),
-        accessories: orderForm.accessories.length > 0 ? JSON.stringify(orderForm.accessories) : null,
-        attachments: fileList.value.length > 0 ? JSON.stringify(fileList.value.map(f => ({
-          name: f.name,
-          url: f.response?.data?.url || f.url
-        }))) : null,
-        rawText: rawText.value,
-        remark: orderForm.remark
-      }
+        const payload = {
+          customerName: orderForm.customerName,
+          phone: orderForm.phone,
+          fax: orderForm.fax,
+          contactPerson: orderForm.contactPerson,
+          deliveryAddress: orderForm.deliveryAddress,
+          orderDate: orderForm.orderDate,
+          deliveryDays: orderForm.deliveryDays,
+          items: JSON.stringify(orderForm.items),
+          accessories: orderForm.accessories.length > 0 ? JSON.stringify(orderForm.accessories) : undefined,
+          attachments: fileList.value.length > 0 ? JSON.stringify(fileList.value.map(f => ({
+            name: f.name,
+            url: f.response?.data?.url || f.url
+          }))) : undefined,
+          rawText: rawText.value,
+          remark: orderForm.remark
+        }
 
       if (isEditMode.value && editingId.value) {
         await orderApi.update(editingId.value, payload)
