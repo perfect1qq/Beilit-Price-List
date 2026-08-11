@@ -2,7 +2,7 @@
   <div class="pager-wrap">
     <el-pagination v-model:current-page="currentPageProxy" v-model:page-size="pageSizeProxy" :page-sizes="pageSizes"
       :total="total" :layout="layout" :background="background" :hide-on-single-page="hideOnSinglePage"
-      :pager-count="pagerCount" @current-change="handleCurrentChange" @size-change="handleSizeChange" />
+      :pager-count="pagerCount" :size="size" @current-change="handleCurrentChange" @size-change="handleSizeChange" />
   </div>
 </template>
 
@@ -18,7 +18,8 @@ const props = defineProps({
   layout: { type: String, default: 'total, sizes, prev, pager, next, jumper' },
   background: { type: Boolean, default: true },
   hideOnSinglePage: { type: Boolean, default: false },
-  pagerCount: { type: Number, default: 7 }
+  pagerCount: { type: Number, default: 7 },
+  size: { type: String as PropType<'large' | 'default' | 'small'>, default: 'default' }
 })
 
 const emit = defineEmits(['update:page', 'update:pageSize', 'page-change', 'size-change'])

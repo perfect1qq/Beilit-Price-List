@@ -25,54 +25,33 @@
       <div class="history-content-wrap" v-loading="loading">
         <el-empty v-if="!groupedContracts.length" :description="keyword ? '未搜索到匹配的合同' : '暂无合同记录'" />
         
-        <el-collapse v-else v-model="activePanels" class="company-collapse">
-          <el-collapse-item v-for="group in groupedContracts" :key="group.companyName" :name="group.companyName">
-            <template #title>
-              <div class="group-title">
-                <div class="group-title-main">
-                  <span class="group-company">{{ group.companyName || '未分类' }}</span>
-                  <el-tag size="small" type="primary">{{ group.records.length }} 份</el-tag>
-                </div>
-              </div>
-            </template>
-
-            <el-table :data="group.records" style="width: 100%;" stripe border class="smart-table">
-              <el-table-column prop="title" label="合同名称" min-width="200" />
-              <el-table-column prop="ownerName" label="创建人" width="120" />
-              <el-table-column label="附件" min-width="150">
-                <template #default="scope">
-                  <div v-if="parseAttachments(scope.row.attachments).length">
-                    <div v-for="file in parseAttachments(scope.row.attachments)" :key="file.url" style="margin-bottom: 4px;">
-                      <el-link type="primary" @click.prevent="handleDownload(file)" underline="never">
-                        <el-icon style="margin-right: 4px"><Document /></el-icon>{{ file.name }}
-                      </el-link>
-                    </div>
+        <GroupedHistoryList v-else :data="groupedContracts">
+          <template #default="{ records }">
+            <el-table-column prop="title" label="合同名称" min-width="200" />
+            <el-table-column prop="ownerName" label="创建人" width="120" />
+            <el-table-column label="附件" min-width="150">
+              <template #default="scope">
+                <div v-if="parseAttachments(scope.row.attachments).length">
+                  <div v-for="file in parseAttachments(scope.row.attachments)" :key="file.url" style="margin-bottom: 4px;">
+                    <el-link type="primary" @click.prevent="handleDownload(file)" underline="never">
+                      <el-icon style="margin-right: 4px"><Document /></el-icon>{{ file.name }}
+                    </el-link>
                   </div>
-                  <span v-else style="color: #999">无</span>
-                </template>
-              </el-table-column>
-              <el-table-column label="操作" width="180" align="center">
-                <template #default="scope">
-                  <el-button type="primary" size="small" plain @click="editContract(scope.row)">查看/编辑</el-button>
-                  <el-button type="danger" size="small" plain @click="deleteContract(scope.row)">删除</el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </el-collapse-item>
-        </el-collapse>
+                </div>
+                <span v-else style="color: #999">无</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="180" align="center">
+              <template #default="scope">
+                <el-button type="primary" size="small" plain @click="editContract(scope.row)">查看/编辑</el-button>
+                <el-button type="danger" size="small" plain @click="deleteContract(scope.row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </template>
+        </GroupedHistoryList>
       </div>
 
-      <div class="pagination-container" v-if="total > 0">
-        <el-pagination
-          v-model:current-page="page"
-          v-model:page-size="pageSize"
-          :total="total"
-          :page-sizes="[20, 50, 100, 200]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="fetchData"
-          @current-change="fetchData"
-        />
-      </div>
+
     </el-card>
   </div>
 </template>
@@ -85,6 +64,8 @@ import { Search, Document } from '@element-plus/icons-vue'
 import contractApi from '@/api/contract'
 import { downloadFile } from '@/utils/downloadFile'
 import type { ContractData } from '@/types'
+import GroupedHistoryList from '@/components/common/GroupedHistoryList.vue'
+import { groupByYearAndCompany } from '@/utils/grouping'
 
 const router = useRouter()
 const route = useRoute()
@@ -93,9 +74,8 @@ const loading = ref(false)
 const rawData = ref<ContractData[]>([])
 const total = ref(0)
 const page = ref(1)
-const pageSize = ref(100) // Increase page size for better grouping
+const pageSize = ref(10000) // Fetch all for proper grouping
 const keyword = ref('')
-const activePanels = ref<string[]>([])
 
 const parseAttachments = (attachmentsStr: string) => {
   if (!attachmentsStr) return []
@@ -111,33 +91,8 @@ const handleDownload = (file: { url: string, name: string }) => {
 }
 
 const groupedContracts = computed(() => {
-  const groups: Record<string, ContractData[]> = {}
-  rawData.value.forEach(contract => {
-    const key = contract.companyName || ''
-    if (!groups[key]) {
-      groups[key] = []
-    }
-    groups[key].push(contract)
-  })
-  
-  return Object.keys(groups).map(companyName => ({
-    companyName,
-    records: groups[companyName]
-  })).sort((a, b) => {
-    if (a.companyName === '') return 1
-    if (b.companyName === '') return -1
-    return a.companyName.localeCompare(b.companyName)
-  })
+  return groupByYearAndCompany(rawData.value, (r) => r.companyName || '未分配公司')
 })
-
-watch(() => groupedContracts.value, (groups) => {
-  if (keyword.value.trim() !== '') {
-    activePanels.value = groups.map(g => g.companyName)
-  } else if (activePanels.value.length === 0 && groups.length > 0) {
-    // default open first panel
-    activePanels.value = [groups[0].companyName]
-  }
-}, { immediate: true })
 
 let searchTimer: any = null
 const onSearch = () => {

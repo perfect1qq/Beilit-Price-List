@@ -22,50 +22,41 @@
       </div>
 
       <!-- 数据表格 -->
-      <el-table :data="orderList" v-loading="loading" border style="width: 100%" stripe :header-cell-style="TABLE_HEADER_STYLE" class="smart-table nowrap-table">
-        <AutoFitColumn :data="orderList" prop="orderNo" label="订单编号" :min="140" :max="220" use-width>
-          <template #default="{ row }">
-            <span class="order-no-link" @click="viewOrder(row.id)">{{ row.orderNo }}</span>
-          </template>
-        </AutoFitColumn>
-        <AutoFitColumn :data="orderList" prop="customerName" label="客户名称" :min="120" :max="350" />
-        <AutoFitColumn :data="orderList" prop="deliveryAddress" label="送货地址" :min="120" :max="400" />
-        <AutoFitColumn :data="orderList" prop="orderDate" label="订单日期" :min="95" :max="160" use-width />
-        <AutoFitColumn :data="orderList" prop="ownerName" label="创建者" :min="80" :max="140" use-width />
-        <AutoFitColumn :data="orderList" label="录入时间" :getter="(row: any) => formatDateTime(row.createdAt)" :min="140" :max="200" use-width>
-          <template #default="{ row }">
-            {{ formatDateTime(row.createdAt) }}
-          </template>
-        </AutoFitColumn>
-        <el-table-column label="操作" min-width="220" align="center">
-          <template #default="{ row }">
-            <div class="action-btns">
-              <el-button type="primary" size="small" plain :icon="View" @click="viewOrder(row.id)">
-                查看
-              </el-button>
-              <el-button type="warning" size="small" plain :icon="Edit" @click="editOrder(row.id)" v-if="!isGuest && canModify(row)">
-                编辑
-              </el-button>
-              <el-button type="danger" size="small" plain :icon="Delete" @click="confirmDelete(row)" v-if="!isGuest && canModify(row)">
-                删除
-              </el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+      <GroupedHistoryList v-loading="loading" :data="groupedOrders">
+        <template #default="{ records }">
+          <AutoFitColumn :data="records" prop="orderNo" label="订单编号" :min="140" :max="220" use-width>
+            <template #default="{ row }">
+              <span class="order-no-link" @click="viewOrder(row.id)">{{ row.orderNo }}</span>
+            </template>
+          </AutoFitColumn>
+          <AutoFitColumn :data="records" prop="customerName" label="客户名称" :min="120" :max="350" />
+          <AutoFitColumn :data="records" prop="deliveryAddress" label="送货地址" :min="120" :max="400" />
+          <AutoFitColumn :data="records" prop="orderDate" label="订单日期" :min="95" :max="160" use-width />
+          <AutoFitColumn :data="records" prop="ownerName" label="创建者" :min="80" :max="140" use-width />
+          <AutoFitColumn :data="records" label="录入时间" :getter="(row: any) => formatDateTime(row.createdAt)" :min="140" :max="200" use-width>
+            <template #default="{ row }">
+              {{ formatDateTime(row.createdAt) }}
+            </template>
+          </AutoFitColumn>
+          <el-table-column label="操作" min-width="220" align="center">
+            <template #default="{ row }">
+              <div class="action-btns">
+                <el-button type="primary" size="small" plain :icon="View" @click="viewOrder(row.id)">
+                  查看
+                </el-button>
+                <el-button type="warning" size="small" plain :icon="Edit" @click="editOrder(row.id)" v-if="!isGuest && canModify(row)">
+                  编辑
+                </el-button>
+                <el-button type="danger" size="small" plain :icon="Delete" @click="confirmDelete(row)" v-if="!isGuest && canModify(row)">
+                  删除
+                </el-button>
+              </div>
+            </template>
+          </el-table-column>
+        </template>
+      </GroupedHistoryList>
 
-      <!-- 分页栏 -->
-      <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="page"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
+
     </el-card>
 
     <!-- 订单排版详情预览抽屉/弹窗 -->
@@ -79,24 +70,26 @@
         </div>
 
         <table class="meta-table">
-          <tr>
-            <td class="meta-label">客户名称</td>
-            <td class="meta-value" colspan="3"><strong>{{ currentOrder.customerName }}</strong></td>
-            <td class="meta-label">订单日期</td>
-            <td class="meta-value">{{ currentOrder.orderDate }}</td>
-          </tr>
-          <tr>
-            <td class="meta-label">联系人</td>
-            <td class="meta-value">{{ currentOrder.contactPerson || '-' }}</td>
-            <td class="meta-label">联系电话</td>
-            <td class="meta-value">{{ currentOrder.phone || '-' }}</td>
-            <td class="meta-label">传真号码</td>
-            <td class="meta-value">{{ currentOrder.fax || '-' }}</td>
-          </tr>
-          <tr>
-            <td class="meta-label">送货地址</td>
-            <td class="meta-value" colspan="5">{{ currentOrder.deliveryAddress || '-' }}</td>
-          </tr>
+          <tbody>
+            <tr>
+              <td class="meta-label">客户名称</td>
+              <td class="meta-value" colspan="3"><strong>{{ currentOrder.customerName }}</strong></td>
+              <td class="meta-label">订单日期</td>
+              <td class="meta-value">{{ currentOrder.orderDate }}</td>
+            </tr>
+            <tr>
+              <td class="meta-label">联系人</td>
+              <td class="meta-value">{{ currentOrder.contactPerson || '-' }}</td>
+              <td class="meta-label">联系电话</td>
+              <td class="meta-value">{{ currentOrder.phone || '-' }}</td>
+              <td class="meta-label">传真号码</td>
+              <td class="meta-value">{{ currentOrder.fax || '-' }}</td>
+            </tr>
+            <tr>
+              <td class="meta-label">送货地址</td>
+              <td class="meta-value" colspan="5">{{ currentOrder.deliveryAddress || '-' }}</td>
+            </tr>
+          </tbody>
         </table>
 
         <table class="items-table">
@@ -182,6 +175,8 @@ import { useUserStore } from '@/stores/user'
 import orderApi, { type OrderData, type OrderItem, type AccessoryItem } from '@/api/order'
 import SearchBar from '@/components/common/SearchBar.vue'
 import { TABLE_HEADER_STYLE, DEFAULT_PAGE_SIZE } from '@/constants/table'
+import GroupedHistoryList from '@/components/common/GroupedHistoryList.vue'
+import { groupByYearAndCompany } from '@/utils/grouping'
 
 const router = useRouter()
 const route = useRoute()
@@ -191,9 +186,13 @@ const { isGuest, isAdmin } = usePermissions()
 const loading = ref(false)
 const keyword = ref('')
 const page = ref(1)
-const pageSize = ref(DEFAULT_PAGE_SIZE)
+const pageSize = ref(10000)
 const total = ref(0)
 const orderList = ref<OrderData[]>([])
+
+const groupedOrders = computed(() => {
+  return groupByYearAndCompany(orderList.value, (r) => r.customerName || '未分配客户')
+})
 
 // 预览相关
 const previewVisible = ref(false)
