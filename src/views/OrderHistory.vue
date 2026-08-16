@@ -14,7 +14,7 @@
       <div class="filter-row">
         <SearchBar
           v-model="keyword"
-          placeholder="搜索订单号、客户名称、联系人或送货地址..."
+          placeholder="搜索下单名称、公司名称、联系人或送货地址..."
           @search="handleSearch"
           style="width: 320px;"
         />
@@ -24,26 +24,18 @@
       <!-- 数据表格 -->
       <GroupedHistoryList v-loading="loading" :data="groupedOrders">
         <template #default="{ records }">
-          <AutoFitColumn :data="records" prop="orderNo" label="订单编号" :min="140" :max="220" use-width>
+          <AutoFitColumn :data="records" prop="customerName" label="公司名称" :min="120" :max="350" />
+          <AutoFitColumn :data="records" prop="name" label="下单名称" :min="120" :max="200" use-width>
             <template #default="{ row }">
-              <span class="order-no-link" @click="viewOrder(row.id)">{{ row.orderNo }}</span>
+              <span class="order-no-link" @click="viewOrder(row.id)">{{ row.name || '未命名订单' }}</span>
             </template>
           </AutoFitColumn>
-          <AutoFitColumn :data="records" prop="customerName" label="客户名称" :min="120" :max="350" />
           <AutoFitColumn :data="records" prop="deliveryAddress" label="送货地址" :min="120" :max="400" />
           <AutoFitColumn :data="records" prop="orderDate" label="订单日期" :min="95" :max="160" use-width />
           <AutoFitColumn :data="records" prop="ownerName" label="创建者" :min="80" :max="140" use-width />
-          <AutoFitColumn :data="records" label="录入时间" :getter="(row: any) => formatDateTime(row.createdAt)" :min="140" :max="200" use-width>
-            <template #default="{ row }">
-              {{ formatDateTime(row.createdAt) }}
-            </template>
-          </AutoFitColumn>
           <el-table-column label="操作" min-width="220" align="center">
             <template #default="{ row }">
               <div class="action-btns">
-                <el-button type="primary" size="small" plain :icon="View" @click="viewOrder(row.id)">
-                  查看
-                </el-button>
                 <el-button type="warning" size="small" plain :icon="Edit" @click="editOrder(row.id)" v-if="!isGuest && canModify(row)">
                   编辑
                 </el-button>
@@ -66,13 +58,12 @@
         <div class="sheet-header">
           <div class="company-brand">武汉倍力特物流装备有限公司</div>
           <div class="sheet-title">生 产 加 工 单</div>
-          <div class="sheet-order-no">订单编号：{{ currentOrder.orderNo }}</div>
         </div>
 
         <table class="meta-table">
           <tbody>
             <tr>
-              <td class="meta-label">客户名称</td>
+              <td class="meta-label">公司名称</td>
               <td class="meta-value" colspan="3"><strong>{{ currentOrder.customerName }}</strong></td>
               <td class="meta-label">订单日期</td>
               <td class="meta-value">{{ currentOrder.orderDate }}</td>
@@ -166,7 +157,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Plus, View, Edit, Delete, Document } from "@element-plus/icons-vue"
+import { Plus, Edit, Delete, Document } from "@element-plus/icons-vue"
 import { ElMessageBox } from 'element-plus'
 import { showSuccess, showError } from '@/utils/message'
 import { downloadFile } from '@/utils/downloadFile'
@@ -308,7 +299,7 @@ const editOrder = (id: number) => {
 // 删除订单
 const confirmDelete = async (row: OrderData) => {
   try {
-    await ElMessageBox.confirm(`确定要删除订单编号为 "${row.orderNo}" 的订单吗？`, '删除确认', {
+    await ElMessageBox.confirm(`确定要删除名为 "${row.name || '未命名订单'}" 的订单吗？`, '删除确认', {
       type: 'warning',
       confirmButtonText: '确定删除',
       cancelButtonText: '取消'

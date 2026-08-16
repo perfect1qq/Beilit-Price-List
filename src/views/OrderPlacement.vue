@@ -34,8 +34,13 @@
             <el-form :model="orderForm" label-position="top" size="default">
               <el-row :gutter="10">
                 <el-col :span="12">
-                  <el-form-item label="客户名称">
-                    <el-input v-model="orderForm.customerName" placeholder="客户公司名称" />
+                  <el-form-item label="下单名称" required>
+                    <el-input v-model="orderForm.name" placeholder="请输入下单名称..." />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="公司名称" required>
+                    <el-input v-model="orderForm.customerName" placeholder="如：XX科技公司" />
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
@@ -166,14 +171,13 @@
             <div class="sheet-header">
               <div class="company-brand">武汉倍力特物流装备有限公司</div>
               <div class="sheet-title">生 产 加 工 单</div>
-              <div class="sheet-order-no" v-if="orderForm.orderNo">订单编号：{{ orderForm.orderNo }}</div>
             </div>
 
             <!-- 客户主信息表 -->
             <table class="meta-table">
               <tr>
-                <td class="meta-label">客户名称</td>
-                <td class="meta-value" colspan="3"><strong>{{ orderForm.customerName || '未指定客户' }}</strong></td>
+                <td class="meta-label">公司名称</td>
+                <td class="meta-value" colspan="3"><strong>{{ orderForm.customerName || '未指定公司' }}</strong></td>
                 <td class="meta-label">订单日期</td>
                 <td class="meta-value">{{ orderForm.orderDate || formatDate(new Date()) }}</td>
               </tr>
@@ -281,7 +285,7 @@ const editingId = ref<number | null>(null)
 
 // 订单主数据表单
 const orderForm = reactive({
-  orderNo: '',
+  name: '',
   customerName: '',
   phone: '',
   fax: '',
@@ -314,6 +318,7 @@ const handleAutoParse = debounce(() => {
   if (!rawText.value.trim()) return
   const { header, items, accessories } = parseOrderText(rawText.value)
 
+  orderForm.name = header.name || orderForm.name
   orderForm.customerName = header.customerName || orderForm.customerName
   orderForm.phone = header.phone || orderForm.phone
   orderForm.fax = header.fax || orderForm.fax
@@ -334,6 +339,7 @@ const handleManualParse = () => {
   const { header, items, accessories } = parseOrderText(rawText.value)
 
   Object.assign(orderForm, {
+    name: header.name,
     customerName: header.customerName,
     phone: header.phone,
     fax: header.fax,
@@ -379,8 +385,12 @@ const removeAccessory = (idx: number) => {
 
 // 保存订单
 const saveOrder = async () => {
+  if (!orderForm.name) {
+    showError(new Error('请填写下单名称'), '保存失败')
+    return
+  }
   if (!orderForm.customerName) {
-    showError(new Error('请填写客户名称'), '保存失败')
+    showError(new Error('请填写公司名称'), '保存失败')
     return
   }
   if (orderForm.items.length === 0) {
@@ -391,6 +401,7 @@ const saveOrder = async () => {
   await withSubmitLock(async () => {
     try {
         const payload = {
+          name: orderForm.name,
           customerName: orderForm.customerName,
           phone: orderForm.phone,
           fax: orderForm.fax,
@@ -448,7 +459,7 @@ onMounted(async () => {
         const order = res.order
         
         Object.assign(orderForm, {
-          orderNo: order.orderNo,
+          name: order.name || '',
           customerName: order.customerName,
           phone: order.phone || '',
           fax: order.fax || '',

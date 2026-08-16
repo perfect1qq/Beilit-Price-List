@@ -75,7 +75,10 @@ import {
   ChatLineSquare,
   Clock,
   Notebook,
-  Tickets
+  Tickets,
+  Suitcase,
+  Box,
+  Stamp
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -107,6 +110,9 @@ const iconMap: Record<string, Component> = {
   '/beam-quotation/history': Clock,
   '/order': Tickets,
   '/order/history': Clock,
+  '/contract': Suitcase,
+  '/contract/history': Clock,
+  '/shelf-material-weight': Box,
   default: IconMenu
 }
 
@@ -118,6 +124,7 @@ const activeMenu = computed(() => {
   if (path === '/quotation' || path.startsWith('/quotation/')) return path
   if (path === '/order' || path.startsWith('/order/')) return path
   if (path === '/beam-quotation' || path.startsWith('/beam-quotation/')) return path
+  if (path === '/contract' || path.startsWith('/contract/')) return path
   if (path.startsWith('/approval/history')) return '/approval/history'
   if (path.startsWith('/approval')) return '/approval'
   return path
@@ -128,6 +135,7 @@ const openMenus = computed(() => {
   if (path === '/quotation' || path.startsWith('/quotation/')) return ['/quotation-group']
   if (path === '/order' || path.startsWith('/order/')) return ['/order-group']
   if (path === '/beam-quotation' || path.startsWith('/beam-quotation/')) return ['/beam-quotation-group']
+  if (path === '/contract' || path.startsWith('/contract/')) return ['/contract-group']
   if (path === '/approval' || path.startsWith('/approval/')) return ['/approval-group']
   return []
 })

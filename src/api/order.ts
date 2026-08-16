@@ -19,7 +19,7 @@ export interface AccessoryItem {
 
 export interface OrderData {
   id: number
-  orderNo: string
+  name: string
   customerName: string
   phone?: string | null
   fax?: string | null
