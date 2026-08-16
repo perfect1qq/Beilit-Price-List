@@ -51,7 +51,6 @@
         </GroupedHistoryList>
       </div>
 
-
     </el-card>
   </div>
 </template>

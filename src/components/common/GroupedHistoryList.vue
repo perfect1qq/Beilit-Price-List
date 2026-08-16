@@ -1,6 +1,6 @@
 <template>
   <div class="grouped-history-wrapper">
-    <el-collapse v-model="activeYearPanels" class="year-collapse">
+    <el-collapse v-model="activeYearPanels" class="year-collapse" accordion>
     <el-collapse-item 
       v-for="yearGroup in data" 
       :key="yearGroup.year" 
@@ -55,26 +55,26 @@
             </el-table>
           </el-collapse-item>
         </el-collapse>
-
-        <div class="year-pager-wrap" v-if="getYearTotalPages(yearGroup) > 1">
-          <PagePagination
-            :page="getYearPage(yearGroup.year)"
-            :page-size="pageSize"
-            :total="yearGroup.companyGroups.length"
-            :page-sizes="[]"
-            layout="prev, pager, next, jumper"
-            :hide-on-single-page="true"
-            @page-change="(val: number) => handlePageChange(yearGroup.year, val)"
-          />
-        </div>
       </template>
     </el-collapse-item>
     </el-collapse>
+    <div class="global-pager-wrap" v-if="activeYearGroup">
+      <PagePagination
+        :page="getYearPage(activeYearGroup.year)"
+        :page-size="pageSize"
+        :total="activeYearGroup.companyGroups.length"
+        :page-sizes="[10, 20, 50]"
+        layout="total, sizes, prev, pager, next, jumper"
+        :hide-on-single-page="false"
+        @page-change="(val: number) => handlePageChange(activeYearGroup.year, val)"
+        @update:pageSize="handleSizeChange"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 import type { YearGroup } from '@/utils/grouping'
 import PagePagination from './PagePagination.vue'
@@ -86,20 +86,25 @@ const props = defineProps({
   }
 })
 
-const pageSize = 15
-const activeYearPanels = ref<string[]>([])
+const pageSize = ref(10)
+const activeYearPanels = ref<string | number>('')
 const activeCompanyPanels = ref<string[]>([])
 const yearPages = ref<Record<number, number>>({})
+
+const activeYearGroup = computed(() => {
+  if (!activeYearPanels.value) return null
+  return props.data.find(g => String(g.year) === String(activeYearPanels.value)) || null
+})
 
 // 数据加载后默认展开最新年份（data 已按年份降序排序，首项即最新）
 watch(() => props.data, (groups) => {
   if (groups.length > 0) {
     const latestYear = String(groups[0].year)
-    if (!activeYearPanels.value.includes(latestYear)) {
-      activeYearPanels.value = [latestYear]
+    if (activeYearPanels.value !== latestYear) {
+      activeYearPanels.value = latestYear
     }
   } else {
-    activeYearPanels.value = []
+    activeYearPanels.value = ''
   }
 }, { immediate: true })
 
@@ -107,19 +112,20 @@ const getYearPage = (year: number) => yearPages.value[year] || 1
 
 const handlePageChange = (year: number, page: number) => {
   yearPages.value[year] = page
-  
-  // 切换分页时，自动折叠所有公司面板
   activeCompanyPanels.value = []
+}
+
+const handleSizeChange = (size: number) => {
+  pageSize.value = size
+  if (activeYearPanels.value) {
+    yearPages.value[Number(activeYearPanels.value)] = 1
+  }
 }
 
 const getPagedCompanies = (yearGroup: YearGroup<unknown>) => {
   const page = getYearPage(yearGroup.year)
-  const start = (page - 1) * pageSize
-  return yearGroup.companyGroups.slice(start, start + pageSize)
-}
-
-const getYearTotalPages = (yearGroup: YearGroup<unknown>) => {
-  return Math.ceil(yearGroup.companyGroups.length / pageSize)
+  const start = (page - 1) * pageSize.value
+  return yearGroup.companyGroups.slice(start, start + pageSize.value)
 }
 </script>
 
@@ -176,16 +182,17 @@ const getYearTotalPages = (yearGroup: YearGroup<unknown>) => {
   background-color: #f8fafc;
 }
 
-.year-pager-wrap {
-  padding: 12px 16px;
-  background-color: #fff;
-  border-top: 1px solid var(--el-border-color-lighter);
+.global-pager-wrap {
+  padding: 16px;
+  background-color: transparent;
+  margin-top: 16px;
+  padding-top: 12px;
   display: flex;
   justify-content: flex-end;
 }
 </style>
 <style scoped>
-/* ========== ����ڷ�ҳ ========== */
+/* ========== ڷҳ ========== */
 .year-pager-wrap {
   margin-top: 16px;
   padding-top: 12px;
@@ -194,7 +201,7 @@ const getYearTotalPages = (yearGroup: YearGroup<unknown>) => {
   justify-content: center;
 }
 
-/* ========== �۵������ʽ ========== */
+/* ========== ۵ʽ ========== */
 .year-collapse {
   border: none;
 }
