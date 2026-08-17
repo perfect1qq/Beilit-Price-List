@@ -112,7 +112,9 @@ const iconMap: Record<string, Component> = {
   '/order/history': Clock,
   '/contract': Suitcase,
   '/contract/history': Clock,
-  '/shelf-material-weight': Box,
+  '/material-calculation': Box,
+  '/material-calculation/shelf-weight': Document,
+  '/material-calculation/back-mesh': Tickets,
   default: IconMenu
 }
 
@@ -125,6 +127,7 @@ const activeMenu = computed(() => {
   if (path === '/order' || path.startsWith('/order/')) return path
   if (path === '/beam-quotation' || path.startsWith('/beam-quotation/')) return path
   if (path === '/contract' || path.startsWith('/contract/')) return path
+  if (path === '/material-calculation' || path.startsWith('/material-calculation/')) return path
   if (path.startsWith('/approval/history')) return '/approval/history'
   if (path.startsWith('/approval')) return '/approval'
   return path
@@ -136,6 +139,7 @@ const openMenus = computed(() => {
   if (path === '/order' || path.startsWith('/order/')) return ['/order-group']
   if (path === '/beam-quotation' || path.startsWith('/beam-quotation/')) return ['/beam-quotation-group']
   if (path === '/contract' || path.startsWith('/contract/')) return ['/contract-group']
+  if (path === '/material-calculation' || path.startsWith('/material-calculation/')) return ['/material-calculation-group']
   if (path === '/approval' || path.startsWith('/approval/')) return ['/approval-group']
   return []
 })

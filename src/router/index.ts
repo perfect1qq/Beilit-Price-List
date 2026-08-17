@@ -27,6 +27,8 @@ const ApprovalHistory = () => import('../views/ApprovalHistory.vue')
 
 const MediumShelfWeightTable = () => import('../views/MediumShelfWeightTable.vue')
 const ShelfMaterialWeight = () => import('../views/ShelfMaterialWeight.vue')
+const MaterialCalculationLayout = () => import('../views/MaterialCalculationLayout.vue')
+const BackMeshMaterial = () => import('../views/BackMeshMaterial.vue')
 const MemoManagement = () => import('../views/MemoManagement.vue')
 const UsdConversion = () => import('../views/UsdConversion.vue')
 const CustomerManagement = () => import('../views/CustomerManagement.vue')
@@ -165,10 +167,23 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '中型货架重量表', requiresPermission: 'quotation:write' },
       },
       {
-        path: 'shelf-material-weight',
-        name: 'ShelfMaterialWeight',
-        component: ShelfMaterialWeight,
-        meta: { title: '货架材料重量', requiresPermission: 'quotation:write' },
+        path: 'material-calculation',
+        component: MaterialCalculationLayout,
+        meta: { title: '计算材料' },
+        children: [
+          {
+            path: 'shelf-weight',
+            name: 'ShelfMaterialWeight',
+            component: ShelfMaterialWeight,
+            meta: { title: '货架材料单', requiresPermission: 'quotation:write' },
+          },
+          {
+            path: 'back-mesh',
+            name: 'BackMeshMaterial',
+            component: BackMeshMaterial,
+            meta: { title: '背网材料计算', requiresPermission: 'quotation:write' },
+          }
+        ]
       },
       {
         path: 'memo-management',
