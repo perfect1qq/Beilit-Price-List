@@ -539,6 +539,22 @@ const handleDelete = async (row: { id?: number | string; companyName: string }) 
   void refetchStats();
 };
 
+const getRemainingClass = (dateStr: string) => {
+  const days = getRemainingDays(dateStr);
+  if (days === null) return "";
+  if (days < 0) return "overdue";
+  if (days <= 3) return "urgent";
+  return "normal";
+};
+
+const getRemainingText = (dateStr: string) => {
+  const days = getRemainingDays(dateStr);
+  if (days === null) return "";
+  if (days < 0) return `逾期${Math.abs(days)}天`;
+  if (days === 0) return "今天到期";
+  return `剩${days}天`;
+};
+
 const invoiceDialogVisible = ref(false);
 const invoiceText = ref("");
 const savingInvoice = ref(false);
