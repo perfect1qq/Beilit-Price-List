@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <el-card shadow="never" class="card">
     <template #header>
       <CardHeader :title="companyName || meta.name || '审批详情'">
@@ -36,7 +36,7 @@
         <el-col :span="8">
           <el-form-item label="成交价">
             <el-input-number :model-value="safeFinalPrice" :disabled="!editMode || isHistoryRoute" :min="0"
-              :precision="2" controls-position="right" style="width: 100%" @input="handleFinalPriceInput" />
+              controls-position="right" style="width: 100%" @input="handleFinalPriceInput" />
           </el-form-item>
         </el-col>
       </el-row>
@@ -66,7 +66,7 @@
         <el-table-column label="单价" width="150">
           <template #default="{ row }">
             <el-input-number :model-value="toNumber(row.unitPrice)" :disabled="!editMode || isHistoryRoute" :min="0"
-              :precision="2" controls-position="right" style="width:100%"
+              controls-position="right" style="width:100%"
               @change="(val: number | undefined) => handleUnitPriceChange(row, val)" />
           </template>
         </el-table-column>

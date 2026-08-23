@@ -42,14 +42,14 @@
           <el-row :gutter="12">
             <el-col :span="12">
               <el-form-item label="折扣(%)">
-                <el-input-number :model-value="toNumber(discount)" :min="0" :max="100" :precision="2"
+                <el-input-number :model-value="toNumber(discount)" :min="0" :max="100"
                   controls-position="right" style="width: 100%" :disabled="isViewMode"
                   @change="(val: number | undefined) => { $emit('update:discount', val); $emit('handleDiscountChange', val) }" />
               </el-form-item>
             </el-col>
             <el-col :span="12">
               <el-form-item label="成交价">
-                <el-input-number :model-value="toNumber(finalPrice)" :min="0" :precision="2" controls-position="right"
+                <el-input-number :model-value="toNumber(finalPrice)" :min="0" controls-position="right"
                   style="width: 100%" :disabled="isViewMode"
                   @change="(val: number | undefined) => { $emit('update:finalPrice', val); $emit('handleManualFinalPriceChange', val) }" />
               </el-form-item>

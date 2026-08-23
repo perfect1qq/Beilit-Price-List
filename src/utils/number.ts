@@ -18,15 +18,15 @@ export const rmbToUsdCeil = (rmb: unknown, rate: unknown): number => {
   return ceil(n / normalizeRate(rate))
 }
 
-export const formatMoney = (value: unknown, decimals: number = 2, separator: string = ','): string => {
-  if (value === null || value === undefined || value === '') return '0.00'
+export const formatMoney = (value: unknown, maxDecimals: number = 2, separator: string = ','): string => {
+  if (value === null || value === undefined || value === '') return '0'
   const num = Number(value)
-  if (isNaN(num)) return '0.00'
+  if (isNaN(num)) return '0'
 
-  const fixedNum = num.toFixed(decimals)
+  const fixedNum = parseFloat(num.toFixed(maxDecimals)).toString()
   const [intPart, decPart] = fixedNum.split('.')
 
   const formattedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, separator)
 
-  return decimals > 0 ? `${formattedInt}.${decPart}` : formattedInt
+  return decPart ? `${formattedInt}.${decPart}` : formattedInt
 }

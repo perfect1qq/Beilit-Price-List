@@ -228,3 +228,18 @@ export const useUpdateOrderMutation = () => {
     },
   })
 }
+
+/**
+ * 删除客户账单（CustomerOrder 表，非 Order 订单历史表）
+ */
+export const useDeleteCustomerOrderMutation = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ orderId, customerId }: { orderId: number; customerId: number }) =>
+      customerApi.deleteOrder(orderId),
+    onSuccess: (_data, { customerId }) => {
+      void queryClient.invalidateQueries({ queryKey: ['customer', customerId] })
+      void queryClient.invalidateQueries({ queryKey: ['customers'] })
+    },
+  })
+}

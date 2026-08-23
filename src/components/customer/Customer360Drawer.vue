@@ -133,13 +133,10 @@
                   <strong style="color: #f56c6c;">¥ {{ Number(scope.row.amount || 0).toLocaleString() }}</strong>
                 </template>
               </el-table-column>
-              <el-table-column prop="signDate" label="签约日期" width="140" align="center">
-                <template #default="scope">{{ scope.row.signDate ? new Date(scope.row.signDate).toLocaleDateString() : '-' }}</template>
+              <el-table-column prop="contractDate" label="合同时间" width="140" align="center">
+                <template #default="scope">{{ scope.row.contractDate ? new Date(scope.row.contractDate).toLocaleDateString() : (scope.row.createdAt ? new Date(scope.row.createdAt).toLocaleDateString() : '-') }}</template>
               </el-table-column>
               <el-table-column prop="ownerName" label="录入人" width="120" align="center" />
-              <el-table-column prop="createdAt" label="系统生成时间" width="180" align="center">
-                <template #default="scope">{{ new Date(scope.row.createdAt).toLocaleString() }}</template>
-              </el-table-column>
             </el-table>
             <el-empty v-if="contracts.length === 0" description="该客户暂未签订正式合同" :image-size="60" />
           </div>
@@ -152,32 +149,34 @@
               <AppButton variant="add" label="新增交易账单" size="small" @click="openFinanceAddDialog" />
             </div>
             <el-table :data="customer.orders || []" border style="width: 100%" stripe>
-              <el-table-column prop="orderName" label="账单/订单名称" min-width="150">
+              <AutoFitColumn :data="customer.orders || []" prop="orderName" label="账单/订单名称" :min="150" :max="400">
                 <template #default="{ row }">
                   <span style="font-weight: bold;">{{ row.orderName }}</span>
                 </template>
-              </el-table-column>
-              <el-table-column prop="orderAmount" label="账单总额(元)" width="130" align="center">
+              </AutoFitColumn>
+              <AutoFitColumn :data="customer.orders || []" prop="orderAmount" label="账单总额(元)" :min="130" :max="200" align="center">
                 <template #default="{ row }">¥ {{ Number(row.orderAmount || 0).toLocaleString() }}</template>
-              </el-table-column>
-              <el-table-column prop="paidAmount" label="已收金额(元)" width="130" align="center">
+              </AutoFitColumn>
+              <AutoFitColumn :data="customer.orders || []" prop="paidAmount" label="已收金额(元)" :min="130" :max="200" align="center">
                 <template #default="{ row }">¥ {{ Number(row.paidAmount || 0).toLocaleString() }}</template>
-              </el-table-column>
-              <el-table-column label="当前欠款(元)" width="130" align="center">
+              </AutoFitColumn>
+              <AutoFitColumn :data="customer.orders || []" label="当前欠款(元)" :min="130" :max="200" align="center">
                 <template #default="{ row }">
                   <strong style="color: #f56c6c;">¥ {{ Math.max(0, (row.orderAmount || 0) - (row.paidAmount || 0)).toLocaleString() }}</strong>
                 </template>
-              </el-table-column>
-              <el-table-column prop="paymentStatus" label="结款状态" width="120" align="center">
+              </AutoFitColumn>
+              <AutoFitColumn :data="customer.orders || []" prop="paymentStatus" label="结款状态" :min="120" :max="180" align="center">
                 <template #default="scope">
                   <el-tag :type="getPaymentStatusInfo(scope.row).type">
                     {{ getPaymentStatusInfo(scope.row).label }}
                   </el-tag>
                 </template>
-              </el-table-column>
-              <el-table-column label="操作" width="120" align="center">
+              </AutoFitColumn>
+              <el-table-column label="操作" min-width="160" align="center">
                 <template #default="scope">
-                  <AppButton variant="edit" link size="small" label="登记回款" @click="openFinanceEditDialog(scope.row)" />
+                  <ActionButtons
+                    :actions="getFinanceActions(scope.row)"
+                  />
                 </template>
               </el-table-column>
             </el-table>
@@ -233,7 +232,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, toRef } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import quotationApi from '@/api/quotation'
 import contractApi from '@/api/contract'
 import orderApi from '@/api/order'
@@ -242,8 +241,11 @@ import {
   useAddFollowUpMutation,
   useAddOrderMutation,
   useUpdateOrderMutation,
+  useDeleteCustomerOrderMutation,
 } from '@/composables/useCustomerQueries'
 import AppButton from '@/components/common/AppButton.vue'
+import AutoFitColumn from '@/components/common/AutoFitColumn.vue'
+import ActionButtons from '@/components/common/ActionButtons.vue'
 import FormButtons from '@/components/common/FormButtons.vue'
 
 const props = defineProps<{
@@ -390,6 +392,7 @@ const goCreateContract = () => {
 const addFollowUpMutation = useAddFollowUpMutation()
 const addOrderMutation = useAddOrderMutation()
 const updateOrderMutation = useUpdateOrderMutation()
+const deleteOrderMutation = useDeleteCustomerOrderMutation()
 
 const submitFollowUp = async () => {
   if (!props.customerId) return
@@ -413,6 +416,17 @@ const openFinanceAddDialog = () => {
   editingFinanceId.value = null
   financeForm.value = { orderName: '', orderAmount: 0, paidAmount: 0, paymentStatus: '待结款', orderStatus: '已下单' }
   showFinanceDialog.value = true
+}
+
+// 合同同步生成的账单（contractId 非空）不允许在此删除，需通过删除对应合同来移除
+const getFinanceActions = (row: any) => {
+  const actions = [
+    { key: 'edit', variant: 'edit' as const, label: '登记回款', onClick: () => openFinanceEditDialog(row) },
+  ]
+  if (!row.contractId) {
+    actions.push({ key: 'delete', variant: 'delete' as const, label: '删除', onClick: () => handleDeleteFinance(row) })
+  }
+  return actions
 }
 
 const openFinanceEditDialog = (row: any) => {
@@ -456,6 +470,19 @@ const submitFinance = async () => {
   } catch (e: any) {
     const errorMsg = e.response?.data?.message || e.message || '保存失败'
     ElMessage.error('保存失败: ' + errorMsg)
+  }
+}
+
+const handleDeleteFinance = async (row: any) => {
+  try {
+    await ElMessageBox.confirm('确定要删除这条账单记录吗？', '提示', { type: 'warning', confirmButtonText: '确定', cancelButtonText: '取消' })
+    await deleteOrderMutation.mutateAsync({ orderId: row.id, customerId: props.customerId })
+    ElMessage.success('账单删除成功')
+    emit('data-changed')
+  } catch (e: any) {
+    if (e !== 'cancel') {
+      ElMessage.error(e.response?.data?.message || e.message || '删除失败')
+    }
   }
 }
 </script>

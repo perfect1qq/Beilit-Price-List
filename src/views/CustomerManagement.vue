@@ -163,18 +163,9 @@
                 >
                   {{ item.customerType || "终端" }}
                 </el-tag>
-                <!-- 结款状态 -->
-                <el-tag
-                  :type="
-                    item.paymentStatus === '已结款'
-                      ? 'success'
-                      : item.paymentStatus === '待催款'
-                      ? 'danger'
-                      : 'info'
-                  "
-                  size="small"
-                >
-                  {{ item.paymentStatus || "未有款项" }}
+                <!-- 结款状态：基于剩余欠款金额动态计算 -->
+                <el-tag :type="getPaymentStatus(item).type" size="small">
+                  {{ getPaymentStatus(item).text }}
                 </el-tag>
                 <!-- 下单状态 -->
                 <el-tag
@@ -537,6 +528,17 @@ const handleDelete = async (row: { id?: number | string; companyName: string }) 
   if (err) { showError(err, "删除客户失败"); return; }
   showSuccess("客户删除成功");
   void refetchStats();
+};
+
+// 根据剩余欠款金额动态计算结款状态：
+//   无订单款项 → 未有款项（info）
+//   剩余欠款 > 0 → 待催款（danger）
+//   剩余欠款 = 0 → 已结款（success）
+const getPaymentStatus = (item: CustomerListItem): { text: string; type: 'info' | 'danger' | 'success' } => {
+  const total = item.totalAmount || 0;
+  const paid = item.totalPaidAmount || 0;
+  if (total === 0) return { text: '未有款项', type: 'info' };
+  return total - paid > 0 ? { text: '待催款', type: 'danger' } : { text: '已结款', type: 'success' };
 };
 
 const getRemainingClass = (dateStr: string) => {

@@ -224,6 +224,7 @@ export interface CustomerData {
 export interface CustomerOrderData {
   id: number
   customerId: number
+  contractId: number | null
   orderName: string
   orderAmount: number | null
   paidAmount: number | null

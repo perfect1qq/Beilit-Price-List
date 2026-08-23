@@ -18,7 +18,7 @@
         </el-form-item>
 
         <el-form-item label="合同金额(¥)" required>
-          <el-input-number v-model="amount" :min="0" :precision="2" :step="100" placeholder="请输入合同成交金额..." style="width: 100%;" />
+          <el-input-number v-model="amount" :min="0" :step="100" placeholder="请输入合同成交金额..." style="width: 100%;" />
         </el-form-item>
 
         <el-form-item label="合同标题" required>
@@ -442,7 +442,8 @@ onMounted(async () => {
       companyName.value = res.contract.companyName || ''
       amount.value = res.contract.amount || 0
       title.value = res.contract.title
-      contractDate.value = res.contract.contractDate ? String(res.contract.contractDate).slice(0, 10) : ''
+      const fallbackDate = res.contract.contractDate || res.contract.createdAt || ''
+      contractDate.value = fallbackDate ? String(fallbackDate).slice(0, 10) : ''
       if (editorRef.value && res.contract.content) {
         editorRef.value.innerHTML = DOMPurify.sanitize(res.contract.content)
       }
