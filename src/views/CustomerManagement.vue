@@ -133,7 +133,7 @@
                 <span class="delivery-arrow">→</span>
                 <span class="delivery-date-label">预计完成：</span>
                 <span class="delivery-date-value">{{ item.deliveryDate || '—' }}</span>
-                <span v-if="item.deliveryDate" class="delivery-remaining" :class="getRemainingClass(item.deliveryDate)">({{ getRemainingText(item.deliveryDate) }})</span>
+                <span v-if="item.deliveryDate" class="delivery-remaining" :class="getRemainingClass(item.deliveryDate, item.installationStatus)">({{ getRemainingText(item.deliveryDate, item.installationStatus) }})</span>
               </div>
               <div class="info-row delivery-info">
                 <span class="label">车间工期：</span>
@@ -141,7 +141,7 @@
                 <span class="delivery-arrow">→</span>
                 <span class="delivery-date-label">预计完成：</span>
                 <span class="delivery-date-value">{{ item.workshopDeliveryDate || '—' }}</span>
-                <span v-if="item.workshopDeliveryDate" class="delivery-remaining" :class="getRemainingClass(item.workshopDeliveryDate)">({{ getRemainingText(item.workshopDeliveryDate) }})</span>
+                <span v-if="item.workshopDeliveryDate" class="delivery-remaining" :class="getRemainingClass(item.workshopDeliveryDate, item.installationStatus)">({{ getRemainingText(item.workshopDeliveryDate, item.installationStatus) }})</span>
               </div>
 
               <div v-if="item.latestFollowUp" class="info-row follow-up-info">
@@ -444,7 +444,8 @@ const getPaymentStatus = (item: CustomerListItem): { text: string; type: 'info' 
   return total - paid > 0 ? { text: '待催款', type: 'danger' } : { text: PaymentStatus.PAID, type: 'success' };
 };
 
-const getRemainingClass = (dateStr: string) => {
+const getRemainingClass = (dateStr: string, installationStatus?: string) => {
+  if (installationStatus === InstallationStatus.INSTALLED) return "text-success";
   const days = getRemainingDays(dateStr);
   if (days === null) return "";
   if (days < 0) return "overdue";
@@ -452,7 +453,8 @@ const getRemainingClass = (dateStr: string) => {
   return "normal";
 };
 
-const getRemainingText = (dateStr: string) => {
+const getRemainingText = (dateStr: string, installationStatus?: string) => {
+  if (installationStatus === InstallationStatus.INSTALLED) return "已完工";
   const days = getRemainingDays(dateStr);
   if (days === null) return "";
   if (days < 0) return `逾期${Math.abs(days)}天`;
