@@ -77,6 +77,12 @@ export const useNotepad = () => {
     }
     folderCountMap.value = countMap
   }
+
+  const onKeywordChange = () => {
+    if (searchTimer) clearTimeout(searchTimer)
+    searchTimer = setTimeout(() => { loadNotes() }, 300)
+  }
+
   const selectFolder = (folder: string) => {
     activeFolder.value = activeFolder.value === folder ? '' : folder
     loadNotes()
