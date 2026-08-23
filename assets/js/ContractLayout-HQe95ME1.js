@@ -1,0 +1,1 @@
+import{B as o,K as t,J as r,at as n}from"./vendor-vue-412Topxo.js";import"./vendor-misc-BKj8oM1-.js";const m=o({__name:"ContractLayout",setup(a){return(c,s)=>{const e=n("router-view");return r(),t(e)}}});export{m as default};

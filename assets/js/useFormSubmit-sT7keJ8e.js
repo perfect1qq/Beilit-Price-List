@@ -1,1 +1,0 @@
-import{r as n}from"./vendor-vue-DbwCLwoH.js";const c=(s={})=>{const{lockDuration:u=300}=s,t=n(!1);let e=0;return{submitLoading:t,withSubmitLock:async a=>{if(t.value)return null;const r=Date.now();if(r-e<u)return null;t.value=!0,e=r;try{return await a()}finally{setTimeout(()=>{t.value=!1},u)}},resetSubmitState:()=>{t.value=!1,e=0}}};export{c as u};
