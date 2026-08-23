@@ -37,8 +37,8 @@
           </div>
         </div>
         <div class="dash-actions" style="display: flex; flex-direction: column; gap: 8px; margin-left: 20px; padding-left: 20px; border-left: 1px solid var(--border-color);">
-          <el-button type="primary" plain size="small" @click="$emit('invoice', customer)">开票信息</el-button>
-          <el-button plain size="small" @click="$emit('edit', customer)">编 辑</el-button>
+          <AppButton type="primary" plain size="small" @click="$emit('invoice', customer)">开票信息</AppButton>
+          <AppButton plain size="small" @click="$emit('edit', customer)">编 辑</AppButton>
         </div>
       </div>
 
@@ -50,7 +50,7 @@
             <div class="section-block">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px;">
                 <h4>业务跟进记录</h4>
-                <el-button type="success" size="small" @click="showFollowUpDialog = true">+ 记录跟进</el-button>
+                <AppButton type="success" size="small" @click="showFollowUpDialog = true">+ 记录跟进</AppButton>
               </div>
               <el-timeline v-if="customer.followUps && customer.followUps.length">
                 <el-timeline-item 
@@ -103,9 +103,9 @@
         <el-tab-pane label="车间下单记录" name="orders">
           <div class="tab-content-scroll">
             <div style="margin-bottom: 15px; text-align: right;">
-              <el-button type="primary" size="small" @click="goCreateOrder">
+              <AppButton type="primary" size="small" @click="goCreateOrder">
                 跳转至新增下单
-              </el-button>
+              </AppButton>
             </div>
             <el-table :data="orders" border style="width: 100%" stripe>
               <el-table-column prop="name" label="下单名称" min-width="180">

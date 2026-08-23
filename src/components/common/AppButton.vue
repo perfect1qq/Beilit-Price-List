@@ -85,12 +85,15 @@ const props = defineProps({
   text: { type: Boolean, default: false },
   nativeType: { type: String as () => 'button' | 'submit' | 'reset', default: 'button' },
   autofocus: { type: Boolean, default: false },
+  /** 防抖时间（毫秒），设为 0 则不防抖 */
+  debounceMs: { type: Number, default: 300 },
 })
 
 const emit = defineEmits<{ click: [MouseEvent] }>()
 
 const buttonRef = ref<any>(null)
 const dynamicText = ref('')
+const isDebouncing = ref(false)
 
 const updateText = () => {
   if (buttonRef.value && buttonRef.value.$el) {
@@ -101,9 +104,8 @@ const updateText = () => {
   }
 }
 
-
-onMounted(updateText)
-onUpdated(updateText)
+onMounted(() => updateText())
+onUpdated(() => updateText())
 
 const autoVariant = computed<Variant>(() => {
   if (props.variant !== 'default') return props.variant
@@ -113,7 +115,7 @@ const autoVariant = computed<Variant>(() => {
   
   if (t.includes('新增') || t.includes('添加') || t.includes('新建') || t.includes('加一') || t.includes('生成')) return 'add'
   if (t.includes('编辑') || t.includes('修改')) return 'edit'
-  if (t.includes('删除') || t.includes('清空') || t.includes('移除') || t.includes('驳回') || t.includes('清除')) return 'delete'
+  if (t.includes('删除') || t.includes('清空') || t.includes('移除') || t.includes('驳回') || t.includes('清理')) return 'delete'
   if (t.includes('查看') || t.includes('详情')) return 'view'
   if (t.includes('保存') || t.includes('确认') || t.includes('提交') || t.includes('通过')) return 'save'
   if (t.includes('取消')) return 'cancel'
@@ -140,6 +142,13 @@ const resolvedIcon = computed<Component | undefined>(() => {
 })
 
 const handleClick = (e: MouseEvent) => {
+  if (props.debounceMs > 0) {
+    if (isDebouncing.value) return
+    isDebouncing.value = true
+    setTimeout(() => {
+      isDebouncing.value = false
+    }, props.debounceMs)
+  }
   emit('click', e)
 }
 </script>

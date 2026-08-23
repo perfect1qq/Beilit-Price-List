@@ -11,91 +11,7 @@
         </CardHeader>
       </template>
 
-      <div class="stats-row">
-        <div
-          class="stat-card"
-          :class="{
-            active: activeStat === ''
-          }"
-          @click="handleStatClick('')"
-        >
-          <div class="stat-value">{{ stats.total }}</div>
-          <div class="stat-label">全部客户</div>
-        </div>
-        <div
-          class="stat-card stat-undealt"
-          :class="{ active: activeStat === '未成交' }"
-          @click="handleStatClick('未成交')"
-        >
-          <div class="stat-value">{{ stats.undealt }}</div>
-          <div class="stat-label">未成交</div>
-        </div>
-        <div
-          class="stat-card stat-dealt"
-          :class="{ active: activeStat === '成交' }"
-          @click="handleStatClick('成交')"
-        >
-          <div class="stat-value">{{ stats.dealt }}</div>
-          <div class="stat-label">成交</div>
-        </div>
-        <div
-          class="stat-card stat-pending"
-          :class="{ active: activeStat === '待催款' }"
-          @click="handleStatClick('待催款')"
-        >
-          <div class="stat-value">{{ stats.pending }}</div>
-          <div class="stat-label">待催款</div>
-        </div>
-        <div
-          class="stat-card stat-settled"
-          :class="{ active: activeStat === '已结款' }"
-          @click="handleStatClick('已结款')"
-        >
-          <div class="stat-value">{{ stats.settled }}</div>
-          <div class="stat-label">已结款</div>
-        </div>
-        <div
-          class="stat-card stat-not-ordered"
-          :class="{ active: activeStat === '未下单' }"
-          @click="handleStatClick('未下单')"
-        >
-          <div class="stat-value">{{ stats.notOrdered }}</div>
-          <div class="stat-label">未下单</div>
-        </div>
-        <div
-          class="stat-card stat-ordered"
-          :class="{ active: activeStat === '已下单' }"
-          @click="handleStatClick('已下单')"
-        >
-          <div class="stat-value">{{ stats.ordered }}</div>
-          <div class="stat-label">已下单</div>
-        </div>
-        <div
-          class="stat-card stat-installed"
-          :class="{ active: activeStat === '已安装' }"
-          @click="handleStatClick('已安装')"
-        >
-          <div class="stat-value">{{ stats.installed }}</div>
-          <div class="stat-label">已安装</div>
-        </div>
-        <div
-          class="stat-card stat-dealer"
-          :class="{ active: activeStat === '经销商' }"
-          @click="handleStatClick('经销商')"
-        >
-          <div class="stat-value">{{ stats.dealer }}</div>
-          <div class="stat-label">经销商</div>
-        </div>
-        <div
-          class="stat-card stat-terminal"
-          :class="{ active: activeStat === '终端' }"
-          @click="handleStatClick('终端')"
-        >
-          <div class="stat-value">{{ stats.terminal }}</div>
-          <div class="stat-label">终端</div>
-        </div>
-      </div>
-
+      <CustomerStats :stats="stats" :active-stat="activeStat" @stat-click="handleStatClick" />
       <div class="search-filter-row">
         <SearchBar
           v-model="searchKeyword"
@@ -151,14 +67,14 @@
                 </el-tag>
                 <!-- 合作状态 -->
                 <el-tag
-                  :type="item.cooperationStatus === '已合作' ? 'success' : 'warning'"
+                  :type="item.cooperationStatus === CooperationStatus.COOPERATED ? 'success' : 'warning'"
                   size="small"
                 >
                   {{ item.cooperationStatus || "未合作" }}
                 </el-tag>
                 <!-- 客户类型 -->
                 <el-tag
-                  :type="item.customerType === '经销商' ? 'primary' : 'info'"
+                  :type="item.customerType === CustomerType.DEALER ? 'primary' : 'info'"
                   size="small"
                 >
                   {{ item.customerType || "终端" }}
@@ -169,14 +85,14 @@
                 </el-tag>
                 <!-- 下单状态 -->
                 <el-tag
-                  :type="item.orderStatus === '已下单' ? 'primary' : 'info'"
+                  :type="item.orderStatus === OrderStatus.ORDERED ? 'primary' : 'info'"
                   size="small"
                 >
                   {{ item.orderStatus || "未下单" }}
                 </el-tag>
                 <!-- 安装状态 -->
                 <el-tag
-                  :type="item.installationStatus === '已安装' ? 'success' : 'info'"
+                  :type="item.installationStatus === InstallationStatus.INSTALLED ? 'success' : 'info'"
                   size="small"
                 >
                   {{ item.installationStatus || "待安装" }}
@@ -522,8 +438,8 @@ const handleDelete = async (row: { id?: number | string; companyName: string }) 
 const getPaymentStatus = (item: CustomerListItem): { text: string; type: 'info' | 'danger' | 'success' } => {
   const total = item.totalAmount || 0;
   const paid = item.totalPaidAmount || 0;
-  if (total === 0) return { text: '未有款项', type: 'info' };
-  return total - paid > 0 ? { text: '待催款', type: 'danger' } : { text: '已结款', type: 'success' };
+  if (total === 0) return { text: PaymentStatus.NONE, type: 'info' };
+  return total - paid > 0 ? { text: '待催款', type: 'danger' } : { text: PaymentStatus.PAID, type: 'success' };
 };
 
 const getRemainingClass = (dateStr: string) => {
@@ -571,14 +487,14 @@ const saveInvoiceInfo = async () => {
 };
 
 const STATS_FILTER_MAP: Record<string, any> = {
-  '未成交': { cooperationStatus: '未合作' },
-  '成交': { cooperationStatus: '已合作' },
+  '未成交': { cooperationStatus: CooperationStatus.UNCOOPERATED },
+  '成交': { cooperationStatus: CooperationStatus.COOPERATED },
   '待催款': { paymentStatus: '待催款' },
-  '已结款': { paymentStatus: '已结款' },
-  '未下单': { cooperationStatus: '已合作', orderStatus: '未下单' },
-  '已下单': { orderStatus: '已下单' },
-  '已安装': { orderStatus: '已下单', installationStatus: '已安装' },
-  '经销商': { customerType: '经销商' },
+  [PaymentStatus.PAID]: { paymentStatus: PaymentStatus.PAID },
+  [OrderStatus.NOT_ORDERED]: { cooperationStatus: CooperationStatus.COOPERATED, orderStatus: OrderStatus.NOT_ORDERED },
+  [OrderStatus.ORDERED]: { orderStatus: OrderStatus.ORDERED },
+  [InstallationStatus.INSTALLED]: { orderStatus: OrderStatus.ORDERED, installationStatus: InstallationStatus.INSTALLED },
+  [CustomerType.DEALER]: { customerType: CustomerType.DEALER },
   '终端': { customerType: '终端' },
 };
 
@@ -590,14 +506,14 @@ const activeStat = computed(() => {
   const t = filters.customerType;
 
   if (!c && !p && !o && !i && !t) return '';
-  if (c === '未合作' && !p && !o && !i && !t) return '未成交';
-  if (c === '已合作' && !p && !o && !i && !t) return '成交';
+  if (c === CooperationStatus.UNCOOPERATED && !p && !o && !i && !t) return '未成交';
+  if (c === CooperationStatus.COOPERATED && !p && !o && !i && !t) return '成交';
   if (p === '待催款' && !c && !o && !i && !t) return '待催款';
-  if (p === '已结款' && !c && !o && !i && !t) return '已结款';
-  if (c === '已合作' && o === '未下单' && !p && !i && !t) return '未下单';
-  if (o === '已下单' && !c && !p && !i && !t) return '已下单';
-  if (o === '已下单' && i === '已安装' && !c && !p && !t) return '已安装';
-  if (t === '经销商' && !c && !p && !o && !i) return '经销商';
+  if (p === PaymentStatus.PAID && !c && !o && !i && !t) return PaymentStatus.PAID;
+  if (c === CooperationStatus.COOPERATED && o === OrderStatus.NOT_ORDERED && !p && !i && !t) return OrderStatus.NOT_ORDERED;
+  if (o === OrderStatus.ORDERED && !c && !p && !i && !t) return OrderStatus.ORDERED;
+  if (o === OrderStatus.ORDERED && i === InstallationStatus.INSTALLED && !c && !p && !t) return InstallationStatus.INSTALLED;
+  if (t === CustomerType.DEALER && !c && !p && !o && !i) return CustomerType.DEALER;
   if (t === '终端' && !c && !p && !o && !i) return '终端';
   return null;
 });
