@@ -552,84 +552,20 @@ onMounted(() => {
 }
 
 
-.stats-row {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-}
 
-.stat-card {
-  flex: 1;
-  min-width: 100px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 14px 16px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
-}
 
-.stat-card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
-}
 
-.stat-card.active {
-  border-color: #3b82f6;
-  background: #eff6ff;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
-}
 
-.stat-value {
-  font-size: 24px;
-  font-weight: 700;
-  color: #0f172a;
-  line-height: 1.2;
-}
 
-.stat-label {
-  font-size: 13px;
-  color: #64748b;
-  margin-top: 4px;
-}
 
-.stat-undealt .stat-value {
-  color: #64748b;
-}
 
-.stat-dealt .stat-value {
-  color: #3b82f6;
-}
 
-.stat-pending .stat-value {
-  color: #ef4444;
-}
 
-.stat-settled .stat-value {
-  color: #22c55e;
-}
 
-.stat-ordered .stat-value {
-  color: #409eff;
-}
 
-.stat-not-ordered .stat-value {
-  color: #94a3b8;
-}
 
-.stat-installed .stat-value {
-  color: #10b981;
-}
 
-.stat-dealer .stat-value {
-  color: #f59e0b;
-}
 
-.stat-terminal .stat-value {
-  color: #06b6d4;
-}
 
 .search-filter-row {
   display: flex;

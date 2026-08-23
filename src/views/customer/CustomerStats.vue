@@ -118,4 +118,42 @@ const handleStatClick = (stat: string) => { emit("stat-click", stat); };
   background: #eff6ff;
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
 }
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+.stat-label {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 4px;
+}
+.stat-undealt .stat-value {
+  color: #64748b;
+}
+.stat-dealt .stat-value {
+  color: #3b82f6;
+}
+.stat-pending .stat-value {
+  color: #ef4444;
+}
+.stat-settled .stat-value {
+  color: #22c55e;
+}
+.stat-ordered .stat-value {
+  color: #409eff;
+}
+.stat-not-ordered .stat-value {
+  color: #94a3b8;
+}
+.stat-installed .stat-value {
+  color: #10b981;
+}
+.stat-dealer .stat-value {
+  color: #f59e0b;
+}
+.stat-terminal .stat-value {
+  color: #06b6d4;
+}
 </style>
