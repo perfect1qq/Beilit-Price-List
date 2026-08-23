@@ -1,7 +1,7 @@
-<template>
+﻿<template>
   <div class="navbar-shell">
     <div class="navbar-top">
-      <el-button class="mobile-nav-trigger" :icon="Menu" circle size="small" @click="emit('toggle-mobile-sidebar')" />
+      <AppButton class="mobile-nav-trigger" :icon="Menu" circle size="small" @click="emit('toggle-mobile-sidebar')" />
       <div class="brand-area">
         <div class="brand-mark">BT</div>
         <div class="brand-copy">
@@ -59,15 +59,15 @@
         </el-form-item>
       </el-form>
       <template #footer="{ loading }">
-        <el-button @click="
+        <AppButton @click="
           changePassDialog.form = {
             oldPassword: '',
             newPassword: '',
             confirmPassword: '',
           };
         changePassDialog.visible = false;
-        ">取消</el-button>
-        <el-button type="primary" :loading="loading" @click="confirmChangePass">提交</el-button>
+        ">取消</AppButton>
+        <AppButton variant="submit" type="primary" :loading="loading" @click="confirmChangePass">提交</AppButton>
       </template>
     </AsyncDialog>
 
@@ -303,3 +303,4 @@ onUnmounted(() => {
   gap: 4px;
 }
 </style>
+

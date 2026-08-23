@@ -3,7 +3,7 @@
     <template #header>
       <CardHeader title="审批管理">
         <template #actions>
-          <SearchBar v-model="searchKeyword" placeholder="按公司名称、名称或提交人搜索" button-text="刷新列表" :loading="loading"
+          <SearchBar v-model="searchKeyword" placeholder="搜索公司名称、项目或提交人" button-text="刷新列表" button-variant="refresh" :loading="loading"
             @search="loadList(1)" />
         </template>
       </CardHeader>
@@ -34,11 +34,11 @@
           </div>
 
           <div class="card-footer">
-            <el-button type="primary" size="small" round @click.stop="editDetail(item.id)">详情</el-button>
-            <el-button type="success" size="small" plain :loading="isActionLoading(item.id as string | number)"
-              @click.stop="approveRow(item)">通过</el-button>
-            <el-button type="danger" size="small" plain :loading="isActionLoading(item.id as string | number)"
-              @click.stop="rejectRow(item)">驳回</el-button>
+            <AppButton variant="primary" size="small" round @click.stop="editDetail(item.id)">详情</AppButton>
+            <AppButton type="success" size="small" plain :loading="isActionLoading(item.id as string | number)"
+              @click.stop="approveRow(item)">通过</AppButton>
+            <AppButton type="danger" size="small" plain :loading="isActionLoading(item.id as string | number)"
+              @click.stop="rejectRow(item)">驳回</AppButton>
           </div>
         </div>
       </template>
@@ -208,3 +208,4 @@ onMounted(() => loadList(1))
   justify-content: flex-end;
 }
 </style>
+

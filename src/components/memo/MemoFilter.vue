@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <header class="memo-header">
     <div class="header-top">
       <div class="header-left">
@@ -6,9 +6,9 @@
       </div>
 
       <div v-if="!isGuest" class="header-actions">
-        <el-button type="primary" :icon="Plus" class="main-add-btn" @click="$emit('create')">
+        <AppButton variant="add" class="main-add-btn" @click="$emit('create')">
           新建任务
-        </el-button>
+        </AppButton>
       </div>
     </div>
 
@@ -117,3 +117,4 @@ const keywordModel = computed({
   }
 }
 </style>
+

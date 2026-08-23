@@ -1,13 +1,13 @@
-<template>
+﻿<template>
   <div class="page">
     <el-card shadow="never" class="page-card">
       <template #header>
         <CardHeader title="货架部件智能汇总">
           <template #actions>
-            <el-button type="info" plain @click="drawerVisible = true">
+            <AppButton type="info" plain @click="drawerVisible = true">
               <template #icon><el-icon><Clock /></el-icon></template>
               历史记录
-            </el-button>
+            </AppButton>
           </template>
         </CardHeader>
       </template>
@@ -81,18 +81,18 @@
           " />
 
         <div class="toolbar">
-          <el-button type="primary" @click="parseNow" :loading="loading" size="large">
+          <AppButton variant="primary" @click="parseNow" :loading="loading" size="large">
             <template #icon><el-icon>
                 <Promotion />
               </el-icon></template>
             {{ loading ? "解析中" : "生成汇总分析" }}
-          </el-button>
-          <el-button @click="clearText" :disabled="loading" size="large">
+          </AppButton>
+          <AppButton @click="clearText" :disabled="loading" size="large">
             <template #icon><el-icon>
                 <RefreshLeft />
               </el-icon></template>
             清空面板
-          </el-button>
+          </AppButton>
         </div>
       </section>
 
@@ -139,9 +139,9 @@
     <el-drawer v-model="drawerVisible" :with-header="false" size="480px" destroy-on-close>
       <div class="drawer-header">
         <span class="drawer-title">复制历史记录</span>
-        <el-button v-if="historyList.length" type="danger" size="small" plain @click="clearAllHistory">
+        <AppButton v-if="historyList.length" type="danger" size="small" plain @click="clearAllHistory">
           清空历史
-        </el-button>
+        </AppButton>
       </div>
       <el-divider style="margin: 12px 0 16px;" />
 
@@ -159,12 +159,12 @@
               <pre>{{ item.rawText }}</pre>
             </div>
             <div class="history-item-actions">
-              <el-button type="primary" size="small" plain @click="applyHistory(item)">
+              <AppButton variant="primary" size="small" @click="applyHistory(item)">
                 重新载入
-              </el-button>
-              <el-button type="danger" size="small" plain @click="deleteHistoryItem(item.id)">
+              </AppButton>
+              <AppButton variant="delete" size="small" @click="deleteHistoryItem(item.id)">
                 删除
-              </el-button>
+              </AppButton>
             </div>
           </div>
         </template>
@@ -642,3 +642,4 @@ h2 {
   gap: 8px;
 }
 </style>
+

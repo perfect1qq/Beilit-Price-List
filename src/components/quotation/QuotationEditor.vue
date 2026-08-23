@@ -14,6 +14,18 @@
             <el-form-item label="公司名称" prop="companyName" :rules="companyNameRule">
               <el-input v-model="localFormModel.companyName" placeholder="请输入公司名称" :disabled="isViewMode" />
             </el-form-item>
+            <el-form-item label="报价时间">
+              <el-date-picker
+                :model-value="quotationDate"
+                @update:model-value="$emit('update:quotationDate', $event || '')"
+                type="date"
+                placeholder="选择报价日期（选填）"
+                format="YYYY-MM-DD"
+                value-format="YYYY-MM-DD"
+                style="width: 100%"
+                :disabled="isViewMode"
+              />
+            </el-form-item>
             <el-form-item label="备注">
               <el-input :model-value="remark" @update:model-value="$emit('update:remark', $event)" type="textarea"
                 :autosize="{ minRows: 3 }" placeholder="备注信息，不参与表格" :disabled="isViewMode" />
@@ -54,8 +66,8 @@
           </div>
 
           <div class="price-actions">
-            <el-button size="small" @click="$emit('restoreAutoFinalPrice')"
-              :disabled="isViewMode || !isManualFinalPrice">恢复自动成交价</el-button>
+            <AppButton size="small" @click="$emit('restoreAutoFinalPrice')"
+              :disabled="isViewMode || !isManualFinalPrice">恢复自动成交价</AppButton>
           </div>
         </el-card>
       </el-col>
@@ -119,8 +131,7 @@
 
         <el-table-column v-if="!hideActionColumn" label="操作" min-width="80" align="center">
           <template #default="{ $index }">
-            <el-button link type="danger" :icon="Delete" @click="$emit('removeRow', $index)"
-              :disabled="isViewMode">删除</el-button>
+            <AppButton variant="delete" @click="$emit('removeRow', $index)" :disabled="isViewMode">删除</AppButton>
           </template>
         </el-table-column>
       </el-table>
@@ -158,7 +169,8 @@ const props = defineProps({
   isManualFinalPrice: Boolean,
   rawText: String,
   items: { type: Array as PropType<QuotationItem[]>, default: () => [] },
-  visibleColumns: { type: Array as PropType<string[]>, default: () => [] }
+  visibleColumns: { type: Array as PropType<string[]>, default: () => [] },
+  quotationDate: String,
 })
 
 const emit = defineEmits([
@@ -166,6 +178,7 @@ const emit = defineEmits([
   'update:discount',
   'update:finalPrice',
   'update:rawText',
+  'update:quotationDate',
   'handleDiscountChange',
   'handleManualFinalPriceChange',
   'restoreAutoFinalPrice',
@@ -296,3 +309,4 @@ onBeforeUnmount(() => {
   }
 }
 </style>
+

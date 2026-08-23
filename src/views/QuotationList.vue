@@ -11,15 +11,14 @@
 
               <template v-if="!isGuest">
 
-                <el-button :icon="Delete" @click="clearRows" :disabled="isViewMode">
+                <AppButton variant="delete" size="default" @click="clearRows" :disabled="isViewMode">
                   清空当前表格
-                </el-button>
+                </AppButton>
 
 
-                <el-button type="success" :icon="Check" @click="handleSubmit" :loading="isSubmitting"
-                  :disabled="isViewMode">
+                <AppButton variant="save" type="success" @click="handleSubmit" :loading="isSubmitting" :disabled="isViewMode">
                   确认保存报价单
-                </el-button>
+                </AppButton>
               </template>
 
 
@@ -42,15 +41,15 @@
         @restore-auto-final-price="restoreAutoFinalPrice" @update-row-total="updateRowTotal" @remove-row="removeRow">
 
         <template #parse-action>
-          <el-button v-if="!isViewMode" type="primary" :icon="MagicStick" @click="handleParseText" :loading="parsing">
+          <AppButton variant="primary" v-if="!isViewMode" :icon="MagicStick" @click="handleParseText" :loading="parsing">
             智能解析粘贴内容
-          </el-button>
+          </AppButton>
         </template>
 
         <template #detail-action>
-          <el-button v-if="!isGuest && !isViewMode" type="primary" plain :icon="Plus" @click="addRow" size="small">
+          <AppButton variant="add" v-if="!isGuest && !isViewMode" @click="addRow" size="small">
             添加一行
-          </el-button>
+          </AppButton>
         </template>
       </QuotationEditor>
     </el-card>
@@ -89,9 +88,6 @@ const formModel = reactive({
 
 
 const parsing = ref(false)
-
-
-const isSubmitting = ref(false)
 
 
 const rulesDisabled = ref(false)
@@ -144,6 +140,7 @@ const { saveQuotation, loading } = useQuotationHistory({
 
 
 const {
+  isSubmitting,
   handleManualFinalPriceChange,
   handleDiscountChange,
   handleParseText,
@@ -151,7 +148,6 @@ const {
 } = useQuotationEditor({
   isViewMode,
   parsing,
-  isSubmitting,
   rawText,
   items,
   name,
@@ -240,3 +236,4 @@ const switchToEdit = () => {
   }
 }
 </style>
+

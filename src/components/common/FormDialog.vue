@@ -8,10 +8,13 @@
 
     <template #footer="{ loading }">
       <slot name="footer" :loading="loading" :validate="handleValidate" :submit="handleSubmit">
-        <el-button :disabled="loading" @click="handleCancel">取消</el-button>
-        <el-button type="primary" :loading="loading" @click="handleSubmit">
-          {{ submitText }}
-        </el-button>
+        <FormButtons
+          :submit-text="submitText"
+          :loading="loading"
+          :cancel-disabled="loading"
+          @cancel="handleCancel"
+          @submit="handleSubmit"
+        />
       </slot>
     </template>
   </AsyncDialog>
@@ -22,6 +25,7 @@ import { ref, watch, nextTick } from 'vue'
 import type { PropType } from 'vue'
 import type { FormInstance } from 'element-plus'
 import AsyncDialog from './AsyncDialog.vue'
+import FormButtons from './FormButtons.vue'
 import type { FormRules } from '@/types'
 
 const props = defineProps({

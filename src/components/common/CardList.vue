@@ -1,4 +1,4 @@
-
+﻿
 
 <template>
   <div class="card-list" v-bind="$attrs" @copy="handleCopy">
@@ -62,9 +62,9 @@
 
 
     <div v-if="loadMore && hasMore && !loading" class="load-more-wrapper">
-      <el-button type="primary" plain :loading="loadingMore" @click="$emit('load-more')">
+      <AppButton variant="primary" :loading="loadingMore" @click="$emit('load-more')">
         {{ loadingMore ? '加载中...' : '加载更多' }}
-      </el-button>
+      </AppButton>
     </div>
 
 
@@ -515,3 +515,4 @@ const handleCopy = (e: ClipboardEvent): void => {
   }
 }
 </style>
+

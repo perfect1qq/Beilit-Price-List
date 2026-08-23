@@ -197,12 +197,13 @@ const routes: RouteRecordRaw[] = [
         component: UsdConversion,
         meta: { title: '美金换算', requiresPermission: 'quotation:write' },
       },
-      {
-        path: 'customer-management',
-        name: 'CustomerManagement',
-        component: CustomerManagement,
-        meta: { title: '客户管理', requiresPermission: 'customer:write' },
-      },
+        {
+          path: 'customer-management',
+          name: 'CustomerManagement',
+          component: CustomerManagement,
+          meta: { title: '客户管理', requiresPermission: 'customer:write' },
+        },
+
       {
         path: 'notepad',
         name: 'Notepad',

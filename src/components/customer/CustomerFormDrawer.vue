@@ -71,6 +71,7 @@
           <el-option label="已结款" value="已结款" />
         </el-select>
       </el-form-item>
+
       <el-form-item label="下单状态" prop="orderStatus">
         <el-select
           v-model="localData.orderStatus"
@@ -163,10 +164,7 @@
     </el-form>
     
     <template #footer>
-      <div style="flex: auto; text-align: right;">
-        <el-button @click="visible = false">取消</el-button>
-        <el-button type="primary" :loading="loading" @click="handleSubmit">确定</el-button>
-      </div>
+      <FormButtons submit-text="确定" :loading="loading" @cancel="visible = false" @submit="handleSubmit" />
     </template>
   </el-drawer>
 </template>
@@ -175,6 +173,7 @@
 import { ref, computed, reactive, watch } from "vue";
 import type { PropType } from "vue";
 import type { FormInstance } from "element-plus";
+import FormButtons from "@/components/common/FormButtons.vue";
 import {
   createRequiredRule,
   createMaxLengthRule,

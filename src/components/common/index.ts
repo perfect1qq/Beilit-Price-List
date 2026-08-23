@@ -6,8 +6,12 @@ import PagePagination from './PagePagination.vue'
 import SearchBar from './SearchBar.vue'
 import CardHeader from './CardHeader.vue'
 import CardList from './CardList.vue'
+import AppButton from './AppButton.vue'
+import ActionButtons from './ActionButtons.vue'
+import FormButtons from './FormButtons.vue'
+import AttachmentList from './AttachmentList.vue'
 
-export { AsyncDialog, FormDialog, AutoFitColumn, PagePagination, SearchBar, CardHeader, CardList }
+export { AsyncDialog, FormDialog, AutoFitColumn, PagePagination, SearchBar, CardHeader, CardList, AppButton, ActionButtons, FormButtons, AttachmentList }
 
 export default {
   install(app: App): void {
@@ -18,5 +22,9 @@ export default {
     app.component('SearchBar', SearchBar)
     app.component('CardHeader', CardHeader)
     app.component('CardList', CardList)
+    app.component('AppButton', AppButton)
+    app.component('ActionButtons', ActionButtons)
+    app.component('FormButtons', FormButtons)
+    app.component('AttachmentList', AttachmentList)
   }
 }

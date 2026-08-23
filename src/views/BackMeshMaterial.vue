@@ -12,25 +12,29 @@
         <div class="input-section">
           <div class="section-title">参数设置</div>
           <el-form label-width="120px" class="settings-form">
-            <el-form-item label="原材料长度(米)">
-              <el-input-number v-model="rawLength" :min="1" :step="0.1" :precision="2" style="width: 150px" />
+            <el-form-item label="原材料长度(mm)">
+              <el-input-number v-model="rawLength" :min="1" :step="100" :precision="0" style="width: 150px" />
               <span class="hint-text">默认一根管子的长度</span>
             </el-form-item>
-            <el-form-item label="锯缝损耗(毫米)">
+            <el-form-item label="锯缝损耗(mm)">
               <el-input-number v-model="sawLoss" :min="0" :step="1" style="width: 150px" />
               <span class="hint-text">每次切割造成的损耗(预留)</span>
+            </el-form-item>
+            <el-form-item label="安全余量(mm)">
+              <el-input-number v-model="safetyMargin" :min="0" :step="5" style="width: 150px" />
+              <span class="hint-text">预留的边缘废料，防止切割误差</span>
             </el-form-item>
           </el-form>
 
           <div class="section-title" style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center;">
             <span>需求列表</span>
-            <el-button type="primary" link :icon="Plus" @click="addRequirement">添加需求</el-button>
+            <AppButton variant="add" @click="addRequirement">添加需求</AppButton>
           </div>
           
           <el-table :data="requirements" border stripe class="requirements-table">
-            <el-table-column label="切割长度 (米)" min-width="150">
+            <el-table-column label="切割长度 (mm)" min-width="150">
               <template #default="{ row }">
-                <el-input-number v-model="row.length" :min="0.1" :max="rawLength" :step="0.1" :precision="3" style="width: 100%" />
+                <el-input-number v-model="row.length" :min="1" :max="rawLength" :step="10" :precision="0" style="width: 100%" />
               </template>
             </el-table-column>
             <el-table-column label="需要数量 (根)" min-width="150">
@@ -40,16 +44,16 @@
             </el-table-column>
             <el-table-column label="操作" width="80" align="center">
               <template #default="{ $index }">
-                <el-button type="danger" link :icon="Delete" @click="removeRequirement($index)" :disabled="requirements.length <= 1" />
+                <AppButton variant="delete" link @click="removeRequirement($index)" :disabled="requirements.length <= 1" />
               </template>
             </el-table-column>
           </el-table>
 
           <div class="action-bar">
-            <el-button type="primary" size="large" class="calc-btn" @click="calculate" :loading="isCalculating">
+            <AppButton variant="primary" size="large" class="calc-btn" @click="calculate" :loading="isCalculating">
               开始计算方案
-            </el-button>
-            <el-button @click="resetForm" size="large">重置</el-button>
+            </AppButton>
+            <AppButton variant="reset" size="large" @click="resetForm">重置</AppButton>
           </div>
         </div>
 
@@ -79,7 +83,7 @@
                     <span class="multiplier">需按此方案切割 <span class="highlight">{{ pattern.count }}</span> 根原材料</span>
                   </div>
                   <div class="pattern-waste">
-                    每根剩余废料: <strong>{{ pattern.waste.toFixed(3) }}</strong> 米
+                    每根剩余废料: <strong>{{ pattern.waste }}</strong> mm
                   </div>
                 </div>
                 
@@ -91,10 +95,10 @@
                       class="cut-segment" 
                       :style="{ width: (cut / rawLength * 100) + '%' }"
                     >
-                      {{ cut }}m
+                      {{ cut }}mm
                     </div>
                     <div class="waste-segment" :style="{ width: (pattern.waste / rawLength * 100) + '%' }">
-                      余{{ pattern.waste.toFixed(2) }}
+                      余{{ pattern.waste }}
                     </div>
                   </div>
                   
@@ -106,7 +110,7 @@
                       size="small"
                       class="cut-tag"
                     >
-                      {{ len }}m × {{ count }}
+                      {{ len }}mm × {{ count }}
                     </el-tag>
                   </div>
                 </div>
@@ -129,8 +133,9 @@ import { Plus, Delete } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 // --- 状态定义 ---
-const rawLength = ref(6.0) // 默认 6 米
-const sawLoss = ref(0)     // 锯缝损耗(毫米)，暂设为0
+const rawLength = ref(6000) // 默认 6000 mm
+const sawLoss = ref(3)     // 锯缝损耗(mm)，刀片厚度默认3mm
+const safetyMargin = ref(20) // 安全余量(mm)，默认留20mm防误差
 const isCalculating = ref(false)
 
 interface Requirement {
@@ -139,10 +144,10 @@ interface Requirement {
 }
 
 const requirements = ref<Requirement[]>([
-  { length: 2.3, quantity: 104 },
-  { length: 1.3, quantity: 332 },
-  { length: 2.7, quantity: 136 },
-  { length: 1.2, quantity: 24 }
+  { length: 2300, quantity: 104 },
+  { length: 1300, quantity: 332 },
+  { length: 2700, quantity: 136 },
+  { length: 1200, quantity: 24 }
 ])
 
 interface Pattern {
@@ -154,7 +159,7 @@ interface Pattern {
 const results = ref<Pattern[]>([])
 const totalRawNeeded = ref(0)
 
-// --- 计算逻辑 (FFD 一维下料) ---
+// --- 计算逻辑 (高级动态规划-贪心组合算法) ---
 const calculate = () => {
   isCalculating.value = true
   
@@ -170,56 +175,128 @@ const calculate = () => {
     return
   }
 
-  // 1. 将所有需求展开为平铺数组
-  const allNeeds: number[] = []
-  requirements.value.forEach(req => {
-    for (let i = 0; i < req.quantity; i++) {
-      allNeeds.push(req.length)
-    }
-  })
+  // 计算有效可用长度：原材料长度 - 安全余量
+  const W = Math.round(rawLength.value) - Math.round(safetyMargin.value)
+  const loss = Math.round(sawLoss.value)
 
-  // 2. 降序排序 (First Fit Decreasing)
-  allNeeds.sort((a, b) => b - a)
+  if (W <= 0) {
+    ElMessage.error('安全余量不能大于或等于原材料长度！')
+    isCalculating.value = false
+    return
+  }
 
-  // 3. 执行贪心装箱
+  let reqs = requirements.value
+    .filter(r => r.quantity > 0)
+    .map((r, index) => ({ 
+      id: index, 
+      l: Math.round(r.length), 
+      q: r.quantity, 
+      originalL: r.length 
+    }))
+
   const pipes: number[][] = []
-  const lossInMeters = sawLoss.value / 1000
 
-  for (const need of allNeeds) {
-    let placed = false
-    for (const pipe of pipes) {
-      const currentUsed = pipe.reduce((a, b) => a + b + lossInMeters, 0)
-      // 第一个切片不需要算损耗，但为了简化，假设每切一刀(包括末尾)都算或者只算中间。
-      // 这里准确来说，切N段需要N-1刀损耗。
-      const neededLength = need + (pipe.length > 0 ? lossInMeters : 0)
-      
-      if (currentUsed + neededLength <= rawLength.value + 0.0001) { // 处理精度浮点数
-        pipe.push(need)
-        placed = true
-        break
+  // 当还有需求未满足时，不断寻找最优方案
+  while (reqs.length > 0) {
+    // 展开可用的物品，限制每种物品的最大放入数量
+    const flatItems: { id: number; l: number; originalL: number }[] = []
+    for (const r of reqs) {
+      const maxCanFit = Math.floor(W / r.l)
+      const count = Math.min(r.q, maxCanFit)
+      for (let c = 0; c < count; c++) {
+        flatItems.push({ id: r.id, l: r.l, originalL: r.originalL })
       }
     }
-    
-    // 如果所有的都放不下，开一根新的
-    if (!placed) {
-      pipes.push([need])
+
+    if (flatItems.length === 0) break
+
+    // 使用 0-1 背包 DP 寻找单根管子的最优切割组合
+    // 目标：在容量 W 内，最大化放入的物品总长度，长度相同时尽量减少物品数量（即优先用大料）
+    const dpScore = new Int32Array(W + 1).fill(-1)
+    const dpItems = new Array<number[]>(W + 1)
+    dpScore[0] = 0
+    dpItems[0] = []
+
+    for (let i = 0; i < flatItems.length; i++) {
+      const item = flatItems[i]
+      // 倒序遍历，保证每个物品只被使用一次
+      for (let w = W; w >= 0; w--) {
+        if (dpScore[w] !== -1) {
+          const isFirstPiece = (w === 0)
+          const addedWeight = item.l + (isFirstPiece ? 0 : loss)
+          const newW = w + addedWeight
+
+          if (newW <= W) {
+            // score 权重公式：总长度占据主导，减去1是为了在长度相同的情况下，选用数量最少的方案（优先大料）
+            const newScore = dpScore[w] + item.l * 1000 - 1
+            if (newScore > dpScore[newW]) {
+              dpScore[newW] = newScore
+              dpItems[newW] = [...dpItems[w], i]
+            }
+          }
+        }
+      }
     }
+
+    // 找出得分最高的组合方案
+    let bestW = 0
+    for (let w = 0; w <= W; w++) {
+      if (dpScore[w] > dpScore[bestW]) {
+        bestW = w
+      }
+    }
+
+    const bestIndices = dpItems[bestW]
+    if (!bestIndices || bestIndices.length === 0) {
+      break
+    }
+
+    // 统计当前最优方案中各需求的数量
+    const patternCounts = new Map<number, number>()
+    for (const idx of bestIndices) {
+      const reqId = flatItems[idx].id
+      patternCounts.set(reqId, (patternCounts.get(reqId) || 0) + 1)
+    }
+
+    // 计算这个方案可以被批量应用多少次（根据库存瓶颈）
+    let applyTimes = Infinity
+    for (const [reqId, count] of patternCounts.entries()) {
+      const req = reqs.find(r => r.id === reqId)!
+      applyTimes = Math.min(applyTimes, Math.floor(req.q / count))
+    }
+
+    // 应用该方案 applyTimes 次
+    for (let t = 0; t < applyTimes; t++) {
+      const pipe: number[] = []
+      for (const [reqId, count] of patternCounts.entries()) {
+        const req = reqs.find(r => r.id === reqId)!
+        req.q -= count // 扣除需求数量
+        for (let c = 0; c < count; c++) {
+          pipe.push(req.originalL)
+        }
+      }
+      pipes.push(pipe)
+    }
+
+    // 移除已完全满足的需求，进入下一轮寻优
+    reqs = reqs.filter(r => r.q > 0)
   }
 
   totalRawNeeded.value = pipes.length
 
-  // 4. 将相同切割方案的合并
+  // 整理并合并完全相同的切割方案
   const patternMap = new Map<string, Pattern>()
+  const lossInMm = sawLoss.value
   
   pipes.forEach(pipe => {
-    // 排序后转字符串作为key，避免同方案不同顺序
+    // 降序排列管子段，确保方案比较时顺序一致
     const sortedPipe = [...pipe].sort((a, b) => b - a)
     const key = sortedPipe.join('|')
     
     if (patternMap.has(key)) {
       patternMap.get(key)!.count += 1
     } else {
-      const usedLen = sortedPipe.reduce((a, b) => a + b, 0) + (Math.max(0, sortedPipe.length - 1) * lossInMeters)
+      const usedLen = sortedPipe.reduce((a, b) => a + b, 0) + (Math.max(0, sortedPipe.length - 1) * lossInMm)
       patternMap.set(key, {
         cuts: sortedPipe,
         waste: rawLength.value - usedLen,
@@ -228,6 +305,7 @@ const calculate = () => {
     }
   })
 
+  // 按使用次数降序排列结果方案
   results.value = Array.from(patternMap.values()).sort((a, b) => b.count - a.count)
   isCalculating.value = false
 }
@@ -256,10 +334,10 @@ const removeRequirement = (index: number) => {
 
 const resetForm = () => {
   requirements.value = [
-    { length: 2.3, quantity: 104 },
-    { length: 1.3, quantity: 332 },
-    { length: 2.7, quantity: 136 },
-    { length: 1.2, quantity: 24 }
+    { length: 2300, quantity: 104 },
+    { length: 1300, quantity: 332 },
+    { length: 2700, quantity: 136 },
+    { length: 1200, quantity: 24 }
   ]
   results.value = []
   totalRawNeeded.value = 0
@@ -496,3 +574,4 @@ const getCutCounts = (cuts: number[]) => {
   padding: 60px 0;
 }
 </style>
+

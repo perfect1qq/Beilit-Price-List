@@ -106,6 +106,7 @@ export interface QuotationData {
   isManual: boolean
   reviewComment: string
   rejectReason: string
+  quotationDate: string
   createDate: string
   submittedAt: string | null
   approvedAt: string | null
@@ -125,6 +126,7 @@ export interface QuotationCreatePayload {
   isManual?: boolean
   status?: QuotationStatus
   remark?: string
+  quotationDate?: string | null
 }
 
 export type QuotationListResult = PaginatedResult<QuotationData>
@@ -140,7 +142,6 @@ export interface QuotationLogData {
 }
 
 export interface BeamQuotationItem {
-  name: string
   length: string
   spec: string
   maxLoad: string
@@ -167,6 +168,8 @@ export interface CustomerCreatePayload {
   shelfType?: string
   discountPoints?: string
   remark?: string
+  orderAmount?: number | null
+  paidAmount?: number | null
   paymentStatus?: string
   orderStatus?: string
   installationStatus?: string
@@ -184,6 +187,8 @@ export interface CustomerUpdatePayload {
   shelfType?: string
   discountPoints?: string
   remark?: string
+  orderAmount?: number | null
+  paidAmount?: number | null
   paymentStatus?: string
   orderStatus?: string
   installationStatus?: string
@@ -210,6 +215,8 @@ export interface CustomerData {
   orderStatus: string
   installationStatus: string
   invoiceInfo: string
+  totalAmount: number | null
+  totalPaidAmount: number | null
   createdAt: string
   updatedAt: string
 }
@@ -219,6 +226,7 @@ export interface CustomerOrderData {
   customerId: number
   orderName: string
   orderAmount: number | null
+  paidAmount: number | null
   orderStatus: string
   paymentStatus: string
   installationStatus: string
@@ -236,6 +244,7 @@ export interface CustomerOrderData {
 export interface CustomerOrderCreatePayload {
   orderName: string
   orderAmount?: number | null
+  paidAmount?: number | null
   orderStatus?: string
   paymentStatus?: string
   installationStatus?: string
@@ -247,6 +256,7 @@ export interface CustomerOrderCreatePayload {
 export interface CustomerOrderUpdatePayload {
   orderName?: string
   orderAmount?: number | null
+  paidAmount?: number | null
   orderStatus?: string
   paymentStatus?: string
   installationStatus?: string
@@ -311,7 +321,6 @@ export interface MemoData {
   id: number
   title: string
   content: string
-  label: string
   color: string
   pinned: boolean
   completed: boolean
@@ -472,8 +481,10 @@ export interface ContractData {
   title: string
   content: string
   attachments: string
+  amount: number
   ownerId: number
   ownerName: string
+  contractDate: string | null
   createdAt: string
   updatedAt: string
 }

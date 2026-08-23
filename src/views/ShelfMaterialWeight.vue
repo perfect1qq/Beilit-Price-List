@@ -5,12 +5,12 @@
         <CardHeader title="货架材料重量">
           <template #actions>
             <div style="display: flex; gap: 12px;">
-              <el-button type="danger" plain :icon="Delete" @click="clearTable">
+              <AppButton variant="delete" size="default" @click="clearTable">
                 清空表格
-              </el-button>
-              <el-button type="primary" :icon="Plus" @click="addRow">
+              </AppButton>
+              <AppButton variant="add" @click="addRow">
                 新增一行
-              </el-button>
+              </AppButton>
             </div>
           </template>
         </CardHeader>
@@ -37,9 +37,9 @@
             </el-select>
           </el-form-item>
           <el-form-item>
-            <el-button type="success" @click="generateShelfMaterials">
+            <AppButton type="success" @click="generateShelfMaterials">
               一键生成
-            </el-button>
+            </AppButton>
           </el-form-item>
         </el-form>
       </div>
@@ -150,13 +150,7 @@
 
         <el-table-column label="操作" width="60" align="center" fixed="right">
           <template #default="{ $index }">
-            <el-button 
-              type="danger" 
-              :icon="Delete" 
-              circle 
-              plain
-              @click="removeRow($index)" 
-            />
+            <AppButton variant="delete" circle @click="removeRow($index)"/>
           </template>
         </el-table-column>
       </el-table>
@@ -436,3 +430,4 @@ const getSummaries = (param: { columns: any[]; data: any[] }) => {
   margin-top: 2px;
 }
 </style>
+

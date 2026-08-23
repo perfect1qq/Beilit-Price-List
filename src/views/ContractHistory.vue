@@ -5,19 +5,14 @@
         <div class="header-tools">
           <span class="page-title">合同历史</span>
           <div class="actions">
-            <el-input
-              v-model="keyword"
-              placeholder="搜索公司名称 / 合同名称..."
-              clearable
+            <SearchBar
+              v-model="filters.keyword"
+              placeholder="搜索公司 / 合同号..."
               style="width: 300px"
-              @input="onSearch"
-            >
-              <template #prefix>
-                <el-icon><Search /></el-icon>
-              </template>
-            </el-input>
+              @search="onSearch"
+            />
             
-            <el-button type="primary" @click="router.push('/contract')">新增合同</el-button>
+            <AppButton variant="primary" @click="router.push('/contract')">新增合同</AppButton>
           </div>
         </div>
       </template>
@@ -28,23 +23,21 @@
         <GroupedHistoryList v-else :data="groupedContracts">
           <template #default="{ records }">
             <el-table-column prop="title" label="合同名称" min-width="200" />
+            <el-table-column label="合同时间" width="120" align="center">
+              <template #default="scope">
+                {{ formatDateOnly(scope.row.contractDate || scope.row.createdAt) || '-' }}
+              </template>
+            </el-table-column>
             <el-table-column prop="ownerName" label="创建人" width="120" />
             <el-table-column label="附件" min-width="150">
               <template #default="scope">
-                <div v-if="parseAttachments(scope.row.attachments).length">
-                  <div v-for="file in parseAttachments(scope.row.attachments)" :key="file.url" style="margin-bottom: 4px;">
-                    <el-link type="primary" @click.prevent="handleDownload(file)" underline="never">
-                      <el-icon style="margin-right: 4px"><Document /></el-icon>{{ file.name }}
-                    </el-link>
-                  </div>
-                </div>
-                <span v-else style="color: #999">无</span>
+                <AttachmentList :raw="scope.row.attachments" />
               </template>
             </el-table-column>
             <el-table-column label="操作" width="180" align="center">
               <template #default="scope">
-                <el-button type="primary" size="small" plain @click="editContract(scope.row)">查看/编辑</el-button>
-                <el-button type="danger" size="small" plain @click="deleteContract(scope.row)">删除</el-button>
+                <AppButton variant="primary" size="small" @click="editContract(scope.row)">查看/编辑</AppButton>
+                <AppButton variant="delete" size="small" @click="deleteContract(scope.row)">删除</AppButton>
               </template>
             </el-table-column>
           </template>
@@ -56,75 +49,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Document } from '@element-plus/icons-vue'
-import contractApi from '@/api/contract'
-import { downloadFile } from '@/utils/downloadFile'
+import SearchBar from '@/components/common/SearchBar.vue'
+import { formatDateOnly } from '@/utils/date'
 import type { ContractData } from '@/types'
 import GroupedHistoryList from '@/components/common/GroupedHistoryList.vue'
 import { groupByYearAndCompany } from '@/utils/grouping'
+import { useContractListQuery, useDeleteContractMutation } from '@/composables/useHistoryQueries'
 
 const router = useRouter()
 const route = useRoute()
 
-const loading = ref(false)
-const rawData = ref<ContractData[]>([])
-const total = ref(0)
-const page = ref(1)
-const pageSize = ref(10000) // Fetch all for proper grouping
-const keyword = ref('')
+// 列表过滤条件（响应式，传给 vue-query）
+const filters = ref({
+  keyword: route.query.keyword ? String(route.query.keyword) : '',
+  page: 1,
+  pageSize: 10000, // 一次拉取所有，用于前端分组
+})
 
-const parseAttachments = (attachmentsStr: string) => {
-  if (!attachmentsStr) return []
-  try {
-    return JSON.parse(attachmentsStr)
-  } catch {
-    return []
-  }
-}
+// 列表查询（自动响应 filters 变化）
+const { data, isLoading: loading, isFetching } = useContractListQuery(filters)
+const rawData = computed<ContractData[]>(() => data.value?.list || [])
 
-const handleDownload = (file: { url: string, name: string }) => {
-  downloadFile({ url: file.url, name: file.name })
-}
+// 删除 mutation
+const deleteMutation = useDeleteContractMutation()
 
 const groupedContracts = computed(() => {
   return groupByYearAndCompany(rawData.value, (r) => r.companyName || '未分配公司')
 })
 
-let searchTimer: any = null
 const onSearch = () => {
-  if (searchTimer) clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => {
-    searchTimer = null
-    page.value = 1
-    fetchData()
-  }, 500)
-}
-
-onBeforeUnmount(() => {
-  if (searchTimer) {
-    clearTimeout(searchTimer)
-    searchTimer = null
-  }
-})
-
-const fetchData = async () => {
-  loading.value = true
-  try {
-    const res = await contractApi.list({
-      page: page.value,
-      pageSize: pageSize.value,
-      keyword: keyword.value
-    })
-    rawData.value = res.list
-    total.value = res.total
-  } catch (e: any) {
-    ElMessage.error(e.message || '获取数据失败')
-  } finally {
-    loading.value = false
-  }
+  filters.value = { ...filters.value, page: 1 }
 }
 
 const editContract = (row: ContractData) => {
@@ -134,22 +91,15 @@ const editContract = (row: ContractData) => {
 const deleteContract = async (row: ContractData) => {
   try {
     await ElMessageBox.confirm('确定要删除该合同吗？', '提示', { type: 'warning' })
-    await contractApi.delete(row.id)
+    await deleteMutation.mutateAsync(row.id)
     ElMessage.success('删除成功')
-    fetchData()
+    // 删除后 vue-query 自动失效并重新拉取，无需手动调 fetchData
   } catch (e: any) {
     if (e !== 'cancel') {
       ElMessage.error(e.message || '删除失败')
     }
   }
 }
-
-onMounted(() => {
-  if (route.query.keyword) {
-    keyword.value = String(route.query.keyword)
-  }
-  fetchData()
-})
 </script>
 
 <style scoped>
@@ -245,3 +195,4 @@ onMounted(() => {
   font-size: 13px;
 }
 </style>
+

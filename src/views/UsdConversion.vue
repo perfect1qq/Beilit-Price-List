@@ -1,11 +1,11 @@
-<template>
+﻿<template>
   <div class="usd-conversion-page">
     <el-card class="box-card">
       <template #header>
         <CardHeader title="美金换算工具">
           <template #actions>
             <div class="actions">
-              <el-button type="primary" :icon="Plus" @click="addRow">添加一行</el-button>
+              <AppButton variant="add" @click="addRow">添加一行</AppButton>
             </div>
           </template>
         </CardHeader>
@@ -90,7 +90,7 @@
 
         <el-table-column label="操作" min-width="80" align="center">
           <template #default="{ $index }">
-            <el-button type="danger" :icon="Delete" circle @click="removeRow($index)" />
+            <AppButton variant="delete" circle @click="removeRow($index)"/>
           </template>
         </el-table-column>
       </el-table>

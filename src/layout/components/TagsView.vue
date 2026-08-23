@@ -1,13 +1,13 @@
-<template>
+﻿<template>
   <div class="tags-view-wrapper">
     <div class="tags-left-tools">
       <el-dropdown trigger="click" @command="handleCommand">
-        <el-button class="tags-op-btn" size="small" round>
+        <AppButton class="tags-op-btn" size="small" round>
           <el-icon>
             <MoreFilled />
           </el-icon>
           <span>页面操作</span>
-        </el-button>
+        </AppButton>
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="closeOthers">关闭其他</el-dropdown-item>
@@ -212,3 +212,4 @@ const handleCommand = async (command: string) => {
   }
 }
 </style>
+

@@ -70,12 +70,6 @@ export const memoTitleRule: FormItemRule[] = [
   noSpaceValidator('任务名称')
 ]
 
-export const memoLabelRule: FormItemRule[] = [
-  { required: true, message: '请选择或输入分类', trigger: TRIGGER_BLUR },
-  createMaxLengthRule(20, '分类'),
-  noSpaceValidator('分类')
-]
-
 export const memoContentRule: FormItemRule[] = [
   { required: true, message: '请输入详细说明', trigger: TRIGGER_BLUR },
   createMaxLengthRule(2000, '详细说明')

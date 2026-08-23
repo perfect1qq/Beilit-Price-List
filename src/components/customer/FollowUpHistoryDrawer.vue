@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-drawer
     :model-value="modelValue"
     :title="drawerTitle"
@@ -19,9 +19,9 @@
           style="flex: 1; margin: 0 16px; max-width: 250px;"
           @search="searchKeyword = $event"
         />
-        <el-button v-if="canCreate" type="primary" size="small" :icon="Plus" @click="handleAdd">
+        <AppButton variant="add" v-if="canCreate" size="small" @click="handleAdd">
           添加跟进
-        </el-button>
+        </AppButton>
       </div>
 
       <div v-if="filteredFollowUps.length > 0" class="fu-list">
@@ -33,10 +33,9 @@
             </div>
             <div class="fu-header-right">
               <span class="fu-time">{{ formatDateTime(item.createdAt || '') }}</span>
-              <el-button v-if="!isGuest" type="danger" link size="small" class="fu-delete" :icon="Delete"
-                @click="handleDelete(item)">
+              <AppButton variant="delete" v-if="!isGuest" size="small" class="fu-delete" @click="handleDelete(item)">
                 删除
-              </el-button>
+              </AppButton>
             </div>
           </div>
           <p class="fu-content">{{ item.content }}</p>
@@ -260,3 +259,4 @@ const handleDelete = async (item: FollowUpData) => {
   font-size: 14px;
 }
 </style>
+

@@ -4,7 +4,7 @@
       <template #header>
         <CardHeader title="审批历史">
           <template #actions>
-            <SearchBar v-model="searchKeyword" placeholder="按公司名称、名称或提交人搜索" button-text="刷新列表" :loading="loading"
+            <SearchBar v-model="searchKeyword" placeholder="搜索公司名称、项目或提交人" button-text="刷新列表" button-variant="refresh" :loading="loading"
               @search="loadList(1)" />
           </template>
         </CardHeader>
@@ -35,7 +35,7 @@
             </div>
 
             <div class="card-footer">
-              <el-button link type="primary" size="small" @click.stop="openDetail(item.id)">查看详情</el-button>
+              <AppButton variant="primary" size="small" @click.stop="openDetail(item.id)">查看详情</AppButton>
             </div>
           </div>
         </template>
@@ -102,3 +102,4 @@ onMounted(() => loadList(1))
   border: 1px solid #e5e7eb;
 }
 </style>
+

@@ -1,4 +1,4 @@
-
+﻿
 
 <template>
   <div class="error-boundary">
@@ -12,12 +12,12 @@
       <p class="error-message">{{ errorMessage }}</p>
 
       <div class="error-actions">
-        <el-button type="primary" @click="handleRetry">
+        <AppButton variant="primary" @click="handleRetry">
           重新加载
-        </el-button>
-        <el-button @click="handleGoHome">
+        </AppButton>
+        <AppButton @click="handleGoHome">
           返回首页
-        </el-button>
+        </AppButton>
       </div>
     </div>
   </div>
@@ -110,3 +110,4 @@ const handleGoHome = () => {
   justify-content: center;
 }
 </style>
+

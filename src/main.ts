@@ -9,6 +9,20 @@ import { pinia } from './stores'
 import { registerAuthRuntimeHandlers } from './utils/authSession'
 import { warmupCriticalViews } from './router/preload'
 import DialogComponents from '@/components/common'
+import { VueQueryPlugin, QueryClient, type VueQueryPluginOptions } from '@tanstack/vue-query'
+
+// 全局 QueryClient：所有 useQuery/useMutation 共享同一缓存
+// staleTime 设为 0 让数据始终"陈旧"，组件重新挂载时会自动重新请求，
+// 同时配合 invalidateQueries 实现跨页面数据联动
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 0,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+})
 
 declare const __APP_VERSION__: string
 
@@ -28,6 +42,7 @@ const app: VueApp = createApp(App)
 app.use(pinia)
 app.use(router)
 app.use(DialogComponents)
+app.use(VueQueryPlugin, { queryClient } satisfies VueQueryPluginOptions)
 
 registerAuthRuntimeHandlers()
 

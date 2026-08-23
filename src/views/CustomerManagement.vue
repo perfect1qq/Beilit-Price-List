@@ -4,9 +4,9 @@
       <template #header>
         <CardHeader title="客户管理">
           <template #actions>
-            <el-button v-if="canCreate" type="primary" :icon="Plus" @click="handleAdd">
+            <AppButton variant="add" v-if="canCreate" @click="handleAdd">
               新增客户
-            </el-button>
+            </AppButton>
           </template>
         </CardHeader>
       </template>
@@ -122,31 +122,20 @@
                 <h3 class="company-name" style="margin: 0; line-height: 1.2;">{{ item.companyName }}</h3>
                 <div class="header-actions" style="display: flex; gap: 8px;">
                   <template v-if="!isGuest">
-                    <el-button
-                      v-if="canEdit"
-                      type="primary"
-                      size="small"
-                      plain
-                      @click.stop="handleInvoiceInfo(item)"
-                      >开票信息</el-button
-                    >
-                    <el-button
-                      v-if="canEdit"
-                      type="warning"
-                      size="small"
-                      plain
-                      :icon="Edit"
-                      @click.stop="handleEdit(item)"
-                      >编辑</el-button
-                    >
-                    <el-button
+                    <AppButton
                       v-if="canDelete"
                       type="danger"
                       size="small"
                       plain
                       :icon="Delete"
                       @click.stop="handleDelete(item)"
-                      >删除</el-button
+                      >删除</AppButton
+                    >
+                    <AppButton
+                      type="success"
+                      size="small"
+                      @click.stop="openCustomer360(item.id)"
+                      >进入全景管家</AppButton
                     >
                   </template>
                 </div>
@@ -226,6 +215,21 @@
                 <span class="value" style="color: #f56c6c; font-weight: 600;">{{ (item.discountPoints && item.discountPoints.trim()) ? item.discountPoints : '—' }}</span>
               </div>
 
+              <div class="financial-summary-box" v-if="item.totalAmount && item.totalAmount > 0">
+                <div class="financial-item">
+                  <span class="label">订单总额</span>
+                  <span class="value">¥{{ item.totalAmount.toLocaleString() }}</span>
+                </div>
+                <div class="financial-item">
+                  <span class="label">已付/预付</span>
+                  <span class="value">¥{{ (item.totalPaidAmount || 0).toLocaleString() }}</span>
+                </div>
+                <div class="financial-item debt">
+                  <span class="label">剩余欠款</span>
+                  <span class="value">¥{{ ((item.totalAmount || 0) - (item.totalPaidAmount || 0)).toLocaleString() }}</span>
+                </div>
+              </div>
+
               <div class="info-row">
                 <span class="label">备注：</span>
                 <span class="value remark-text">{{ item.remark || "-" }}</span>
@@ -237,6 +241,7 @@
                 <span class="delivery-arrow">→</span>
                 <span class="delivery-date-label">预计完成：</span>
                 <span class="delivery-date-value">{{ item.deliveryDate || '—' }}</span>
+                <span v-if="item.deliveryDate" class="delivery-remaining" :class="getRemainingClass(item.deliveryDate)">({{ getRemainingText(item.deliveryDate) }})</span>
               </div>
               <div class="info-row delivery-info">
                 <span class="label">车间工期：</span>
@@ -244,6 +249,7 @@
                 <span class="delivery-arrow">→</span>
                 <span class="delivery-date-label">预计完成：</span>
                 <span class="delivery-date-value">{{ item.workshopDeliveryDate || '—' }}</span>
+                <span v-if="item.workshopDeliveryDate" class="delivery-remaining" :class="getRemainingClass(item.workshopDeliveryDate)">({{ getRemainingText(item.workshopDeliveryDate) }})</span>
               </div>
 
               <div v-if="item.latestFollowUp" class="info-row follow-up-info">
@@ -280,60 +286,12 @@
               </div>
             </div>
 
-            <div class="card-footer">
-              <div class="action-buttons">
-                <el-button
-                  type="primary"
-                  size="small"
-                  round
-                  plain
-                  @click.stop="handleViewFollowUps(item)"
-                  >跟进记录</el-button
-                >
-                <el-button
-                  v-if="item.cooperationStatus === '已合作'"
-                  type="primary"
-                  size="small"
-                  round
-                  plain
-                  @click.stop="handleRepurchase(item)"
-                  >复购记录</el-button
-                >
-                <el-button
-                  v-if="item.hasQuotation"
-                  type="primary"
-                  size="small"
-                  round
-                  plain
-                  @click.stop="handleNavigateTo('quotation', item.companyName)"
-                  >查看报价单{{ Number(item.quotationCount) > 1 ? ` (${item.quotationCount})` : '' }}</el-button
-                >
-                <el-button
-                  v-if="item.hasContract"
-                  type="primary"
-                  size="small"
-                  round
-                  plain
-                  @click.stop="handleNavigateTo('contract', item.companyName)"
-                  >查看合同{{ Number(item.contractCount) > 1 ? ` (${item.contractCount})` : '' }}</el-button
-                >
-                <el-button
-                  v-if="item.hasPlacementOrder"
-                  type="primary"
-                  size="small"
-                  round
-                  plain
-                  @click.stop="handleNavigateTo('order', item.companyName)"
-                  >查看下单{{ Number(item.placementOrderCount) > 1 ? ` (${item.placementOrderCount})` : '' }}</el-button
-                >
-              </div>
-            </div>
           </div>
         </template>
 
         <template #empty-action>
-          <el-button v-if="canCreate" type="primary" @click="handleAdd"
-            >立即添加客户</el-button
+          <AppButton v-if="canCreate" type="primary" @click="handleAdd"
+            >立即添加客户</AppButton
           >
         </template>
       </CardList>
@@ -349,18 +307,7 @@
       @submit="handleFormSubmit"
     />
 
-    <OrderHistoryDrawer
-      v-model="orderHistoryVisible"
-      :customer-id="currentCustomer?.id || 0"
-      :customer-name="currentCustomer?.companyName || ''"
-      :cooperation-status="currentCustomer?.cooperationStatus || ''"
-      :orders="currentCustomer?.orders || []"
-      :can-create="canCreate"
-      :is-guest="isGuest"
-      @order-change="handleRecordChange"
-    />
-
-    <FollowUpHistoryDrawer
+      <FollowUpHistoryDrawer
       v-model="followUpHistoryVisible"
       :customer-id="currentCustomer?.id || 0"
       :customer-name="currentCustomer?.companyName || ''"
@@ -379,68 +326,140 @@
       />
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="invoiceDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="saveInvoiceInfo" :loading="savingInvoice">保存</el-button>
+          <AppButton @click="invoiceDialogVisible = false">取消</AppButton>
+          <AppButton variant="save" @click="saveInvoiceInfo" :loading="savingInvoice">保存</AppButton>
         </span>
       </template>
     </el-dialog>
+
+    <Customer360Drawer
+      v-model="customer360Visible"
+      :customer-id="selectedCustomer360Id"
+      @data-changed="handleRecordChange"
+      @edit="handleEdit"
+      @invoice="handleInvoiceInfo"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessageBox } from "element-plus";
 import { Plus, Edit, Delete } from "@element-plus/icons-vue";
-import customerApi from "@/api/customer";
 import { to } from "@/utils/async";
-import { formatDate } from "@/utils/date";
+import { formatDate, getRemainingDays } from "@/utils/date";
 import { showError, showSuccess } from "@/utils/message";
 import { usePermissions } from "@/composables/usePermissions";
+import { useCustomerForm } from "@/composables/useCustomer";
 import {
-  useCustomerList,
-  useCustomerForm,
-  useFollowUp,
-  useCustomerStats,
-  buildListPatchFromDetail,
-} from "@/composables/useCustomer";
+  useCustomerListQuery,
+  useCustomerStatsQuery,
+  useUpdateCustomerMutation,
+  useDeleteCustomerMutation,
+  useCreateCustomerMutation,
+  type CustomerListFilters,
+} from "@/composables/useCustomerQueries";
 import type {
   CustomerCreatePayload,
   CustomerUpdatePayload,
+  CustomerListItem,
   FollowUpData,
 } from "@/types";
-import type { CustomerListItem } from "@/composables/useCustomer";
+import { DEFAULT_PAGE_SIZE } from "@/constants/table";
 
 import SearchBar from "@/components/common/SearchBar.vue";
 import CardHeader from "@/components/common/CardHeader.vue";
 import CardList from "@/components/common/CardList.vue";
 import CustomerFormDrawer from "@/components/customer/CustomerFormDrawer.vue";
-import OrderHistoryDrawer from "@/components/customer/OrderHistoryDrawer.vue";
 import FollowUpHistoryDrawer from "@/components/customer/FollowUpHistoryDrawer.vue";
+import Customer360Drawer from "@/components/customer/Customer360Drawer.vue";
 
 const router = useRouter();
-const { isGuest, canCreate, canEdit, canDelete } = usePermissions();
+const { isGuest, isAdmin, canCreate, canEdit, canDelete } = usePermissions();
 
-const {
-  loading,
-  customerList,
-  searchKeyword,
-  filterCooperationStatus,
-  filterCustomerType,
-  filterPaymentStatus,
-  filterOrderStatus,
-  filterInstallationStatus,
-  page,
-  pageSize,
-  total,
-  loadList,
-  handleSearch,
-  updateLocalItem,
-  removeLocalItem,
-} = useCustomerList();
+const customer360Visible = ref(false);
+const selectedCustomer360Id = ref<number | null>(null);
 
-const { stats, loadStats } = useCustomerStats();
+// ---- 查询过滤器（响应式，变化时自动重新请求） ----
+const filters = reactive<CustomerListFilters>({
+  keyword: "",
+  cooperationStatus: "",
+  customerType: "",
+  paymentStatus: "",
+  orderStatus: "",
+  installationStatus: "",
+  page: 1,
+  pageSize: DEFAULT_PAGE_SIZE,
+});
 
+// 模板里仍用扁平变量，这里做一层映射
+const searchKeyword = computed({
+  get: () => filters.keyword,
+  set: (v: string) => { filters.keyword = v },
+});
+const filterCooperationStatus = computed({
+  get: () => filters.cooperationStatus,
+  set: (v: string) => { filters.cooperationStatus = v; filters.page = 1 },
+});
+const filterCustomerType = computed({
+  get: () => filters.customerType,
+  set: (v: string) => { filters.customerType = v; filters.page = 1 },
+});
+const filterPaymentStatus = computed({
+  get: () => filters.paymentStatus,
+  set: (v: string) => { filters.paymentStatus = v; filters.page = 1 },
+});
+const filterOrderStatus = computed({
+  get: () => filters.orderStatus,
+  set: (v: string) => { filters.orderStatus = v; filters.page = 1 },
+});
+const filterInstallationStatus = computed({
+  get: () => filters.installationStatus,
+  set: (v: string) => { filters.installationStatus = v; filters.page = 1 },
+});
+const page = computed({
+  get: () => filters.page,
+  set: (v: number) => { filters.page = v },
+});
+const pageSize = computed({
+  get: () => filters.pageSize,
+  set: (v: number) => { filters.pageSize = v; filters.page = 1 },
+});
+
+// ---- vue-query 查询 ----
+// filters 是 reactive，MaybeRefOrGetter 会通过 toValue 自动解包并追踪变化
+const { data: listData, isLoading: loading, refetch: refetchList } = useCustomerListQuery(
+  () => ({ ...filters }),
+);
+const { data: statsData, refetch: refetchStats } = useCustomerStatsQuery();
+
+// 列表/统计 computed（给模板用，保持模板兼容）
+const customerList = computed<CustomerListItem[]>(() => listData.value?.list || []);
+const total = computed(() => listData.value?.total || 0);
+const stats = computed(() => statsData.value || {
+  total: 0, undealt: 0, dealt: 0, pending: 0, settled: 0,
+  ordered: 0, notOrdered: 0, pendingInstall: 0, installed: 0,
+  dealer: 0, terminal: 0,
+});
+
+const handleSearch = () => {
+  filters.page = 1;
+  void refetchList();
+};
+
+const handleResetFilter = () => {
+  filters.keyword = "";
+  filters.cooperationStatus = "";
+  filters.customerType = "";
+  filters.paymentStatus = "";
+  filters.orderStatus = "";
+  filters.installationStatus = "";
+  filters.page = 1;
+  void refetchList();
+};
+
+// ---- 表单状态（沿用旧 composable，只管 UI 状态） ----
 const {
   dialogVisible,
   editingId,
@@ -453,75 +472,51 @@ const {
   resetForm,
 } = useCustomerForm();
 
-const {
-  currentCustomer,
-  refreshCurrentCustomer,
-} = useFollowUp();
-
-// 客户表单抽屉引用：用于父组件完成异步后关闭按钮 loading
+// 客户表单抽屉引用
 const customerFormDrawerRef = ref<{ resetLoading: () => void } | null>(null);
 
-// 局部同步：刷新客户详情并更新列表中对应项（跟进/复购/编辑后调用）
-const syncCustomerToList = async (
-  id: number,
-  updateResult?: Awaited<ReturnType<typeof customerApi.update>> | null,
-) => {
-  const detail = await refreshCurrentCustomer(id);
-  if (detail) {
-    const current = customerList.value.find((c) => c.id === id);
-    updateLocalItem(id, buildListPatchFromDetail(detail, current, updateResult?.customer));
-  }
+// ---- mutations ----
+const updateMutation = useUpdateCustomerMutation();
+const createMutation = useCreateCustomerMutation();
+const deleteMutation = useDeleteCustomerMutation();
+
+// 360 抽屉数据变更后，列表和统计会因 invalidateQueries 自动刷新
+// 这里只需保证抽屉关闭时 refetchStats，统计数字同步
+const handleRecordChange = () => {
+  void refetchStats();
 };
 
-const handleRecordChange = async () => {
-  const id = currentCustomer.value?.id;
-  if (!id) return;
-  await syncCustomerToList(id);
+const openDrawerWithDetail = async (item: CustomerListItem, drawerRef: { value: boolean }, _errorMsg: string) => {
+  // 详情由 360 抽屉自行用 useCustomerDetailQuery 加载，这里只控制显隐
+  selectedCustomer360Id.value = item.id;
+  drawerRef.value = true;
 };
-
-const openDrawerWithDetail = async (item: CustomerListItem, drawerRef: { value: boolean }, errorMsg: string) => {
-  try {
-    const res = await customerApi.getDetail(item.id);
-    currentCustomer.value = res?.customer || null;
-    drawerRef.value = true;
-  } catch (err) {
-    showError(err, errorMsg);
-  }
-};
-
-// 复购记录抽屉
-const orderHistoryVisible = ref(false);
-const handleRepurchase = (item: CustomerListItem) => openDrawerWithDetail(item, orderHistoryVisible, "加载复购记录失败");
 
 // 跟进记录抽屉
 const followUpHistoryVisible = ref(false);
 const handleViewFollowUps = (item: CustomerListItem) => openDrawerWithDetail(item, followUpHistoryVisible, "加载跟进记录失败");
 
+const openCustomer360 = (id: number) => {
+  selectedCustomer360Id.value = id;
+  customer360Visible.value = true;
+};
+
 const handleFormSubmit = async (data: CustomerCreatePayload & CustomerUpdatePayload) => {
   await withSubmitLock(async () => {
     try {
       if (editingId.value) {
-        const id = editingId.value;
-        const [err, updateResult] = await to(customerApi.update(id, { ...data }));
-        if (err) {
-          showError(err, "更新客户失败");
-          return;
-        }
-        // 局部更新当前卡片，报价单字段用 update 返回值（基于新公司名重算）
-        await syncCustomerToList(id, updateResult);
+        const [err] = await to(updateMutation.mutateAsync({ id: editingId.value, data }));
+        if (err) { showError(err, "更新客户失败"); return; }
         showSuccess("客户更新成功");
       } else {
-        const [err] = await to(customerApi.create({ ...data }));
-        if (err) {
-          showError(err, "创建客户失败");
-          return;
-        }
+        const [err] = await to(createMutation.mutateAsync({ ...data }));
+        if (err) { showError(err, "创建客户失败"); return; }
         showSuccess("客户创建成功");
-        loadList();
       }
       dialogVisible.value = false;
       resetForm();
-      loadStats();
+      // vue-query 的 onSuccess 已 invalidate，这里手动 refetch 统计确保即时
+      void refetchStats();
     } finally {
       customerFormDrawerRef.value?.resetLoading();
     }
@@ -538,39 +533,21 @@ const handleDelete = async (row: { id?: number | string; companyName: string }) 
   );
   if (confirmErr) return;
 
-  const [err] = await to(customerApi.remove(row.id!));
-  if (err) {
-    showError(err, "删除客户失败");
-    return;
-  }
+  const [err] = await to(deleteMutation.mutateAsync(row.id as number));
+  if (err) { showError(err, "删除客户失败"); return; }
   showSuccess("客户删除成功");
-  removeLocalItem(row.id as number);
-  loadStats();
+  void refetchStats();
 };
-
-const handleNavigateTo = (type: 'quotation' | 'contract' | 'order', companyName: string) => {
-  const routeMap = {
-    quotation: { path: '/quotation/history', queryKey: 'keyword' },
-    contract: { path: '/contract/history', queryKey: 'keyword' },
-    order: { path: '/order/history', queryKey: 'keyword' }
-  }
-  const config = routeMap[type]
-  if (config) {
-    router.push({
-      path: config.path,
-      query: { [config.queryKey]: companyName } as Record<string, string>
-    })
-  }
-}
 
 const invoiceDialogVisible = ref(false);
 const invoiceText = ref("");
 const savingInvoice = ref(false);
 
-const handleInvoiceInfo = async (item: CustomerListItem) => {
+const handleInvoiceInfo = async (item: any) => {
   try {
+    selectedCustomer360Id.value = item.id;
+    const customerApi = (await import("@/api/customer")).default;
     const res = await customerApi.getDetail(item.id);
-    currentCustomer.value = res?.customer || null;
     invoiceText.value = res?.customer?.invoiceInfo || "";
     invoiceDialogVisible.value = true;
   } catch (err) {
@@ -579,18 +556,15 @@ const handleInvoiceInfo = async (item: CustomerListItem) => {
 };
 
 const saveInvoiceInfo = async () => {
-  const id = currentCustomer.value?.id;
+  const id = selectedCustomer360Id.value;
   if (!id) return;
   savingInvoice.value = true;
-  const [err, updateResult] = await to(customerApi.update(id, { invoiceInfo: invoiceText.value }));
+  const [err] = await to(updateMutation.mutateAsync({ id, data: { invoiceInfo: invoiceText.value } }));
   savingInvoice.value = false;
-  if (err) {
-    showError(err, "保存开票信息失败");
-    return;
-  }
+  if (err) { showError(err, "保存开票信息失败"); return; }
   showSuccess("开票信息保存成功");
   invoiceDialogVisible.value = false;
-  await syncCustomerToList(id, updateResult);
+  void refetchStats();
 };
 
 const STATS_FILTER_MAP: Record<string, any> = {
@@ -606,11 +580,11 @@ const STATS_FILTER_MAP: Record<string, any> = {
 };
 
 const activeStat = computed(() => {
-  const c = filterCooperationStatus.value;
-  const p = filterPaymentStatus.value;
-  const o = filterOrderStatus.value;
-  const i = filterInstallationStatus.value;
-  const t = filterCustomerType.value;
+  const c = filters.cooperationStatus;
+  const p = filters.paymentStatus;
+  const o = filters.orderStatus;
+  const i = filters.installationStatus;
+  const t = filters.customerType;
 
   if (!c && !p && !o && !i && !t) return '';
   if (c === '未合作' && !p && !o && !i && !t) return '未成交';
@@ -626,35 +600,63 @@ const activeStat = computed(() => {
 });
 
 const handleStatClick = (type: string) => {
-  filterCooperationStatus.value = "";
-  filterPaymentStatus.value = "";
-  filterOrderStatus.value = "";
-  filterInstallationStatus.value = "";
-  filterCustomerType.value = "";
-  
+  filters.cooperationStatus = "";
+  filters.paymentStatus = "";
+  filters.orderStatus = "";
+  filters.installationStatus = "";
+  filters.customerType = "";
+
   const map = STATS_FILTER_MAP[type];
   if (map) {
-    if (map.cooperationStatus) filterCooperationStatus.value = map.cooperationStatus;
-    if (map.paymentStatus) filterPaymentStatus.value = map.paymentStatus;
-    if (map.orderStatus) filterOrderStatus.value = map.orderStatus;
-    if (map.installationStatus) filterInstallationStatus.value = map.installationStatus;
-    if (map.customerType) filterCustomerType.value = map.customerType;
+    if (map.cooperationStatus) filters.cooperationStatus = map.cooperationStatus;
+    if (map.paymentStatus) filters.paymentStatus = map.paymentStatus;
+    if (map.orderStatus) filters.orderStatus = map.orderStatus;
+    if (map.installationStatus) filters.installationStatus = map.installationStatus;
+    if (map.customerType) filters.customerType = map.customerType;
   }
-  
-  handleSearch();
+  filters.page = 1;
+  void refetchList();
 };
 
-onMounted(async () => {
-  await Promise.allSettled([
-    loadList(),
-    loadStats()
-  ]);
+// 模板里使用的 loading / customerList / stats / total 已通过 computed 暴露
+// vue-query 会在组件挂载时自动发起请求，无需 onMounted 手动触发
+onMounted(() => {
+  void refetchStats();
 });
 </script>
 
 <style scoped>
 .customer-management {
-  padding: 20px;
+  height: 100%;
+}
+
+.financial-summary-box {
+  display: flex;
+  justify-content: space-between;
+  background-color: #fff8e6;
+  border: 1px solid #fae3b7;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin: 10px 0;
+}
+.financial-summary-box .financial-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.financial-summary-box .financial-item .label {
+  font-size: 12px;
+  color: #909399;
+}
+.financial-summary-box .financial-item .value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #303133;
+}
+.financial-summary-box .financial-item.debt .value {
+  color: #f56c6c;
+  font-size: 15px;
 }
 
 .stats-row {
@@ -856,6 +858,21 @@ onMounted(async () => {
   font-size: 13px;
 }
 
+.delivery-remaining {
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.text-danger {
+  color: #f56c6c;
+}
+.text-warning {
+  color: #e6a23c;
+}
+.text-success {
+  color: #67c23a;
+}
+
 .two-col {
   display: flex !important;
   align-items: flex-start;
@@ -886,3 +903,5 @@ onMounted(async () => {
   }
 }
 </style>
+
+

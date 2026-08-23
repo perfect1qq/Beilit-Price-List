@@ -10,6 +10,16 @@
       @clear="handleClear"
       @keyup.enter="handleEnter"
     />
+    <AppButton
+      v-if="buttonText"
+      :variant="buttonVariant"
+      :size="size"
+      :loading="loading"
+      :disabled="disabled"
+      @click="handleButtonClick"
+    >
+      {{ buttonText }}
+    </AppButton>
     <slot name="extra" />
   </div>
 </template>
@@ -49,8 +59,25 @@ const props = defineProps({
   collapsed: {
     type: Boolean,
     default: false
+  },
+  /** 右侧自带按钮的文字，如果不传则不显示按钮 */
+  buttonText: {
+    type: String,
+    default: ''
+  },
+  /** 右侧自带按钮的预设风格 */
+  buttonVariant: {
+    type: String,
+    default: 'search'
+  },
+  /** 右侧自带按钮及前缀是否处于加载中状态 */
+  loading: {
+    type: Boolean,
+    default: false
   }
 })
+
+import AppButton from './AppButton.vue'
 
 const emit = defineEmits(['update:modelValue', 'search', 'clear'])
 
@@ -85,6 +112,11 @@ const handleClear = () => {
   emit('clear')
   if (timeout) clearTimeout(timeout)
   emit('search', '')
+}
+
+const handleButtonClick = () => {
+  if (timeout) clearTimeout(timeout)
+  emit('search', keyword.value)
 }
 
 onBeforeUnmount(() => {

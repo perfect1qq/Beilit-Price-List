@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <AuthLayout card-title="欢迎登入系统" card-subtitle="请输入正式员工账号与密码登录倍力特工作台">
 
     <el-form ref="formRef" :model="form" :rules="rules" class="form" @keyup.enter="handleLogin">
@@ -13,9 +13,9 @@
       </el-form-item>
 
 
-      <el-button class="login-btn" type="primary" size="large" :loading="loading" @click="handleLogin">
+      <AppButton variant="primary" class="login-btn" size="large" :loading="loading" @click="handleLogin">
         登录系统
-      </el-button>
+      </AppButton>
 
 
       <div v-if="isPublicRegisterEnabled" class="footer-links">
@@ -92,3 +92,4 @@ const handleLogin = async () => {
 
 const goToRegister = () => router.push('/register')
 </script>
+

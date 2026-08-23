@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="user-card-item">
     <div class="card-header">
       <h3 class="username">{{ user.username }}</h3>
@@ -39,13 +39,12 @@
     </div>
 
     <div class="card-footer">
-      <el-button type="warning" size="small" plain :icon="Lock" @click.stop="$emit('reset-password', user)">
+      <AppButton type="warning" size="small" plain :icon="Lock" @click.stop="$emit('reset-password', user)">
         重置密码
-      </el-button>
-      <el-button type="danger" size="small" plain :icon="Delete" @click.stop="$emit('delete', user)"
-        :disabled="user.id === currentUserId">
+      </AppButton>
+      <AppButton variant="delete" size="small" @click.stop="$emit('delete', user)" :disabled="user.id === currentUserId">
         删除
-      </el-button>
+      </AppButton>
     </div>
   </div>
 </template>
@@ -160,3 +159,4 @@ const roleLabel = computed(() => {
   border-top: 1px solid #f1f5f9;
 }
 </style>
+

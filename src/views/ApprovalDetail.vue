@@ -1,18 +1,18 @@
-<template>
+﻿<template>
   <el-card shadow="never" class="card">
     <template #header>
       <CardHeader :title="companyName || meta.name || '审批详情'">
         <template #actions>
           <el-tag :type="tagType(meta.status)" effect="dark">{{ statusLabel(meta.status) }}</el-tag>
-          <el-button @click="goBackToList">返回列表</el-button>
-          <el-button v-if="!isHistoryRoute && meta.status === 'pending'" type="success" :loading="actionLoading"
+          <AppButton @click="goBackToList">返回列表</AppButton>
+          <AppButton v-if="!isHistoryRoute && meta.status === 'pending'" type="success" :loading="actionLoading"
             :disabled="!canApprove" @click="approve">
             {{ approveButtonText }}
-          </el-button>
-          <el-button v-if="!isHistoryRoute && meta.status === 'pending'" type="danger" :loading="actionLoading"
-            @click="reject">驳回</el-button>
-          <el-button v-if="!isHistoryRoute && meta.status !== 'approved'" type="warning" :loading="actionLoading"
-            :disabled="!editMode" @click="save">保存当前修改</el-button>
+          </AppButton>
+          <AppButton v-if="!isHistoryRoute && meta.status === 'pending'" type="danger" :loading="actionLoading"
+            @click="reject">驳回</AppButton>
+          <AppButton v-if="!isHistoryRoute && meta.status !== 'approved'" type="warning" :loading="actionLoading"
+            :disabled="!editMode" @click="save">保存当前修改</AppButton>
         </template>
       </CardHeader>
     </template>
@@ -82,8 +82,7 @@
       <div class="summary-item">合计小计：<span>¥ {{ Number(subtotal || 0).toFixed(2) }}</span></div>
       <div class="summary-item">优惠金额：<span>¥ {{ Number(discountAmount || 0).toFixed(2) }}</span></div>
       <div class="summary-item main">最终成交价：<strong>¥ {{ Number(finalPrice || 0).toFixed(2) }}</strong></div>
-      <el-button v-if="editMode && !isHistoryRoute && isManualFinalPrice" type="primary" link
-        @click="restoreAutoFinalPrice">恢复自动计算</el-button>
+      <AppButton variant="primary" v-if="editMode && !isHistoryRoute && isManualFinalPrice" @click="restoreAutoFinalPrice">恢复自动计算</AppButton>
     </div>
 
     <el-divider />
@@ -237,3 +236,4 @@ const {
   }
 }
 </style>
+

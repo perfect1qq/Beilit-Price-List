@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="stunning-upload-container">
     <el-upload
       class="custom-dragger"
@@ -21,10 +21,10 @@
         </div>
         <div class="text-main">将文件拖拽至此区域</div>
         <div class="text-sub">支持各类文档、图片等格式，单文件最大 50MB</div>
-        <el-button type="primary" round class="browse-btn" @click.stop>
+        <AppButton variant="primary" round class="browse-btn" @click.stop>
           <el-icon class="el-icon--left"><FolderOpened /></el-icon>
           浏览本地文件
-        </el-button>
+        </AppButton>
       </div>
     </el-upload>
 
@@ -47,12 +47,12 @@
         </div>
 
         <div class="file-actions">
-          <el-button v-if="file.url || (file.response && file.response.data && file.response.data.url)" type="primary" link @click="previewOrDownload(file)">
+          <AppButton variant="view" v-if="file.url || (file.response && file.response.data && file.response.data.url)" @click="previewOrDownload(file)">
             查看
-          </el-button>
-          <el-button type="danger" link @click="handleRemoveFile(file)">
+          </AppButton>
+          <AppButton type="danger" link @click="handleRemoveFile(file)">
             <el-icon><Delete /></el-icon>
-          </el-button>
+          </AppButton>
         </div>
 
         <!-- 进度条背景 -->
@@ -362,3 +362,4 @@ const previewOrDownload = (file: UploadFile) => {
   transform: translateX(-30px);
 }
 </style>
+

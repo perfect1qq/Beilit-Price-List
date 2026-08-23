@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <AuthLayout card-title="申请创建账号" card-subtitle="填写基本员工信息与邀请码加入倍力特管理平台">
 
     <el-form ref="formRef" :model="form" :rules="rules" class="form" @keyup.enter="handleRegister">
@@ -20,8 +20,7 @@
         <el-input v-model="form.inviteCode" placeholder="请输入管理员邀请码" size="large" clearable :prefix-icon="Key" />
       </el-form-item>
 
-      <el-button class="login-btn" type="primary" size="large" :loading="loading"
-        @click="handleRegister">立即注册</el-button>
+      <AppButton variant="primary" class="login-btn" size="large" :loading="loading" @click="handleRegister">立即注册</AppButton>
 
       <div class="footer-links">
         <span>已有账号？</span>
@@ -118,3 +117,4 @@ const handleRegister = async () => {
 
 const goToLogin = () => router.push('/login')
 </script>
+

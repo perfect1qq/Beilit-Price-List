@@ -11,7 +11,7 @@
         <el-upload class="avatar-uploader" action="" :auto-upload="false" :show-file-list="false"
           accept="image/jpeg,image/png,image/gif,image/webp" :on-change="handleFileChange">
           <template #trigger>
-            <el-button type="primary" size="large">选择图片</el-button>
+            <AppButton variant="upload" size="large" label="选择图片" />
           </template>
         </el-upload>
         <p class="avatar-tip">支持 jpg、png、gif、webp 格式，大小不超过 5MB</p>
@@ -56,9 +56,9 @@
       </div>
     </div>
     <template #footer>
-      <el-button @click="cancel">取消</el-button>
-      <el-button v-if="selectedFile" @click="resetCrop">重新选择</el-button>
-      <el-button type="primary" :loading="uploading" @click="handleUpload" :disabled="!selectedFile">确认上传</el-button>
+      <AppButton variant="cancel" label="取消" @click="cancel" />
+      <AppButton v-if="selectedFile" label="重新选择" @click="resetCrop" />
+      <AppButton variant="submit" :loading="uploading" :disabled="!selectedFile" label="确认上传" @click="handleUpload" />
     </template>
   </el-dialog>
 </template>
@@ -66,6 +66,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import AppButton from '@/components/common/AppButton.vue'
 import authApi from '@/api/auth'
 import { extractMessage } from '@/utils/message'
 import { useUserStore } from '@/stores/user'

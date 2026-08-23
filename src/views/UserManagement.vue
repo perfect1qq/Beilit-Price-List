@@ -17,11 +17,7 @@
           </div>
 
           <div class="actions">
-            <SearchBar v-model="search" placeholder="搜索用户名" button-text="刷新列表" @search="fetchUsers">
-              <template #extra>
-                <el-button type="primary" :icon="Refresh" @click="fetchUsers">刷新</el-button>
-              </template>
-            </SearchBar>
+            <SearchBar v-model="search" placeholder="搜索用户名" button-text="刷新" button-variant="refresh" @search="fetchUsers" />
           </div>
         </div>
       </template>
@@ -48,8 +44,8 @@
         </el-form>
       </div>
       <template #footer="{ loading }">
-        <el-button @click="resetDialog.password = ''; resetDialog.visible = false">取消</el-button>
-        <el-button type="primary" :loading="loading" @click="onConfirmReset">确认重置</el-button>
+        <AppButton variant="cancel" @click="resetDialog.password = ''; resetDialog.visible = false">取消</AppButton>
+        <AppButton variant="primary" :loading="loading" @click="onConfirmReset">确认重置</AppButton>
       </template>
     </AsyncDialog>
   </div>
@@ -178,3 +174,4 @@ const onConfirmReset = () => confirmReset(resetDialogRef.value)
   }
 }
 </style>
+

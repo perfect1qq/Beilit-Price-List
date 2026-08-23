@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-card shadow="never" class="card invite-code-card">
     <div class="invite-section">
       <div class="invite-left">
@@ -13,8 +13,8 @@
       <div class="invite-right">
         <div class="invite-code-display">
           <span class="code-text">{{ code || '加载中...' }}</span>
-          <el-button type="primary" text :icon="CopyDocument" @click="$emit('copy')" :disabled="!code">复制</el-button>
-          <el-button type="warning" text :icon="Refresh" @click="$emit('refresh')" :loading="refreshing">刷新</el-button>
+          <AppButton variant="primary" :icon="CopyDocument" @click="$emit('copy')" :disabled="!code">复制</AppButton>
+          <AppButton variant="refresh" type="warning" @click="$emit('refresh')" :loading="refreshing">刷新</AppButton>
         </div>
       </div>
     </div>
@@ -109,3 +109,4 @@ defineEmits(['copy', 'refresh'])
   }
 }
 </style>
+

@@ -33,6 +33,8 @@ const INITIAL_FORM: CustomerCreatePayload & CustomerUpdatePayload = {
   shelfType: '',
   discountPoints: '',
   remark: '',
+  orderAmount: null,
+  paidAmount: null,
   paymentStatus: '未有款项',
   orderStatus: '未下单',
   installationStatus: '待安装'
@@ -249,7 +251,7 @@ export const useFollowUp = () => {
 /**
  * 从客户详情派生列表项更新补丁
  * 报价单相关字段优先使用 updateResult（编辑客户时由后端基于新公司名重算），
- * 否则保留 current 的旧值（跟进/复购变更不影响报价单关联）
+ * 否则保留 current 的旧值（跟进/订单变更不影响报价单关联）
  */
 export const buildListPatchFromDetail = (
   detail: CustomerDetailData,
@@ -276,6 +278,8 @@ export const buildListPatchFromDetail = (
     paymentStatus: detail.paymentStatus,
     orderStatus: detail.orderStatus,
     installationStatus: detail.installationStatus,
+    totalAmount: detail.totalAmount,
+    totalPaidAmount: detail.totalPaidAmount,
     followUpCount: followUps.length,
     orderCount: orders.length,
     latestFollowUp,

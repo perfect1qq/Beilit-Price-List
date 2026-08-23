@@ -35,4 +35,15 @@ const addDays = (days: number, fromDate?: DateInput): Date => {
   return date
 }
 
-export { formatDate, formatDateTime, formatDateOnly, addDays }
+const getRemainingDays = (dateStr: DateInput): number | null => {
+  if (!dateStr) return null
+  const target = new Date(dateStr)
+  if (Number.isNaN(target.getTime())) return null
+  target.setHours(0, 0, 0, 0)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const diffTime = target.getTime() - today.getTime()
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+}
+
+export { formatDate, formatDateTime, formatDateOnly, addDays, getRemainingDays }

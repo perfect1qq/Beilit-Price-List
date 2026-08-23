@@ -9,7 +9,6 @@ import { showError } from '@/utils/message'
 export const useQuotationHistoryPage = () => {
   const route = useRoute()
   const parsing = ref(false)
-  const isSubmitting = ref(false)
   const rulesDisabled = ref(false)
   const viewState = ref<string>('list')
   const activePanels = ref<string[]>([])
@@ -30,6 +29,7 @@ export const useQuotationHistoryPage = () => {
     rawText,
     items,
     visibleColumns,
+    quotationDate,
     editingHistoryId,
     isViewMode,
     subtotal,
@@ -66,10 +66,12 @@ export const useQuotationHistoryPage = () => {
     deleteHistory
   } = useQuotationHistory({
     api: quotationApi,
-    loadToEditor: (record, mode) => loadRecord(record, mode)
+    loadToEditor: (record, mode) => loadRecord(record, mode),
+    useVueQuery: true,
   })
 
   const {
+    isSubmitting,
     handleManualFinalPriceChange,
     handleDiscountChange,
     handleParseText,
@@ -77,7 +79,6 @@ export const useQuotationHistoryPage = () => {
   } = useQuotationEditor({
     isViewMode,
     parsing,
-    isSubmitting,
     rawText,
     items,
     name,
@@ -181,6 +182,7 @@ export const useQuotationHistoryPage = () => {
     rawText,
     items,
     visibleColumns,
+    quotationDate,
     editingHistoryId,
     isViewMode,
     subtotal,

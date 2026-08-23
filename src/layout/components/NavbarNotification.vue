@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-dropdown class="right-menu-item hover-effect" trigger="click" @command="handleNoticeClick">
     <div class="notice-box" :class="{ 'has-unread': unreadApprovalCount > 0 }">
       <div v-if="unreadApprovalCount > 0" class="notice-glow"></div>
@@ -16,8 +16,7 @@
             <span class="title">系统消息</span>
             <span class="subtitle">最近 10 条通知</span>
           </div>
-          <el-button v-if="noticeList.length" link type="primary" size="small"
-            @click="markAllAsRead">全部已读</el-button>
+          <AppButton variant="primary" v-if="noticeList.length" size="small" @click="markAllAsRead">全部已读</AppButton>
         </div>
         <el-scrollbar max-height="320px">
           <div v-if="!noticeList.length" class="notice-empty">
@@ -385,3 +384,4 @@ onUnmounted(() => {
   }
 }
 </style>
+

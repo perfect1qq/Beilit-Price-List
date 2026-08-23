@@ -1,7 +1,7 @@
 <template>
   <el-dialog
     :model-value="modelValue"
-    :title="isEdit ? '编辑复购项目' : '新增复购项目'"
+    :title="isEdit ? '编辑订单项目' : '新增订单项目'"
     width="540px"
     destroy-on-close
     @update:model-value="emit('update:modelValue', $event)"
@@ -16,7 +16,7 @@
       <el-form-item label="项目名称" prop="orderName">
         <el-input
           v-model="localData.orderName"
-          placeholder="例如：首次合作项目、第2期复购项目等"
+          placeholder="例如：首次合作项目、第2期订单项目等"
           maxlength="50"
           show-word-limit
         />
@@ -42,6 +42,37 @@
           <el-radio label="待催款">待催款</el-radio>
           <el-radio label="已结款">已结款</el-radio>
         </el-radio-group>
+      </el-form-item>
+
+      <el-form-item
+        v-if="['待催款', '已结款'].includes(localData.paymentStatus)"
+        label="已付/预付"
+        prop="paidAmount"
+      >
+        <div class="flex gap-2 w-full">
+          <el-input
+            v-model="localData.paidAmount"
+            placeholder="输入金额"
+            type="number"
+          >
+            <template #prepend>¥</template>
+          </el-input>
+          <el-select 
+            v-if="localData.orderAmount"
+            v-model="quickPercentage" 
+            placeholder="比例" 
+            style="width: 110px" 
+            @change="handlePercentageChange"
+            clearable
+          >
+            <el-option label="0%" :value="0" />
+            <el-option label="10%" :value="0.1" />
+            <el-option label="30%" :value="0.3" />
+            <el-option label="50%" :value="0.5" />
+            <el-option label="90%" :value="0.9" />
+            <el-option label="100%" :value="1" />
+          </el-select>
+        </div>
       </el-form-item>
 
       <el-form-item label="安装状态" prop="installationStatus">
@@ -89,12 +120,7 @@
     </el-form>
 
     <template #footer>
-      <div class="dialog-footer">
-        <el-button @click="emit('update:modelValue', false)">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="handleSubmit">
-          保存
-        </el-button>
-      </div>
+      <FormButtons submit-text="保存" :loading="submitting" @cancel="emit('update:modelValue', false)" @submit="handleSubmit" />
     </template>
   </el-dialog>
 </template>
@@ -102,6 +128,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch, computed } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
+import FormButtons from '@/components/common/FormButtons.vue'
 import type { CustomerOrderData, CustomerOrderCreatePayload, CustomerOrderUpdatePayload } from '@/types'
 
 const props = defineProps<{
@@ -121,8 +148,9 @@ const submitting = ref(false)
 const isEdit = computed(() => !!props.orderData && !!props.orderData.id)
 
 const localData = reactive({
-  orderName: '复购项目',
+  orderName: '订单项目',
   orderAmount: '' as string | number | null,
+  paidAmount: '' as string | number | null,
   orderStatus: '已下单',
   paymentStatus: '待催款',
   installationStatus: '待安装',
@@ -137,13 +165,25 @@ const rules: FormRules = {
   ],
 }
 
+const quickPercentage = ref<number | null>(null)
+
+const handlePercentageChange = (val: number | null | undefined) => {
+  if (val !== null && val !== undefined && localData.orderAmount) {
+    const amount = Number(localData.orderAmount)
+    if (!isNaN(amount)) {
+      localData.paidAmount = Number((amount * val).toFixed(2))
+    }
+  }
+}
+
 watch(
   () => props.modelValue,
   (val) => {
     if (val) {
       if (props.orderData) {
-        localData.orderName = props.orderData.orderName || '复购项目'
+        localData.orderName = props.orderData.orderName || '订单项目'
         localData.orderAmount = props.orderData.orderAmount ?? ''
+        localData.paidAmount = props.orderData.paidAmount ?? ''
         localData.orderStatus = props.orderData.orderStatus || '已下单'
         localData.paymentStatus = (props.orderData.paymentStatus && props.orderData.paymentStatus !== '未有款项') ? props.orderData.paymentStatus : '待催款'
         localData.installationStatus = props.orderData.installationStatus || '待安装'
@@ -151,8 +191,9 @@ watch(
         localData.workshopDeliveryDays = props.orderData.workshopDeliveryDays ?? null
         localData.remark = props.orderData.remark || ''
       } else {
-        localData.orderName = '复购项目'
+        localData.orderName = '订单项目'
         localData.orderAmount = ''
+        localData.paidAmount = ''
         localData.orderStatus = '已下单'
         localData.paymentStatus = '待催款'
         localData.installationStatus = '待安装'
@@ -186,6 +227,7 @@ const handleSubmit = async () => {
   const payload: CustomerOrderCreatePayload | CustomerOrderUpdatePayload = {
     orderName: localData.orderName.trim(),
     orderAmount: localData.orderAmount === '' || localData.orderAmount === null ? null : Number(localData.orderAmount),
+    paidAmount: localData.paidAmount === '' || localData.paidAmount === null ? null : Number(localData.paidAmount),
     orderStatus: localData.orderStatus,
     paymentStatus: localData.paymentStatus,
     installationStatus: localData.installationStatus,
@@ -210,9 +252,4 @@ defineExpose({
 </script>
 
 <style scoped>
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-}
 </style>

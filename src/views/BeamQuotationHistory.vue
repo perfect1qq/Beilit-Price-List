@@ -27,14 +27,12 @@
           </AutoFitColumn>
           <el-table-column label="操作" min-width="155" align="center">
             <template #default="{ row }">
-              <div class="action-btns">
-                <template v-if="!isGuest">
-                  <el-button type="warning" size="small" plain :icon="Edit" :loading="isActionLoading(row.id)"
-                    @click="enterDetail(row, 'edit')">编辑</el-button>
-                  <el-button v-if="isAdmin" type="danger" size="small" plain :icon="Delete" :loading="isActionLoading(row.id)"
-                    @click="handleDelete(row)">删除</el-button>
-                </template>
-              </div>
+              <ActionButtons
+                :actions="[
+                  { key: 'edit', variant: 'edit', label: '编辑', loading: isActionLoading(row.id), show: !isGuest, onClick: () => enterDetail(row, 'edit') },
+                  { key: 'delete', variant: 'delete', label: '删除', loading: isActionLoading(row.id), show: isAdmin, onClick: () => handleDelete(row) },
+                ]"
+              />
             </template>
           </el-table-column>
         </el-table>
@@ -56,7 +54,6 @@
 <script setup lang="ts">
 import { ref, reactive, watch, onMounted } from 'vue'
 defineOptions({ name: 'BeamQuotationHistory' })
-import { Edit, Delete } from '@element-plus/icons-vue'
 import { to } from '@/utils/async'
 import { showError, showSuccess, showWarning } from '@/utils/message'
 import { usePermissions } from '@/composables/usePermissions'
@@ -66,6 +63,7 @@ import { TABLE_HEADER_STYLE, DEFAULT_PAGE_SIZE } from '@/constants/table'
 import beamApi from '@/api/beam'
 import type { BeamQuotationItem } from '@/types'
 import BeamQuotationEditor from '@/components/beam/BeamQuotationEditor.vue'
+import ActionButtons from '@/components/common/ActionButtons.vue'
 
 const { isGuest, isAdmin } = usePermissions()
 
@@ -116,7 +114,7 @@ const enterDetail = (row: Record<string, unknown>, mode: string) => {
   viewState.value = mode
 }
 
-const addRow = () => editingItems.value.push({ name: '', length: '', spec: '', maxLoad: '' })
+const addRow = () => editingItems.value.push({ length: '', spec: '', maxLoad: '' })
 
 const removeRow = (index: number) => {
   if (editingItems.value.length <= 1) return showWarning('至少需要保留一行数据，无法继续删除！')

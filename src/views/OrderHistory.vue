@@ -4,21 +4,21 @@
       <template #header>
         <div class="header-content">
           <span class="title">订单历史记录</span>
-          <el-button type="primary" :icon="Plus" @click="goToNewOrder" v-if="!isGuest">
+          <AppButton variant="add" @click="goToNewOrder" v-if="!isGuest">
             新增下单
-          </el-button>
+          </AppButton>
         </div>
       </template>
 
       <!-- 搜索过滤条 -->
       <div class="filter-row">
         <SearchBar
-          v-model="keyword"
+          v-model="filters.keyword"
           placeholder="搜索下单名称、公司名称、联系人或送货地址..."
           @search="handleSearch"
           style="width: 320px;"
         />
-        <el-button @click="resetSearch">重置</el-button>
+        <AppButton variant="reset" @click="resetSearch">重置</AppButton>
       </div>
 
       <!-- 数据表格 -->
@@ -35,14 +35,13 @@
           <AutoFitColumn :data="records" prop="ownerName" label="创建者" :min="80" :max="140" use-width />
           <el-table-column label="操作" min-width="220" align="center">
             <template #default="{ row }">
-              <div class="action-btns">
-                <el-button type="warning" size="small" plain :icon="Edit" @click="editOrder(row.id)" v-if="!isGuest && canModify(row)">
-                  编辑
-                </el-button>
-                <el-button type="danger" size="small" plain :icon="Delete" @click="confirmDelete(row)" v-if="!isGuest && canModify(row)">
-                  删除
-                </el-button>
-              </div>
+              <ActionButtons
+                :actions="[
+                  { key: 'view', variant: 'view', label: '查看', onClick: () => viewOrder(row.id) },
+                  { key: 'edit', variant: 'edit', label: '编辑', show: !isGuest && canModify(row), onClick: () => editOrder(row.id) },
+                  { key: 'delete', variant: 'delete', label: '删除', show: !isGuest && canModify(row), onClick: () => confirmDelete(row) },
+                ]"
+              />
             </template>
           </el-table-column>
         </template>
@@ -123,14 +122,7 @@
 
         <div class="attachments-section" v-if="currentOrderAttachments.length > 0">
           <div class="block-title">【附件材料】</div>
-          <div class="attachments-list">
-            <div v-for="(file, index) in currentOrderAttachments" :key="index" class="attachment-item">
-              <el-icon><Document /></el-icon>
-              <el-link type="primary" @click.prevent="handleDownload(file)" underline="never">
-                {{ file.name || '未命名附件' }}
-              </el-link>
-            </div>
-          </div>
+          <AttachmentList :raw="currentOrder.value?.attachments" empty-text="" />
         </div>
 
         <div class="sheet-footer">
@@ -155,39 +147,46 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Plus, Edit, Delete, Document } from "@element-plus/icons-vue"
 import { ElMessageBox } from 'element-plus'
 import { showSuccess, showError } from '@/utils/message'
-import { downloadFile } from '@/utils/downloadFile'
 import { usePermissions } from '@/composables/usePermissions'
 import { useUserStore } from '@/stores/user'
-import orderApi, { type OrderData, type OrderItem, type AccessoryItem } from '@/api/order'
+import { type OrderData, type OrderItem, type AccessoryItem } from '@/api/order'
 import SearchBar from '@/components/common/SearchBar.vue'
-import { TABLE_HEADER_STYLE, DEFAULT_PAGE_SIZE } from '@/constants/table'
+import ActionButtons from '@/components/common/ActionButtons.vue'
 import GroupedHistoryList from '@/components/common/GroupedHistoryList.vue'
 import { groupByYearAndCompany } from '@/utils/grouping'
+import { useOrderListQuery, useOrderDetailQuery, useDeleteOrderMutation } from '@/composables/useHistoryQueries'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 const { isGuest, isAdmin } = usePermissions()
 
-const loading = ref(false)
-const keyword = ref('')
-const page = ref(1)
-const pageSize = ref(10000)
-const total = ref(0)
-const orderList = ref<OrderData[]>([])
+// 列表过滤条件（响应式）
+const filters = ref({
+  keyword: route.query.keyword ? String(route.query.keyword) : '',
+  page: 1,
+  pageSize: 10000, // 一次拉取，用于前端分组
+})
+
+// 列表查询
+const { data, isLoading: loading } = useOrderListQuery(filters)
+const orderList = computed<OrderData[]>(() => data.value?.list || [])
+
+// 删除 mutation
+const deleteMutation = useDeleteOrderMutation()
+
+// 详情查询（按需触发，给预览弹窗用）
+const previewVisible = ref(false)
+const previewingId = ref<number | null>(null)
+const { data: currentOrder } = useOrderDetailQuery(previewingId)
 
 const groupedOrders = computed(() => {
   return groupByYearAndCompany(orderList.value, (r) => r.customerName || '未分配客户')
 })
-
-// 预览相关
-const previewVisible = ref(false)
-const currentOrder = ref<OrderData | null>(null)
 
 const currentOrderItems = computed<OrderItem[]>(() => {
   if (!currentOrder.value?.items) return []
@@ -216,10 +215,6 @@ const currentOrderAttachments = computed<any[]>(() => {
   }
 })
 
-const handleDownload = (file: { url: string, name: string }) => {
-  downloadFile({ url: file.url, name: file.name })
-}
-
 // 检查是否有编辑权限
 const canModify = (row: OrderData) => {
   return isAdmin.value || row.ownerId === userStore.user?.id
@@ -229,66 +224,18 @@ const goToNewOrder = () => {
   router.push('/order')
 }
 
-// 格式化日期
-const formatDateTime = (val?: string) => {
-  if (!val) return '-'
-  const d = new Date(val)
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const date = String(d.getDate()).padStart(2, '0')
-  const h = String(d.getHours()).padStart(2, '0')
-  const min = String(d.getMinutes()).padStart(2, '0')
-  return `${y}-${m}-${date} ${h}:${min}`
-}
-
-const loadList = async () => {
-  loading.value = true
-  try {
-    const res = await orderApi.list({
-      keyword: keyword.value,
-      page: page.value,
-      pageSize: pageSize.value
-    })
-    orderList.value = res.list
-    total.value = res.total
-  } catch (err: any) {
-    showError(err, '获取订单列表失败')
-  } finally {
-    loading.value = false
-  }
-}
-
 const handleSearch = () => {
-  page.value = 1
-  loadList()
+  filters.value = { ...filters.value, page: 1 }
 }
 
 const resetSearch = () => {
-  keyword.value = ''
-  page.value = 1
-  loadList()
-}
-
-const handleSizeChange = (val: number) => {
-  pageSize.value = val
-  page.value = 1
-  loadList()
-}
-
-const handleCurrentChange = (val: number) => {
-  page.value = val
-  loadList()
+  filters.value = { ...filters.value, keyword: '', page: 1 }
 }
 
 // 查看详情 (弹出弹窗)
-const viewOrder = async (id: number) => {
-  try {
-    const res = await orderApi.getDetail(id)
-    currentOrder.value = res.order
-    previewVisible.value = true
-  } catch (err: any) {
-    showError(err, '读取订单详情失败')
-  }
+const viewOrder = (id: number) => {
+  previewingId.value = id
+  previewVisible.value = true
 }
 
 // 去编辑页面
@@ -304,22 +251,15 @@ const confirmDelete = async (row: OrderData) => {
       confirmButtonText: '确定删除',
       cancelButtonText: '取消'
     })
-    await orderApi.remove(row.id)
+    await deleteMutation.mutateAsync(row.id)
     showSuccess('订单已成功删除')
-    loadList()
+    // 删除后 vue-query 自动失效并重新拉取
   } catch (err: any) {
     if (err !== 'cancel') {
       showError(err, '删除订单失败')
     }
   }
 }
-
-onMounted(() => {
-  if (route.query.keyword) {
-    keyword.value = String(route.query.keyword)
-  }
-  loadList()
-})
 </script>
 
 <style scoped>
@@ -657,3 +597,4 @@ onMounted(() => {
   color: #909399;
 }
 </style>
+

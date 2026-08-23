@@ -6,6 +6,7 @@ import { ref } from 'vue'
 import type { Ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { quotationApi } from '@/api/quotation'
+import { useFormSubmit } from '@/composables/useFormSubmit'
 import type { QuotationCreatePayload, QuotationItem } from '@/types'
 import type { QuotationRow } from '@/composables/useQuotationDraft'
 
@@ -18,7 +19,6 @@ interface FormModel {
 interface QuotationEditorDeps {
   isViewMode: Ref<boolean>
   parsing: Ref<boolean>
-  isSubmitting: Ref<boolean>
   rawText: Ref<string>
   items: Ref<QuotationRow[]>
   name: Ref<string>
@@ -38,6 +38,7 @@ interface QuotationEditorDeps {
 }
 
 interface QuotationEditorReturn {
+  isSubmitting: Ref<boolean>
   handleManualFinalPriceChange: (value: unknown) => void
   handleDiscountChange: () => void
   handleParseText: () => Promise<void>
@@ -49,7 +50,6 @@ const useQuotationEditor = (deps: Partial<QuotationEditorDeps>): Partial<Quotati
   const {
     isViewMode = ref(false),
     parsing = ref(false),
-    isSubmitting = ref(false),
     rawText = ref(''),
     items = ref([]),
     name = ref(''),
@@ -67,6 +67,9 @@ const useQuotationEditor = (deps: Partial<QuotationEditorDeps>): Partial<Quotati
     onSaveSuccess,
     parseTextFn = async () => null,
   } = deps
+
+  // 统一使用 useFormSubmit 管理提交 loading：防重 + 防抖 + 自动复位
+  const { submitLoading: isSubmitting, withSubmitLock } = useFormSubmit({ lockDuration: 300 })
 
   const handleManualFinalPriceChange = (value: unknown): void => {
     try {
@@ -171,61 +174,58 @@ const useQuotationEditor = (deps: Partial<QuotationEditorDeps>): Partial<Quotati
   }
 
   const handleSubmit = async (): Promise<void> => {
-    if (isSubmitting.value) return
+    // withSubmitLock 内部已处理防重 + 防抖 + 自动复位，无需手动管理 isSubmitting
+    await withSubmitLock(async () => {
+      name.value = formModel.name
+      companyName.value = formModel.companyName
 
-    name.value = formModel.name
-    companyName.value = formModel.companyName
+      const [validateErr] = await to(formRef.value?.validate() ?? Promise.resolve(false))
+      if (validateErr) return
 
-    const [validateErr] = await to(formRef.value?.validate() ?? Promise.resolve(false))
-    if (validateErr) return
+      if (!validateRows()) return
 
-    if (!validateRows()) return
-
-    const currentName = String(name.value || '').trim()
-    const currentCompany = String(companyName.value || '').trim()
-    if (currentName && currentCompany) {
-      const [suggestErr, suggestRes] = await to(
-        quotationApi.suggestName(currentName, currentCompany, editingHistoryId?.value ?? undefined)
-      )
-      if (!suggestErr && suggestRes?.suggestedName && suggestRes.suggestedName !== currentName) {
-        ElMessage.warning(`名称「${currentName}」在该公司下已存在，已自动修改为「${suggestRes.suggestedName}」`)
-        name.value = suggestRes.suggestedName
-        formModel.name = suggestRes.suggestedName
+      const currentName = String(name.value || '').trim()
+      const currentCompany = String(companyName.value || '').trim()
+      if (currentName && currentCompany) {
+        const [suggestErr, suggestRes] = await to(
+          quotationApi.suggestName(currentName, currentCompany, editingHistoryId?.value ?? undefined)
+        )
+        if (!suggestErr && suggestRes?.suggestedName && suggestRes.suggestedName !== currentName) {
+          ElMessage.warning(`名称「${currentName}」在该公司下已存在，已自动修改为「${suggestRes.suggestedName}」`)
+          name.value = suggestRes.suggestedName
+          formModel.name = suggestRes.suggestedName
+        }
       }
-    }
 
-    const payload = getPayload()
+      const payload = getPayload()
 
-    if (
-      editingHistoryId?.value &&
-      JSON.stringify(payload) === originalPayloadStr?.value
-    ) {
-      return showWarning('没有做任何修改，无法保存无用的沉余记录！')
-    }
+      if (
+        editingHistoryId?.value &&
+        JSON.stringify(payload) === originalPayloadStr?.value
+      ) {
+        return showWarning('没有做任何修改，无法保存无用的沉余记录！')
+      }
 
+      const [err, result] = await to(
+        saveQuotation(payload, editingHistoryId?.value),
+      )
 
-    isSubmitting.value = true
-    const [err, result] = await to(
-      saveQuotation(payload, editingHistoryId?.value),
-    )
+      if (err) {
+        showError(err, '入库失败，请稍后刷新重试！')
+        return
+      }
 
-    if (err) {
-      showError(err, '入库失败，请稍后刷新重试！')
-      isSubmitting.value = false
-      return
-    }
-
-    if (result) {
-      showSuccess(editingHistoryId?.value ? '修改成功' : '成功新增报价单')
+      if (result) {
+        showSuccess(editingHistoryId?.value ? '修改成功' : '成功新增报价单')
 
 
-      if (onSaveSuccess) onSaveSuccess(result)
-    }
-
-    isSubmitting.value = false
+        if (onSaveSuccess) onSaveSuccess(result)
+      }
+    })
   }
 
   return {
+    isSubmitting,
     handleManualFinalPriceChange,
     handleDiscountChange,
     handleParseText,

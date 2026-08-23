@@ -79,8 +79,8 @@ export const useMemoManagement = () => {
   const editorVisible = ref(false)
   const editorMode = ref<'create' | 'edit'>('create')
   const editingId = ref<number | null>(null)
-  const form = reactive<MemoCreatePayload>({ title: '', content: '', label: '', color: 'blue', pinned: false, completed: false, remindAt: undefined })
-  const originalForm = reactive<MemoCreatePayload>({ title: '', content: '', label: '', color: 'blue', pinned: false, completed: false, remindAt: undefined })
+  const form = reactive<MemoCreatePayload>({ title: '', content: '', color: 'blue', pinned: false, completed: false, remindAt: undefined })
+  const originalForm = reactive<MemoCreatePayload>({ title: '', content: '', color: 'blue', pinned: false, completed: false, remindAt: undefined })
   const historyVisible = ref(false)
   const historyTitle = ref('日志')
   const historyList = shallowRef<MemoHistoryItem[]>([])
@@ -191,7 +191,7 @@ export const useMemoManagement = () => {
 
   const openCreate = () => {
     editorMode.value = 'create'
-    Object.assign(form, { title: '', content: '', label: '', color: 'blue', pinned: false, completed: false, remindAt: undefined })
+    Object.assign(form, { title: '', content: '', color: 'blue', pinned: false, completed: false, remindAt: undefined })
     editorVisible.value = true
   }
 

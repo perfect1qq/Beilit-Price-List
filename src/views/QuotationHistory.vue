@@ -6,8 +6,8 @@
           <CardHeader title="报价单历史">
             <template #actions>
               <div class="history-toolbar">
-                <el-input v-model="searchKeyword" placeholder="按公司名称 / 名称搜索" clearable style="max-width: 340px"
-                  @input="onKeywordInput" />
+                <SearchBar v-model="searchKeyword" placeholder="按公司名称 / 名称搜索" style="max-width: 340px"
+                  @search="onKeywordInput" />
                 <el-tag type="info">
                   共 {{ totalRecords }} 条记录 /
                   {{ groupedHistoryList.length }} 个年份</el-tag>
@@ -34,14 +34,14 @@
                 <el-table-column prop="finalPrice" label="成交价" min-width="85" align="center">
                   <template #default="{ row }">¥ {{ formatMoney(row.finalPrice) }}</template>
                 </el-table-column>
-                <el-table-column prop="createDate" label="创建时间" min-width="95" align="center" />
+                <el-table-column prop="createDate" label="报价时间" min-width="95" align="center" />
                 <el-table-column label="操作" min-width="220" align="center">
                   <template #default="{ row }: { row: HistoryRecord }">
                     <div class="action-btns">
-                      <el-button type="primary" size="small" plain @click="openDetail(row, 'view')">查看</el-button>
+                      <AppButton variant="view" size="small" @click="openDetail(row, 'view')">查看</AppButton>
                       <template v-if="!isGuest">
-                        <el-button v-if="canModify(row)" type="warning" size="small" plain :loading="isActionLoading(row.id)" @click="openDetail(row, 'edit')">修改</el-button>
-                        <el-button v-if="canDelete(row)" type="danger" size="small" plain :loading="isActionLoading(row.id)" @click="deleteHistory(row)">删除</el-button>
+                        <AppButton v-if="canModify(row)" variant="edit" :loading="isActionLoading(row.id)" @click="openDetail(row, 'edit')">修改</AppButton>
+                        <AppButton variant="delete" v-if="canDelete(row)" size="small" :loading="isActionLoading(row.id)" @click="deleteHistory(row)">删除</AppButton>
                       </template>
                     </div>
                   </template>
@@ -59,11 +59,10 @@
           <CardHeader title="报价单详情">
             <template #actions>
               <div class="toolbar">
-                <el-button @click="backToList">返回列表</el-button>
-                <el-button v-if="!isViewMode" type="primary" plain :icon="Plus" @click="addRow">手动添加一行</el-button>
-                <el-button v-if="!isViewMode" :icon="Delete" @click="clearRows">清空当前表格</el-button>
-                <el-button v-if="!isViewMode" type="success" :icon="Check" @click="handleSubmit"
-                  :loading="isSubmitting">确认保存报价单</el-button>
+                <AppButton @click="backToList">返回列表</AppButton>
+                <AppButton variant="add" v-if="!isViewMode" @click="addRow">手动添加一行</AppButton>
+                <AppButton variant="delete" size="default" v-if="!isViewMode" @click="clearRows">清空当前表格</AppButton>
+                <AppButton variant="save" v-if="!isViewMode" type="success" @click="handleSubmit" :loading="isSubmitting">确认保存报价单</AppButton>
               </div>
             </template>
           </CardHeader>
@@ -71,15 +70,15 @@
 
         <QuotationEditor ref="formRef" :is-view-mode="isViewMode" :rules-disabled="rulesDisabled"
           :editing-history-id="editingHistoryId" :form-model="formModel" v-model:remark="remark"
-          v-model:discount="discount" v-model:final-price="finalPrice" v-model:raw-text="rawText" :subtotal="subtotal"
+          v-model:discount="discount" v-model:final-price="finalPrice" v-model:raw-text="rawText"
+          v-model:quotation-date="quotationDate" :subtotal="subtotal"
           :discount-amount="discountAmount" :auto-final-price="autoFinalPrice"
           :is-manual-final-price="isManualFinalPrice" :items="items" :visible-columns="visibleColumns"
           :hide-action-column="isGuest" @handle-discount-change="handleDiscountChange"
           @handle-manual-final-price-change="handleManualFinalPriceChange"
           @restore-auto-final-price="restoreAutoFinalPrice" @update-row-total="updateRowTotal" @remove-row="removeRow">
           <template #parse-action>
-            <el-button v-if="!isViewMode" type="primary" :icon="MagicStick" @click="handleParseText"
-              :loading="parsing">智能解析粘贴内容</el-button>
+            <AppButton variant="primary" v-if="!isViewMode" :icon="MagicStick" @click="handleParseText" :loading="parsing">智能解析粘贴内容</AppButton>
           </template>
         </QuotationEditor>
       </el-card>
@@ -91,7 +90,10 @@
 import { computed, watch, nextTick } from "vue";
 import { useRoute } from "vue-router";
 defineOptions({ name: "QuotationHistory" });
-import { Delete, Check, MagicStick, Plus } from "@element-plus/icons-vue";
+import { Delete, Check, MagicStick, Plus, Setting } from "@element-plus/icons-vue";
+import type { UploadFile, UploadFiles } from 'element-plus'
+import SearchBar from '@/components/common/SearchBar.vue'
+import AppButton from '@/components/common/AppButton.vue'
 import { usePermissions } from "@/composables/usePermissions";
 import { useUserStore } from "@/stores/user";
 import { formatMoney } from "@/utils/number";
@@ -120,6 +122,7 @@ const {
   rawText,
   items,
   visibleColumns,
+  quotationDate,
   editingHistoryId,
   isViewMode,
   subtotal,
@@ -253,3 +256,4 @@ const canDelete = (row: HistoryRecord) => {
   }
 }
 </style>
+

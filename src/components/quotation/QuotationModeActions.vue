@@ -1,10 +1,10 @@
 <template>
-  <el-button v-if="isEditing && !isViewMode" type="warning" @click="$emit('reset')">新建空白单</el-button>
-  <el-button v-if="isViewMode" type="info" :icon="Edit" @click="$emit('switch-edit')">编辑当前记录</el-button>
+  <AppButton v-if="isEditing && !isViewMode" variant="add" label="新建空白单" @click="$emit('reset')" />
+  <AppButton v-if="isViewMode" variant="edit" label="编辑当前记录" @click="$emit('switch-edit')" />
 </template>
 
 <script setup lang="ts">
-import { Edit } from '@element-plus/icons-vue'
+import AppButton from '@/components/common/AppButton.vue'
 
 defineProps({
   isEditing: { type: Boolean, default: false },

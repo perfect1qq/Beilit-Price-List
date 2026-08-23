@@ -7,30 +7,25 @@
           <template #actions>
             <div class="toolbar">
               <template v-if="!isGuest">
-                <el-button type="primary" :icon="Plus" @click="addRow">添加一行</el-button>
-                <el-button type="success" :icon="Check" :loading="saving" @click="handleSave">提交保存</el-button>
+                <AppButton variant="add" @click="addRow">添加一行</AppButton>
+                <AppButton variant="save" type="success" :loading="saving" @click="handleSave">提交保存</AppButton>
               </template>
 
-              <div class="name-group">
-                <span class="label">横梁名称:</span>
-                <el-form-item prop="recordName" :rules="beamNameRule">
-                  <el-input v-model="recordName" placeholder="必填" style="width: 280px" :disabled="isGuest" />
-                </el-form-item>
-              </div>
             </div>
           </template>
         </CardHeader>
       </template>
 
       <el-table :data="items" border stripe style="width: 100%" :header-cell-style="TABLE_HEADER_STYLE"
-        class="smart-table">
-          <el-table-column label="横梁名称" align="center">
-            <template #default="{ row, $index }">
-              <el-form-item :prop="'items.' + $index + '.name'" :rules="beamNameRule">
-                <el-input v-model="row.name" size="small" placeholder="必填" />
+        class="smart-table" :span-method="objectSpanMethod">
+          <el-table-column label="横梁名称" align="center" width="220">
+            <template #default="{}">
+              <el-form-item prop="recordName" :rules="beamNameRule" style="margin-bottom: 0;">
+                <el-input v-model="recordName" size="small" placeholder="请输入横梁名称，如：XX项目重型货架横梁" :disabled="isGuest" />
               </el-form-item>
             </template>
           </el-table-column>
+
           <el-table-column label="长度(mm)" align="center">
             <template #default="{ row, $index }">
               <el-form-item :prop="'items.' + $index + '.length'"
@@ -56,7 +51,7 @@
           </el-table-column>
           <el-table-column v-if="!isGuest" label="操作" min-width="80" align="center">
             <template #default="{ $index }">
-              <el-button link type="danger" :icon="Delete" @click="deleteRow($index)" />
+              <AppButton variant="delete" @click="deleteRow($index)"/>
             </template>
           </el-table-column>
         </el-table>
@@ -81,11 +76,21 @@ import CardHeader from '@/components/common/CardHeader.vue'
 const { isGuest } = usePermissions()
 
 const recordName = ref('')
-const items = ref<Array<{ name: string; length: string; spec: string; maxLoad: string }>>([{ name: '', length: '', spec: '', maxLoad: '' }])
+const items = ref<Array<{ length: string; spec: string; maxLoad: string }>>([{ length: '', spec: '', maxLoad: '' }])
 const { submitLoading: saving, withSubmitLock } = useFormSubmit({ lockDuration: 300 })
 const formRef = ref<InstanceType<typeof import('element-plus')['ElForm']> | null>(null)
 
-const addRow = () => items.value.push({ name: '', length: '', spec: '', maxLoad: '' })
+const objectSpanMethod = ({ columnIndex, rowIndex }: { columnIndex: number; rowIndex: number }) => {
+  if (columnIndex === 0) {
+    if (rowIndex === 0) {
+      return { rowspan: items.value.length, colspan: 1 }
+    } else {
+      return { rowspan: 0, colspan: 0 }
+    }
+  }
+}
+
+const addRow = () => items.value.push({ length: '', spec: '', maxLoad: '' })
 
 const deleteRow = (index: number) => {
   if (items.value.length <= 1) {
@@ -112,7 +117,7 @@ const handleSave = async () => {
     showSuccess('新增成功')
     formRef.value?.resetFields()
     recordName.value = ''
-    items.value = [{ name: '', length: '', spec: '', maxLoad: '' }]
+    items.value = [{ length: '', spec: '', maxLoad: '' }]
   })
 }
 

@@ -17,8 +17,23 @@
           <el-input v-model="companyName" placeholder="请输入公司名称，相同公司名称在历史记录会自动归纳..." />
         </el-form-item>
 
+        <el-form-item label="合同金额(¥)" required>
+          <el-input-number v-model="amount" :min="0" :precision="2" :step="100" placeholder="请输入合同成交金额..." style="width: 100%;" />
+        </el-form-item>
+
         <el-form-item label="合同标题" required>
           <el-input v-model="title" placeholder="请输入合同标题..." />
+        </el-form-item>
+
+        <el-form-item label="合同时间">
+          <el-date-picker
+            v-model="contractDate"
+            type="date"
+            placeholder="选择合同日期（选填）"
+            format="YYYY-MM-DD"
+            value-format="YYYY-MM-DD"
+            style="width: 100%;"
+          />
         </el-form-item>
 
         <el-form-item label="合同内容 (支持直接从 Word 文档复制粘贴，保留原格式)" required>
@@ -95,7 +110,9 @@ const router = useRouter()
 const isEdit = ref(false)
 const contractId = ref<number>(0)
 const companyName = ref('')
+const amount = ref<number>(0)
 const title = ref('')
+const contractDate = ref<string>('')
 const { submitLoading: saving, withSubmitLock } = useFormSubmit({ lockDuration: 300 })
 const attachments = ref<any[]>([])
 
@@ -423,7 +440,9 @@ onMounted(async () => {
     try {
       const res = await contractApi.get(id)
       companyName.value = res.contract.companyName || ''
+      amount.value = res.contract.amount || 0
       title.value = res.contract.title
+      contractDate.value = res.contract.contractDate ? String(res.contract.contractDate).slice(0, 10) : ''
       if (editorRef.value && res.contract.content) {
         editorRef.value.innerHTML = DOMPurify.sanitize(res.contract.content)
       }
@@ -476,18 +495,22 @@ const saveContract = async () => {
       if (isEdit.value) {
         await contractApi.update(contractId.value, {
           companyName: companyName.value,
+          amount: amount.value,
           title: title.value,
           content: html,
-          attachments: JSON.stringify(finalAttachments)
+          attachments: JSON.stringify(finalAttachments),
+          contractDate: contractDate.value || null,
         })
         ElMessage.success('合同更新成功')
         router.push('/contract/history')
       } else {
         await contractApi.create({
           companyName: companyName.value,
+          amount: amount.value,
           title: title.value,
           content: html,
-          attachments: JSON.stringify(finalAttachments)
+          attachments: JSON.stringify(finalAttachments),
+          contractDate: contractDate.value || null,
         })
         ElMessage.success('合同创建成功')
         router.push('/contract/history')

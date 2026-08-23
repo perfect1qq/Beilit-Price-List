@@ -11,11 +11,11 @@
     <div class="order-drawer">
       <div class="drawer-toolbar">
         <span class="record-count">
-          共 <b>{{ orders.length }}</b> 条复购记录
+          共 <b>{{ orders.length }}</b> 条订单记录
         </span>
-        <el-button v-if="canCreate && cooperationStatus === '已合作'" type="primary" size="small" :icon="Plus" @click="handleAdd">
-          新增复购
-        </el-button>
+        <AppButton variant="add" v-if="canCreate && cooperationStatus === '已合作'" size="small" @click="handleAdd">
+          新增订单
+        </AppButton>
       </div>
 
       <div v-if="orders.length > 0" class="order-list">
@@ -38,7 +38,15 @@
           <div class="order-item-body">
             <div v-if="order.orderAmount != null" class="meta-row">
               <span class="meta-label">成交金额</span>
-              <span class="meta-value amount">¥{{ order.orderAmount }}</span>
+              <span class="meta-value amount">¥{{ order.orderAmount.toLocaleString() }}</span>
+            </div>
+            <div v-if="order.paidAmount != null && order.paymentStatus === '待催款'" class="meta-row">
+              <span class="meta-label">已付预付</span>
+              <span class="meta-value amount">¥{{ order.paidAmount.toLocaleString() }}</span>
+            </div>
+            <div v-if="order.orderAmount != null && order.paymentStatus === '待催款'" class="meta-row">
+              <span class="meta-label debt-label">剩余欠款</span>
+              <span class="meta-value amount debt-value">¥{{ (order.orderAmount - (order.paidAmount || 0)).toLocaleString() }}</span>
             </div>
             <div class="meta-row">
               <span class="meta-label">实际工期</span>
@@ -67,14 +75,14 @@
             <span class="footer-meta">操作人：{{ order.operatorName }}</span>
             <span class="footer-meta">{{ formatDate(order.createdAt) }}</span>
             <div v-if="!isGuest" class="footer-actions">
-              <el-button type="warning" link size="small" :icon="Edit" @click="handleEdit(order)">编辑</el-button>
-              <el-button type="danger" link size="small" :icon="Delete" @click="handleDelete(order)">删除</el-button>
+              <AppButton variant="edit" size="small" @click="handleEdit(order)">编辑</AppButton>
+              <AppButton variant="delete" size="small" @click="handleDelete(order)">删除</AppButton>
             </div>
           </div>
         </div>
       </div>
 
-      <el-empty v-else description="暂无复购记录" :image-size="100" />
+      <el-empty v-else description="暂无订单记录" :image-size="100" />
     </div>
 
     <OrderFormDialog
@@ -116,7 +124,7 @@ const orderDialogRef = ref<InstanceType<typeof OrderFormDialog> | null>(null)
 
 const drawerTitle = computed(() => {
   const name = props.customerName || '客户'
-  return `${name} · 复购记录`
+  return `${name} · 订单记录`
 })
 
 const getComputedDate = (days: number | null, startDate: string | null, fallbackDate: string): string => {
@@ -137,7 +145,7 @@ const handleEdit = (order: CustomerOrderData) => {
 
 const handleDelete = async (order: CustomerOrderData) => {
   const ok = await confirmAndDelete(
-    `确定要删除复购项目“${order.orderName}”吗？`,
+    `确定要删除订单项目“${order.orderName}”吗？`,
     () => customerApi.deleteOrder(order.id),
     { successMsg: '删除成功' }
   )
@@ -150,10 +158,10 @@ const handleOrderSubmit = async (payload: { isEdit: boolean; data: CustomerOrder
     orderDialogRef.value?.setSubmitting(true)
     if (payload.isEdit && payload.orderId) {
       await customerApi.updateOrder(payload.orderId, payload.data as CustomerOrderUpdatePayload)
-      ElMessage.success('复购项目更新成功')
+      ElMessage.success('订单项目更新成功')
     } else {
       await customerApi.addOrder(props.customerId, payload.data as CustomerOrderCreatePayload)
-      ElMessage.success('复购项目添加成功')
+      ElMessage.success('订单项目添加成功')
     }
     orderFormVisible.value = false
     emit('order-change')
@@ -256,8 +264,15 @@ const handleOrderSubmit = async (payload: { isEdit: boolean; data: CustomerOrder
 }
 
 .meta-value.amount {
-  color: #ef4444;
+  color: #303133;
   font-weight: 600;
+}
+
+.debt-label, .debt-value {
+  color: #f56c6c;
+}
+.debt-value {
+  font-size: 15px;
 }
 
 .delivery-sub {
@@ -297,3 +312,4 @@ const handleOrderSubmit = async (payload: { isEdit: boolean; data: CustomerOrder
   gap: 4px;
 }
 </style>
+

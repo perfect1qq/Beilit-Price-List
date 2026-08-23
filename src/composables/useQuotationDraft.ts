@@ -23,6 +23,7 @@ interface QuotationDraftReturn {
   rawText: Ref<string>
   items: Ref<QuotationRow[]>
   visibleColumns: Ref<string[]>
+  quotationDate: Ref<string>
   editingHistoryId: Ref<number | null>
   mode: Ref<string>
   subtotal: ComputedRef<number>
@@ -110,6 +111,8 @@ export const useQuotationDraft = (): QuotationDraftReturn => {
 
   const items = ref<QuotationRow[]>([createEmptyRow()])
 
+  const quotationDate = ref<string>('')
+
   const visibleColumns = ref([...FIELD_ORDER])
 
   const editingHistoryId = ref<number | null>(null)
@@ -152,6 +155,7 @@ export const useQuotationDraft = (): QuotationDraftReturn => {
     rawText.value = ''
     items.value = [createEmptyRow()]
     visibleColumns.value = [...FIELD_ORDER]
+    quotationDate.value = ''
     editingHistoryId.value = null
     mode.value = 'edit'
   }
@@ -236,6 +240,7 @@ export const useQuotationDraft = (): QuotationDraftReturn => {
     rawText.value = ''
     editingHistoryId.value = (record.id ?? null) as number | null
     mode.value = newMode
+    quotationDate.value = (record.quotationDate as string) || ''
 
     let itemsParsed: unknown = record.items || []
     if (typeof itemsParsed === 'string') {
@@ -267,6 +272,7 @@ export const useQuotationDraft = (): QuotationDraftReturn => {
     finalPrice: Number(finalPrice.value || 0),
     isManual: Boolean(isManualFinalPrice.value),
     items: items.value.map(normalizeRow),
+    quotationDate: quotationDate.value || null,
   })
 
   return {
@@ -280,6 +286,7 @@ export const useQuotationDraft = (): QuotationDraftReturn => {
     rawText,
     items,
     visibleColumns,
+    quotationDate,
     editingHistoryId,
     mode,
     subtotal,

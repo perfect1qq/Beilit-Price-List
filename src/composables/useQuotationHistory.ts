@@ -1,7 +1,8 @@
 
 
-import { computed, ref, shallowRef, type Ref, type ShallowRef, type ComputedRef } from 'vue'
+import { computed, ref, shallowRef, watch, type Ref, type ShallowRef, type ComputedRef } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/vue-query'
 import { debounce } from '@/utils/debounce'
 import { to } from '@/utils/async'
 import { extractMessage } from '@/utils/message'
@@ -41,6 +42,8 @@ interface QuotationHistoryApi {
 interface QuotationHistoryOptions {
   api: QuotationHistoryApi
   loadToEditor: (record: HistoryRecord, mode: string) => void
+  /** 启用 vue-query 管理列表查询和删除/新增/修改的失效通知 */
+  useVueQuery?: boolean
 }
 
 interface QuotationHistoryReturn {
@@ -193,7 +196,7 @@ const fetchAllRecords = async (api: QuotationHistoryOptions['api'], keyword = ''
   return merged
 }
 
-export const useQuotationHistory = ({ api, loadToEditor }: QuotationHistoryOptions): QuotationHistoryReturn => {
+export const useQuotationHistory = ({ api, loadToEditor, useVueQuery: enableVueQuery }: QuotationHistoryOptions): QuotationHistoryReturn => {
   const historyList = shallowRef<HistoryRecord[]>([])
 
   const groupedHistoryList = computed(() => {
@@ -234,7 +237,49 @@ export const useQuotationHistory = ({ api, loadToEditor }: QuotationHistoryOptio
 
   const loading = ref(false)
 
+  // ===== vue-query 分支：列表查询 =====
+  // 报价单历史需要"一次拉取所有页"做年份/公司分组，
+  // 因此这里不用普通分页 query，而是写一个循环拉取的 query。
+  const queryClient = enableVueQuery ? useQueryClient() : null
+  const listQuery = enableVueQuery
+    ? useQuery({
+        queryKey: ['quotations', 'history-all', searchKeyword],
+        queryFn: async () => {
+          return await fetchAllRecords(api, searchKeyword.value)
+        },
+        placeholderData: keepPreviousData,
+      })
+    : null
+
+  // vue-query 模式下，historyList 同步自 query 的 data
+  if (enableVueQuery && listQuery) {
+    watch(
+      () => listQuery.data.value,
+      (records) => {
+        historyList.value = records ?? []
+        yearPages.value = {}
+      },
+      { immediate: true }
+    )
+    watch(
+      () => listQuery.isLoading.value,
+      (v) => { loading.value = v },
+      { immediate: true }
+    )
+  }
+
   const loadHistoryList = async (): Promise<HistoryRecord[]> => {
+    // vue-query 模式：失效并等待重新拉取
+    if (enableVueQuery && queryClient) {
+      await queryClient.invalidateQueries({ queryKey: ['quotations', 'history-all'] })
+      await queryClient.fetchQuery({
+        queryKey: ['quotations', 'history-all', searchKeyword],
+        queryFn: async () => await fetchAllRecords(api, searchKeyword.value),
+      })
+      return historyList.value
+    }
+
+    // 手写模式（保留兼容）
     loading.value = true
 
     const [err, records] = await to(fetchAllRecords(api, searchKeyword.value))
@@ -255,6 +300,12 @@ export const useQuotationHistory = ({ api, loadToEditor }: QuotationHistoryOptio
 
   const triggerSearch = debounce(async () => {
     resetToFirstPage()
+    if (enableVueQuery) {
+      // vue-query 会因 searchKeyword 变化自动重新拉取
+      // 但这里仍主动触发一次以应对 immediate=false 的场景
+      await loadHistoryList()
+      return
+    }
     const [searchErr] = await to(loadHistoryList())
     if (searchErr) ElMessage.error(extractMessage(searchErr, '历史记录加载失败'))
   }, 300)
@@ -267,6 +318,18 @@ export const useQuotationHistory = ({ api, loadToEditor }: QuotationHistoryOptio
     setYearPage(year, page)
   }
 
+
+  // ===== vue-query 分支：删除 mutation =====
+  const deleteMutation = enableVueQuery && queryClient
+    ? useMutation({
+        mutationFn: (id: number | string) => api.remove(id),
+        onSuccess: () => {
+          void queryClient.invalidateQueries({ queryKey: ['quotations'] })
+          void queryClient.invalidateQueries({ queryKey: ['customers'] })
+        },
+      })
+    : null
+
   const saveQuotation = async (payload: QuotationCreatePayload, editingId?: number | string | null): Promise<HistoryRecord | null> => {
     const body = clone(payload)
 
@@ -274,16 +337,28 @@ export const useQuotationHistory = ({ api, loadToEditor }: QuotationHistoryOptio
       const result = await withActionLock(editingId, async () => api.update(editingId, body))
       if (!result) return null
       const record = result.quotation
-      const index = historyList.value.findIndex(item => item.id === record.id)
-      if (index !== -1) historyList.value[index] = record
-      else await loadHistoryList()
+      // vue-query 模式下，失效后 vue-query 会自动重新拉取
+      if (enableVueQuery && queryClient) {
+        void queryClient.invalidateQueries({ queryKey: ['quotations', 'detail', editingId] })
+        void queryClient.invalidateQueries({ queryKey: ['quotations'] })
+        void queryClient.invalidateQueries({ queryKey: ['customers'] })
+      } else {
+        const index = historyList.value.findIndex(item => item.id === record.id)
+        if (index !== -1) historyList.value[index] = record
+        else await loadHistoryList()
+      }
       return record
     }
 
     const result = await api.create(body)
     const record = result.quotation
-    if (record) historyList.value.unshift(record)
-    else await loadHistoryList()
+    if (enableVueQuery && queryClient) {
+      void queryClient.invalidateQueries({ queryKey: ['quotations'] })
+      void queryClient.invalidateQueries({ queryKey: ['customers'] })
+    } else {
+      if (record) historyList.value.unshift(record)
+      else await loadHistoryList()
+    }
     return record
   }
 
@@ -295,6 +370,21 @@ export const useQuotationHistory = ({ api, loadToEditor }: QuotationHistoryOptio
     ))
     if (confirmErr) return
 
+    // vue-query 模式：乐观删除后失效重取
+    if (enableVueQuery && deleteMutation) {
+      const snapshot = [...historyList.value]
+      removeById(record.id)
+      const [err] = await to(deleteMutation.mutateAsync(record.id))
+      if (err) {
+        historyList.value = snapshot
+        ElMessage.error((err as { message?: string; response?: { data?: { message?: string } } })?.message || (err as { response?: { data?: { message?: string } } })?.response?.data?.message || '删除失败')
+        return
+      }
+      ElMessage.success('删除成功')
+      return
+    }
+
+    // 手写模式（保留兼容）
     const snapshot = [...historyList.value]
     removeById(record.id)
 

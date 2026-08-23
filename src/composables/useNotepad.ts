@@ -32,7 +32,6 @@ export const useNotepad = () => {
   const isAllChecked = computed(() => noteList.value.length > 0 && checkedIds.value.size === noteList.value.length)
   const isIndeterminate = computed(() => checkedIds.value.size > 0 && checkedIds.value.size < noteList.value.length)
 
-  let searchTimer: ReturnType<typeof setTimeout> | null = null
   let saveTimer: ReturnType<typeof setTimeout> | null = null
 
   const getFolderCount = (folder: string): number => folderCountMap.value[folder] || 0
@@ -78,12 +77,6 @@ export const useNotepad = () => {
     }
     folderCountMap.value = countMap
   }
-
-  const onKeywordChange = () => {
-    if (searchTimer) clearTimeout(searchTimer)
-    searchTimer = setTimeout(() => { loadNotes() }, 300)
-  }
-
   const selectFolder = (folder: string) => {
     activeFolder.value = activeFolder.value === folder ? '' : folder
     loadNotes()
@@ -247,16 +240,12 @@ export const useNotepad = () => {
     Promise.all([loadFolders(), loadNotes()])
   }
 
-  onBeforeUnmount(() => {
-    if (searchTimer) {
-      clearTimeout(searchTimer)
-      searchTimer = null
-    }
-    if (saveTimer) {
-      clearTimeout(saveTimer)
-      saveTimer = null
-    }
-  })
+    onBeforeUnmount(() => {
+      if (saveTimer) {
+        clearTimeout(saveTimer)
+        saveTimer = null
+      }
+    })
 
   return {
     keyword,

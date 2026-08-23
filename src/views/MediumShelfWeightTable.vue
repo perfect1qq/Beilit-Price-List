@@ -12,18 +12,18 @@
           <template #actions>
             <div class="toolbar-actions">
               <template v-if="!isGuest">
-                <el-button v-if="!editMode" type="primary" :icon="Edit" @click="startEdit">
+                <AppButton variant="edit" size="default" v-if="!editMode" @click="startEdit">
                   编辑
-                </el-button>
+                </AppButton>
 
                 <template v-else>
-                  <el-button :icon="Plus" @click="addSummaryRow">新增中型货架重量表</el-button>
-                  <el-button :loading="saving" type="success" @click="saveData">保存</el-button>
-                  <el-button @click="cancelEdit">取消</el-button>
+                  <AppButton variant="add" @click="addSummaryRow">新增中型货架重量表</AppButton>
+                  <AppButton variant="save" :loading="saving" type="success" @click="saveData">保存</AppButton>
+                  <AppButton variant="cancel" @click="cancelEdit">取消</AppButton>
                 </template>
               </template>
 
-              <el-button :icon="Refresh" @click="loadData" :loading="loading">刷新</el-button>
+              <AppButton variant="refresh" @click="loadData" :loading="loading">刷新</AppButton>
             </div>
           </template>
         </CardHeader>
@@ -110,9 +110,9 @@
 
             <el-table-column v-if="editMode" label="操作" min-width="90" align="center">
               <template #default="{ $index }">
-                <el-button type="danger" link @click="removeSummaryRow($index)">
+                <AppButton variant="delete" @click="removeSummaryRow($index)">
                   删除
-                </el-button>
+                </AppButton>
               </template>
             </el-table-column>
           </el-table>
@@ -123,7 +123,7 @@
           <template #header>
             <div style="display:flex; align-items:center; justify-content:space-between">
               <div class="section-title">层数规格明细</div>
-              <el-button v-if="editMode" :icon="Plus" @click="addDetailRow">新增层数规格明细</el-button>
+              <AppButton variant="add" v-if="editMode" @click="addDetailRow">新增层数规格明细</AppButton>
             </div>
           </template>
 
@@ -171,9 +171,9 @@
 
             <el-table-column v-if="editMode" label="操作" min-width="90" align="center">
               <template #default="{ $index }">
-                <el-button type="danger" link @click="removeDetailRow($index)">
+                <AppButton variant="delete" @click="removeDetailRow($index)">
                   删除
-                </el-button>
+                </AppButton>
               </template>
             </el-table-column>
           </el-table>

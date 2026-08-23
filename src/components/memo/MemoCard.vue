@@ -20,14 +20,13 @@
         <p class="card-body">{{ item.content }}</p>
 
         <div v-if="boardMode" class="card-meta">
-          <span class="tag">{{ item.label || '默认' }}</span>
           <span class="date">{{ formatTime(item.updatedAt) }}</span>
         </div>
       </div>
 
       <div v-if="boardMode" class="card-actions">
         <el-dropdown trigger="click" :disabled="isGuest">
-          <el-button link :icon="MoreFilled"></el-button>
+          <AppButton link :icon="MoreFilled"></AppButton>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item v-if="!isGuest" @click="$emit('edit', item)">编辑详情</el-dropdown-item>
@@ -45,8 +44,8 @@
 
       <div v-else class="card-actions">
         <template v-if="!isGuest">
-          <el-button link @click="$emit('edit', item)">编辑</el-button>
-          <el-button link type="danger" @click="$emit('remove', item)">删除</el-button>
+          <AppButton variant="edit" @click="$emit('edit', item)">编辑</AppButton>
+          <AppButton variant="delete" @click="$emit('remove', item)">删除</AppButton>
         </template>
       </div>
     </div>
@@ -180,3 +179,4 @@ const formatTime = (v: string | undefined) => formatDateTime(v || '')
   color: #cbd5e1;
 }
 </style>
+

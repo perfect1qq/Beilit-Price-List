@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="not-found-page">
     <el-card class="not-found-card" shadow="never">
       <div class="not-found-content">
@@ -6,8 +6,8 @@
         <div class="error-title">页面不存在</div>
         <p class="error-desc">您访问的页面可能已被删除、移动，或地址输入有误。</p>
         <div class="error-actions">
-          <el-button type="primary" @click="goHome">返回首页</el-button>
-          <el-button @click="goBack">返回上一页</el-button>
+          <AppButton variant="primary" @click="goHome">返回首页</AppButton>
+          <AppButton @click="goBack">返回上一页</AppButton>
         </div>
       </div>
     </el-card>
@@ -80,3 +80,4 @@ const goBack = () => {
   justify-content: center;
 }
 </style>
+

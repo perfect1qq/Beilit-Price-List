@@ -1,4 +1,4 @@
-
+﻿
 <template>
   <div class="app-wrapper" :class="{ mobile: isMobile, mobileSidebarOpen: mobileSidebarOpen }">
     <div v-if="isMobile && mobileSidebarOpen" class="sidebar-mask" @click="closeMobileSidebar"></div>
@@ -11,11 +11,11 @@
         <AppMain />
       </ErrorBoundary>
     </div>
-    <el-button v-if="isMobile && !mobileSidebarOpen" class="mobile-menu-btn" circle @click="toggleMobileSidebar">
+    <AppButton v-if="isMobile && !mobileSidebarOpen" class="mobile-menu-btn" circle @click="toggleMobileSidebar">
       <el-icon>
         <Menu />
       </el-icon>
-    </el-button>
+    </AppButton>
   </div>
 </template>
 
@@ -148,3 +148,4 @@ onUnmounted(() => {
 
 }
 </style>
+

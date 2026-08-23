@@ -20,9 +20,9 @@
               @input="handleAutoParse"
             />
             <div class="parse-actions">
-              <el-button type="success" :icon="Refresh" @click="handleManualParse">
+              <AppButton variant="refresh" type="success" @click="handleManualParse">
                 重新智能解析
-              </el-button>
+              </AppButton>
             </div>
           </div>
 
@@ -78,15 +78,13 @@
               <!-- 明细项目表 -->
               <div class="section-title">
                 <span>加工明细</span>
-                <el-button type="primary" link size="small" :icon="Plus" @click="addItem">
-                  添加项
-                </el-button>
+                <AppButton variant="add" @click="addItem">添加项</AppButton>
               </div>
               <div class="items-editor-table">
                 <div v-for="(item, idx) in orderForm.items" :key="item.id || idx" class="item-editor-row">
                   <div class="item-header-row">
                     <span class="row-num">#{{ idx + 1 }}</span>
-                    <el-button type="danger" link size="small" :icon="Delete" @click="removeItem(idx)" />
+                    <AppButton variant="delete" @click="removeItem(idx)" />
                   </div>
                   <el-row :gutter="6">
                     <el-col :span="8">
@@ -114,9 +112,7 @@
               <!-- 配件项目表 -->
               <div class="section-title">
                 <span>配件明细</span>
-                <el-button type="primary" link size="small" :icon="Plus" @click="addAccessory">
-                  添加配件
-                </el-button>
+                <AppButton variant="add" @click="addAccessory">添加配件</AppButton>
               </div>
               <div class="items-editor-table">
                 <div v-for="(acc, idx) in orderForm.accessories" :key="acc.id || idx" class="accessory-editor-row">
@@ -128,7 +124,7 @@
                       <el-input v-model="acc.qty" size="small" placeholder="数量 (如 20个)" />
                     </el-col>
                     <el-col :span="2">
-                      <el-button type="danger" link size="small" :icon="Delete" @click="removeAccessory(idx)" />
+                      <AppButton variant="delete" @click="removeAccessory(idx)" />
                     </el-col>
                   </el-row>
                 </div>
@@ -156,12 +152,12 @@
             <div class="preview-header-actions">
               <span class="preview-title">生产加工单版面预览</span>
               <div class="buttons">
-                <el-button v-if="isEditMode" type="info" @click="cancelEdit">
+                <AppButton v-if="isEditMode" type="info" @click="cancelEdit">
                   取消编辑
-                </el-button>
-                <el-button type="success" :icon="Check" :loading="saving" @click="saveOrder">
+                </AppButton>
+                <AppButton variant="save" type="success" :loading="saving" @click="saveOrder">
                   {{ isEditMode ? '更新订单' : '保存订单' }}
-                </el-button>
+                </AppButton>
               </div>
             </div>
           </template>
@@ -862,3 +858,4 @@ onMounted(async () => {
   }
 }
 </style>
+
