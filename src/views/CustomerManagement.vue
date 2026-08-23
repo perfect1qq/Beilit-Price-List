@@ -235,6 +235,8 @@
 </template>
 
 <script setup lang="ts">
+import { CooperationStatus, CustomerType, PaymentStatus, OrderStatus, InstallationStatus } from '@/constants/enums';
+import CustomerStats from './customer/CustomerStats.vue';
 import { onMounted, ref, computed, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessageBox } from "element-plus";
