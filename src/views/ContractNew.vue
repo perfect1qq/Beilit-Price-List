@@ -5,9 +5,9 @@
         <div class="card-header">
           <span>{{ isEdit ? '编辑合同' : '新增合同' }}</span>
           <div class="header-actions">
-            <el-button @click="goBack">返回列表</el-button>
-            <el-button type="info" plain @click="insertPageBreak">插入分页符</el-button>
-            <el-button type="primary" :loading="saving" @click="saveContract">保存合同</el-button>
+            <AppButton @click="goBack">返回列表</AppButton>
+            <AppButton type="info" plain @click="insertPageBreak">插入分页符</AppButton>
+            <AppButton type="primary" :loading="saving" @click="saveContract">保存合同</AppButton>
           </div>
         </div>
       </template>
@@ -41,10 +41,10 @@
             <!-- 工具栏 -->
             <div class="editor-toolbar">
               <el-button-group>
-                <el-button size="small" @click="execCmd('bold')" title="加粗"><strong>B</strong></el-button>
-                <el-button size="small" @click="execCmd('italic')" title="斜体"><em>I</em></el-button>
-                <el-button size="small" @click="execCmd('underline')" title="下划线"><u>U</u></el-button>
-                <el-button size="small" @click="execCmd('strikeThrough')" title="删除线"><s>S</s></el-button>
+                <AppButton size="small" @click="execCmd('bold')" title="加粗"><strong>B</strong></AppButton>
+                <AppButton size="small" @click="execCmd('italic')" title="斜体"><em>I</em></AppButton>
+                <AppButton size="small" @click="execCmd('underline')" title="下划线"><u>U</u></AppButton>
+                <AppButton size="small" @click="execCmd('strikeThrough')" title="删除线"><s>S</s></AppButton>
               </el-button-group>
               <el-select v-model="fontName" size="small" placeholder="字体" style="width: 110px;" @change="execCmd('fontName', fontName)">
                 <el-option v-for="f in fontNames" :key="f" :label="f" :value="f" />
@@ -53,26 +53,26 @@
                 <el-option v-for="s in 7" :key="s" :label="sizeLabels[s - 1]" :value="s" />
               </el-select>
               <el-button-group>
-                <el-button size="small" @click="execCmd('foreColor', fontColor)" title="文字颜色">
+                <AppButton size="small" @click="execCmd('foreColor', fontColor)" title="文字颜色">
                   <span style="color: #409eff;">A</span>
-                </el-button>
+                </AppButton>
                 <el-color-picker v-model="fontColor" size="small" @change="execCmd('foreColor', fontColor)" />
               </el-button-group>
               <el-button-group>
-                <el-button size="small" @click="execCmd('justifyLeft')" title="左对齐">
+                <AppButton size="small" @click="execCmd('justifyLeft')" title="左对齐">
                   <el-icon><svg viewBox="0 0 1024 1024" width="14" height="14"><path fill="currentColor" d="M128 128h768v64H128zM128 320h512v64H128zM128 512h768v64H128zM128 704h512v64H128z"/></svg></el-icon>
-                </el-button>
-                <el-button size="small" @click="execCmd('justifyCenter')" title="居中">
+                </AppButton>
+                <AppButton size="small" @click="execCmd('justifyCenter')" title="居中">
                   <el-icon><svg viewBox="0 0 1024 1024" width="14" height="14"><path fill="currentColor" d="M128 128h768v64H128zM256 320h512v64H256zM128 512h768v64H128zM256 704h512v64H256z"/></svg></el-icon>
-                </el-button>
-                <el-button size="small" @click="execCmd('justifyRight')" title="右对齐">
+                </AppButton>
+                <AppButton size="small" @click="execCmd('justifyRight')" title="右对齐">
                   <el-icon><svg viewBox="0 0 1024 1024" width="14" height="14"><path fill="currentColor" d="M128 128h768v64H128zM384 320h512v64H384zM128 512h768v64H128zM384 704h512v64H384z"/></svg></el-icon>
-                </el-button>
+                </AppButton>
               </el-button-group>
-              <el-button size="small" @click="execCmd('insertUnorderedList')" title="无序列表">• 列表</el-button>
-              <el-button size="small" @click="execCmd('insertOrderedList')" title="有序列表">1. 列表</el-button>
-              <el-button size="small" @click="execCmd('removeFormat')" title="清除格式">清除</el-button>
-              <el-button type="warning" size="small" :icon="MagicStick" @click="smartFormat" title="根据合同文字内容自动识别标题、双方、条款、签署区并套用专业排版">智能排版</el-button>
+              <AppButton size="small" @click="execCmd('insertUnorderedList')" title="无序列表">• 列表</AppButton>
+              <AppButton size="small" @click="execCmd('insertOrderedList')" title="有序列表">1. 列表</AppButton>
+              <AppButton size="small" @click="execCmd('removeFormat')" title="清除格式">清除</AppButton>
+              <AppButton type="warning" size="small" :icon="MagicStick" @click="smartFormat" title="根据合同文字内容自动识别标题、双方、条款、签署区并套用专业排版">智能排版</AppButton>
             </div>
             <!-- 编辑区域（原生 contentEditable，粘贴时保留 Word 格式） -->
             <div
@@ -94,6 +94,8 @@
 </template>
 
 <script setup lang="ts">
+import AppButton from '@/components/common/AppButton.vue'
+
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'

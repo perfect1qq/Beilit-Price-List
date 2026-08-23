@@ -9,11 +9,11 @@
             </el-icon>
           </template>
         </el-input>
-        <el-button v-if="!isGuest && !batchMode" type="primary" :icon="Plus" circle class="add-btn" @click="createNote" />
-        <el-button v-else-if="!isGuest && batchMode" type="danger" :icon="Delete" circle class="add-btn"
+        <AppButton v-if="!isGuest && !batchMode" type="primary" :icon="Plus" circle class="add-btn" @click="createNote" />
+        <AppButton v-else-if="!isGuest && batchMode" type="danger" :icon="Delete" circle class="add-btn"
           :disabled="!checkedIds.size" @click="batchDeleteNotes" />
         <el-tooltip v-if="!isGuest" :content="batchMode ? '取消多选' : '多选删除'" placement="top">
-          <el-button :type="batchMode ? 'warning' : 'default'" :icon="batchMode ? Close : Operation" circle
+          <AppButton :type="batchMode ? 'warning' : 'default'" :icon="batchMode ? Close : Operation" circle
             class="add-btn" @click="toggleBatchMode" />
         </el-tooltip>
       </div>
@@ -88,17 +88,17 @@
             <el-input v-if="editFolder === '__new__'" v-model="newFolderName" placeholder="文件夹名称" size="default"
               class="new-folder-input" @blur="confirmNewFolder" @keyup.enter="confirmNewFolder" />
             <el-tooltip v-if="!isGuest" content="保存" placement="top">
-              <el-button type="primary" :icon="Check" circle size="default" @click="doSave" :disabled="!isDirty()" />
+              <AppButton type="primary" :icon="Check" circle size="default" @click="doSave" :disabled="!isDirty()" />
             </el-tooltip>
             <el-tooltip v-if="!isGuest" :content="currentNote.pinned ? '取消置顶' : '置顶'" placement="top">
-              <el-button :type="currentNote.pinned ? 'warning' : 'default'" :icon="Star" circle size="default"
+              <AppButton :type="currentNote.pinned ? 'warning' : 'default'" :icon="Star" circle size="default"
                 @click="togglePinNote" />
             </el-tooltip>
             <el-tooltip content="历史记录" placement="top">
-              <el-button :icon="Clock" circle size="default" @click="openHistory" />
+              <AppButton :icon="Clock" circle size="default" @click="openHistory" />
             </el-tooltip>
             <el-tooltip v-if="!isGuest" content="删除" placement="top">
-              <el-button type="danger" :icon="Delete" circle size="default" @click="deleteNote" />
+              <AppButton type="danger" :icon="Delete" circle size="default" @click="deleteNote" />
             </el-tooltip>
           </div>
         </div>
@@ -127,6 +127,8 @@
 </template>
 
 <script setup lang="ts">
+import AppButton from '@/components/common/AppButton.vue'
+
 import { onMounted } from 'vue'
 import {
   Plus,

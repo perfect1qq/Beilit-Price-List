@@ -206,21 +206,6 @@
                 <span class="value" style="color: #f56c6c; font-weight: 600;">{{ (item.discountPoints && item.discountPoints.trim()) ? item.discountPoints : '—' }}</span>
               </div>
 
-              <div class="financial-summary-box" v-if="item.totalAmount && item.totalAmount > 0">
-                <div class="financial-item">
-                  <span class="label">订单总额</span>
-                  <span class="value">¥{{ item.totalAmount.toLocaleString() }}</span>
-                </div>
-                <div class="financial-item">
-                  <span class="label">已付/预付</span>
-                  <span class="value">¥{{ (item.totalPaidAmount || 0).toLocaleString() }}</span>
-                </div>
-                <div class="financial-item debt">
-                  <span class="label">剩余欠款</span>
-                  <span class="value">¥{{ ((item.totalAmount || 0) - (item.totalPaidAmount || 0)).toLocaleString() }}</span>
-                </div>
-              </div>
-
               <div class="info-row">
                 <span class="label">备注：</span>
                 <span class="value remark-text">{{ item.remark || "-" }}</span>
@@ -648,34 +633,6 @@ onMounted(() => {
   height: 100%;
 }
 
-.financial-summary-box {
-  display: flex;
-  justify-content: space-between;
-  background-color: #fff8e6;
-  border: 1px solid #fae3b7;
-  border-radius: 6px;
-  padding: 10px 12px;
-  margin: 10px 0;
-}
-.financial-summary-box .financial-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-.financial-summary-box .financial-item .label {
-  font-size: 12px;
-  color: #909399;
-}
-.financial-summary-box .financial-item .value {
-  font-size: 14px;
-  font-weight: 600;
-  color: #303133;
-}
-.financial-summary-box .financial-item.debt .value {
-  color: #f56c6c;
-  font-size: 15px;
-}
 
 .stats-row {
   display: flex;

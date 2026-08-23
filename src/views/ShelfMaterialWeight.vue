@@ -194,15 +194,17 @@ const MATERIAL_SPECS: Record<string, { expandedSurface: number, thickness: numbe
 
 const materialOptions = Object.keys(MATERIAL_SPECS)
 
+const CATEGORY_MAP: Record<number, string> = {
+  0: 'column',
+  1: 'beam',
+  2: 'horizontal_brace',
+  3: 'diagonal_brace'
+}
+
 const getOptionsForRow = (index: number) => {
-  if (index === 0) {
-    return materialOptions.filter(k => MATERIAL_SPECS[k].category === 'column')
-  } else if (index === 1) {
-    return materialOptions.filter(k => MATERIAL_SPECS[k].category === 'beam')
-  } else if (index === 2) {
-    return materialOptions.filter(k => MATERIAL_SPECS[k].category === 'horizontal_brace')
-  } else if (index === 3) {
-    return materialOptions.filter(k => MATERIAL_SPECS[k].category === 'diagonal_brace')
+  const category = CATEGORY_MAP[index]
+  if (category) {
+    return materialOptions.filter(k => MATERIAL_SPECS[k].category === category)
   }
   return materialOptions
 }
@@ -346,6 +348,25 @@ const calculateTotalWeight = (row: MaterialRow): string => {
   return total.toFixed(3)
 }
 
+const SUMMARY_CALCULATORS: Record<string, (data: any[]) => string> = {
+  '重量(kg/m)': (data) => {
+    let total = 0
+    data.forEach(row => {
+      const val = parseFloat(calculateWeight(row))
+      if (!isNaN(val)) total += val
+    })
+    return total.toFixed(1)
+  },
+  '总重量(kg)': (data) => {
+    let total = 0
+    data.forEach(row => {
+      const val = parseFloat(calculateTotalWeight(row))
+      if (!isNaN(val)) total += val
+    })
+    return total.toFixed(3)
+  }
+}
+
 const getSummaries = (param: { columns: any[]; data: any[] }) => {
   const { columns, data } = param
   const sums: string[] = []
@@ -356,26 +377,9 @@ const getSummaries = (param: { columns: any[]; data: any[] }) => {
       return
     }
     
-    if (column.label === '重量(kg/m)') {
-      let totalUnitWeight = 0
-      data.forEach(row => {
-        const rowUnitStr = calculateWeight(row)
-        const rowUnitWeight = parseFloat(rowUnitStr)
-        if (!isNaN(rowUnitWeight)) {
-          totalUnitWeight += rowUnitWeight
-        }
-      })
-      sums[index] = totalUnitWeight.toFixed(1)
-    } else if (column.label === '总重量(kg)') {
-      let totalWeight = 0
-      data.forEach(row => {
-        const rowTotalStr = calculateTotalWeight(row)
-        const rowTotal = parseFloat(rowTotalStr)
-        if (!isNaN(rowTotal)) {
-          totalWeight += rowTotal
-        }
-      })
-      sums[index] = totalWeight.toFixed(3)
+    const calculator = SUMMARY_CALCULATORS[column.label]
+    if (calculator) {
+      sums[index] = calculator(data)
     } else {
       sums[index] = ''
     }

@@ -1,113 +1,48 @@
+ï»¿
 const fs = require('fs');
-const path = require('path');
-const file = path.join('src/components/customer/Customer360Drawer.vue');
-let content = fs.readFileSync(file, 'utf8');
+let content = fs.readFileSync('d:/work/Beilit-Price-List/src/views/ShelfMaterialWeight.vue', 'utf8');
 
-// Replace finance table
-const financeOld =               <el-table :data="customer.orders || []" border style="width: 100%" stripe>
-                <el-table-column prop="orderName" label="ÕËµ¥/¶©µ¥Ãû³Æ" min-width="150">
-                  <template #default="{ row }">
-                    <span style="font-weight: bold;">{{ row.orderName }}</span>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="orderAmount" label="ÕËµ¥×Ü¶î(Ôª)" width="130" align="center">
-                  <template #default="{ row }">£¤ {{ Number(row.orderAmount || 0).toLocaleString() }}</template>
-                </el-table-column>
-                <el-table-column prop="paidAmount" label="ÒÑÊÕ½ð¶î(Ôª)" width="130" align="center">
-                  <template #default="{ row }">£¤ {{ Number(row.paidAmount || 0).toLocaleString() }}</template>
-                </el-table-column>
-                <el-table-column label="µ±Ç°Ç·¿î(Ôª)" width="130" align="center">
-                  <template #default="{ row }">
-                    <strong style="color: #f56c6c;">£¤ {{ Math.max(0, (row.orderAmount || 0) - (row.paidAmount || 0)).toLocaleString() }}</strong>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="paymentStatus" label="½á¿î×´Ì¬" width="120" align="center">
-                  <template #default="scope">
-                    <el-tag :type="getPaymentStatusInfo(scope.row).type">
-                      {{ getPaymentStatusInfo(scope.row).label }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="²Ù×÷" width="120" align="center">
-                  <template #default="scope">
-                    <AppButton variant="edit" link size="small" label="µÇ¼Ç»Ø¿î" @click="openFinanceEditDialog(scope.row)" />
-                  </template>
-                </el-table-column>
-              </el-table>;
-
-const financeNew =               <el-table :data="customer.orders || []" border style="width: 100%" stripe>
-                <AutoFitColumn :data="customer.orders || []" prop="orderName" label="ÕËµ¥/¶©µ¥Ãû³Æ" :min="150" :max="400">
-                  <template #default="{ row }">
-                    <span style="font-weight: bold;">{{ row.orderName }}</span>
-                  </template>
-                </AutoFitColumn>
-                <AutoFitColumn :data="customer.orders || []" prop="orderAmount" label="ÕËµ¥×Ü¶î(Ôª)" :min="130" :max="200" align="center">
-                  <template #default="{ row }">£¤ {{ Number(row.orderAmount || 0).toLocaleString() }}</template>
-                </AutoFitColumn>
-                <AutoFitColumn :data="customer.orders || []" prop="paidAmount" label="ÒÑÊÕ½ð¶î(Ôª)" :min="130" :max="200" align="center">
-                  <template #default="{ row }">£¤ {{ Number(row.paidAmount || 0).toLocaleString() }}</template>
-                </AutoFitColumn>
-                <AutoFitColumn :data="customer.orders || []" label="µ±Ç°Ç·¿î(Ôª)" :min="130" :max="200" align="center">
-                  <template #default="{ row }">
-                    <strong style="color: #f56c6c;">£¤ {{ Math.max(0, (row.orderAmount || 0) - (row.paidAmount || 0)).toLocaleString() }}</strong>
-                  </template>
-                </AutoFitColumn>
-                <AutoFitColumn :data="customer.orders || []" prop="paymentStatus" label="½á¿î×´Ì¬" :min="120" :max="180" align="center">
-                  <template #default="scope">
-                    <el-tag :type="getPaymentStatusInfo(scope.row).type">
-                      {{ getPaymentStatusInfo(scope.row).label }}
-                    </el-tag>
-                  </template>
-                </AutoFitColumn>
-                <el-table-column label="²Ù×÷" min-width="160" align="center">
-                  <template #default="scope">
-                    <ActionButtons
-                      :actions="[
-                        { key: 'edit', variant: 'edit', label: 'µÇ¼Ç»Ø¿î', onClick: () => openFinanceEditDialog(scope.row) },
-                        { key: 'delete', variant: 'delete', label: 'É¾³ý', onClick: () => handleDeleteFinance(scope.row) }
-                      ]"
-                    />
-                  </template>
-                </el-table-column>
-              </el-table>;
-
-content = content.replace(financeOld, financeNew);
-if (content === fs.readFileSync(file, 'utf8')) {
-  console.log("finance replace failed!");
-} else {
-  console.log("finance replace success");
-}
-
-// Ensure ActionButtons is imported
-if (!content.includes('import ActionButtons')) {
-  content = content.replace(
-    import AppButton from '@/components/common/AppButton.vue',
-    import AppButton from '@/components/common/AppButton.vue'\nimport ActionButtons from '@/components/common/ActionButtons.vue'
-  );
-}
-
-// Replace script end to include handleDeleteFinance
-const scriptOld =   }
-</script>;
-
-const scriptNew =   }
-
-  const handleDeleteFinance = async (row: any) => {
-    try {
-      await ElMessageBox.confirm('È·¶¨ÒªÉ¾³ýÕâÌõÕËµ¥¼ÇÂ¼Âð£¿', 'ÌáÊ¾', { type: 'warning', confirmButtonText: 'È·¶¨', cancelButtonText: 'È¡Ïû' })
-      await customerApi.deleteOrder(row.id)
-      ElMessage.success('ÕËµ¥É¾³ý³É¹¦')
-      emit('data-changed')
-    } catch (e: any) {
-      if (e !== 'cancel') {
-        ElMessage.error(e.response?.data?.message || e.message || 'É¾³ýÊ§°Ü')
-      }
-    }
+const newFunc = \const SUMMARY_CALCULATORS: Record<string, (data: any[]) => string> = {
+  'é‡é‡(kg/m)': (data) => {
+    let total = 0
+    data.forEach(row => {
+      const val = parseFloat(calculateWeight(row))
+      if (!isNaN(val)) total += val
+    })
+    return total.toFixed(1)
+  },
+  'æ€»é‡é‡(kg)': (data) => {
+    let total = 0
+    data.forEach(row => {
+      const val = parseFloat(calculateTotalWeight(row))
+      if (!isNaN(val)) total += val
+    })
+    return total.toFixed(3)
   }
-</script>;
-
-if (!content.includes('handleDeleteFinance')) {
-  content = content.replace(scriptOld, scriptNew);
 }
 
-fs.writeFileSync(file, content, 'utf8');
+const getSummaries = (param: { columns: any[]; data: any[] }) => {
+  const { columns, data } = param
+  const sums: string[] = []
+  
+  columns.forEach((column, index) => {
+    if (index === 0) {
+      sums[index] = 'åˆè®¡'
+      return
+    }
+    
+    const calculator = SUMMARY_CALCULATORS[column.label]
+    if (calculator) {
+      sums[index] = calculator(data)
+    } else {
+      sums[index] = ''
+    }
+  })
+  
+  return sums
+}\;
+
+content = content.replace(/const getSummaries = \\(param: \\{ columns: any\\[\\]; data: any\\[\\] \\}\\) => \\{[\\s\\S]*?return sums\\r?\\n\\}/, newFunc);
+
+fs.writeFileSync('d:/work/Beilit-Price-List/src/views/ShelfMaterialWeight.vue', content, 'utf8');
+
