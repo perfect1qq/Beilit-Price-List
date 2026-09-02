@@ -199,7 +199,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="showFinanceDialog" :title="editingFinanceId ? '登记回款与更新状态' : '新增交易账单'" width="500px" append-to-body>
+    <el-dialog v-model="showFinanceDialog" :title="editingFinanceId ? '登记回款与更新状态' : '新增交易账单'" width="650px" append-to-body>
       <el-form :model="financeForm" label-width="120px">
         <el-form-item label="账单/订单名称">
           <el-input v-model="financeForm.orderName" placeholder="如：第一笔订单、二期工程..." />
@@ -208,8 +208,7 @@
           <el-input-number v-model="financeForm.orderAmount" :min="0" style="width:100%" />
         </el-form-item>
         <el-form-item label="已收金额(元)">
-          <el-input-number v-model="financeForm.paidAmount" :min="0" style="width:100%" :disabled="!!editingFinanceId" />
-          <div v-if="editingFinanceId" style="color: #909399; font-size: 12px; line-height: 1.2; margin-top: 4px;">编辑账单时，已收金额由下方“回款记录”自动计算得出。</div>
+          <el-input-number v-model="financeForm.paidAmount" :min="0" style="width:100%" />
         </el-form-item>
         <el-form-item label="当前欠款(元)">
           <span style="color: #f56c6c; font-weight: bold;">
@@ -243,22 +242,22 @@
         </div>
 
         <el-table :data="currentOrderForPayment?.payments || []" border size="small" style="width: 100%" max-height="250">
-          <el-table-column prop="createdAt" label="回款时间" width="140">
+          <AutoFitColumn :data="currentOrderForPayment?.payments || []" prop="createdAt" label="回款时间" :min="140" :max="200" align="center">
             <template #default="{ row }">
               <span style="color: #606266;">{{ new Date(row.createdAt).toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) }}</span>
             </template>
-          </el-table-column>
-          <el-table-column prop="amount" label="金额(元)" width="100" align="right">
+          </AutoFitColumn>
+          <AutoFitColumn :data="currentOrderForPayment?.payments || []" prop="amount" label="金额(元)" :min="100" :max="150" align="center">
             <template #default="{ row }">
-              <span style="color: #67c23a; font-weight: bold; font-family: monospace; font-size: 13px;">+{{ row.amount.toLocaleString() }}</span>
+              <span style="color: #67c23a; font-weight: bold; font-family: monospace; font-size: 13px;">{{ row.amount.toLocaleString() }}</span>
             </template>
-          </el-table-column>
-          <el-table-column prop="remark" label="备注" min-width="120" show-overflow-tooltip />
-          <el-table-column label="操作" width="60" align="center">
+          </AutoFitColumn>
+          <AutoFitColumn :data="currentOrderForPayment?.payments || []" prop="remark" label="备注" :min="120" :max="300" align="center" show-overflow-tooltip />
+          <AutoFitColumn :data="currentOrderForPayment?.payments || []" label="操作" :min="90" align="center">
             <template #default="{ row }">
               <AppButton variant="delete" type="danger" link @click="deletePaymentRecord(row.id)">删除</AppButton>
             </template>
-          </el-table-column>
+          </AutoFitColumn>
           <template #empty>
             <span style="color: #909399; font-size: 13px;">暂无回款记录</span>
           </template>
@@ -496,6 +495,15 @@ watch(() => customer.value?.orders, (newOrders) => {
 
 const submitPayment = async () => {
   if (!currentOrderForPayment.value || !props.customerId) return
+  if (paymentForm.value.amount <= 0) {
+    ElMessage.warning('回款金额必须大于 0')
+    return
+  }
+  const customerArrears = Math.max(0, (customer.value?.totalAmount || 0) - (customer.value?.totalPaidAmount || 0));
+  if (paymentForm.value.amount > customerArrears) {
+    ElMessage.warning(`回款金额不能超过该客户的总欠款金额 (最多还能登记: ¥${customerArrears})`)
+    return
+  }
   submittingPayment.value = true
   try {
     await addPaymentMutation.mutateAsync({
@@ -543,6 +551,16 @@ const openFinanceEditDialog = (row: any) => {
 
 const submitFinance = async () => {
   if (!props.customerId) return
+
+  const originalPaidAmount = currentOrderForPayment.value?.paidAmount || 0;
+  const increase = financeForm.value.paidAmount - originalPaidAmount;
+  const customerArrears = Math.max(0, (customer.value?.totalAmount || 0) - (customer.value?.totalPaidAmount || 0));
+
+  if (increase > customerArrears) {
+    ElMessage.warning(`已收金额的新增量不能超过该客户的总欠款 (最多还能增加: ¥${customerArrears})`)
+    return
+  }
+  
   // 提交前强制重新计算结款状态
   financeForm.value.paymentStatus = computePaymentStatus(financeForm.value.orderAmount, financeForm.value.paidAmount)
   try {

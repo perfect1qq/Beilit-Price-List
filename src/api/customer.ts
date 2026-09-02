@@ -30,8 +30,8 @@ interface CustomerStats {
 const list = (params?: CustomerListParams) =>
   request.get<CustomerListResult>('/api/customers', { params })
 
-const getArrearsList = () =>
-  request.get<{ list: any[] }>('/api/customers/arrears')
+const getArrearsList = (params?: { page: number, pageSize: number }) =>
+  request.get<{ list: any[], total: number, page: number, pageSize: number }>('/api/customers/arrears', { params })
 
 const getStats = () =>
   request.get<CustomerStats>('/api/customers/stats')

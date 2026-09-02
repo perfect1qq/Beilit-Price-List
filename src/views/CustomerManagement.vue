@@ -248,6 +248,14 @@
           </template>
         </el-table-column>
       </el-table>
+      <PagePagination
+        v-if="arrearsTotal > 0"
+        style="margin-top: 15px;"
+        v-model:page="arrearsParams.page"
+        v-model:pageSize="arrearsParams.pageSize"
+        :total="arrearsTotal"
+        @change="handleViewArrears"
+      />
       <div style="margin-top: 15px; text-align: right; font-weight: bold; font-size: 16px;">
         总欠款合计：<span style="color: #f56c6c;">¥ {{ totalArrearsAmount }}</span>
       </div>
@@ -258,6 +266,7 @@
 <script setup lang="ts">
 import { CooperationStatus, CustomerType, PaymentStatus, OrderStatus, InstallationStatus } from '@/constants/enums';
 import CustomerStats from './customer/CustomerStats.vue';
+import PagePagination from '@/components/common/PagePagination.vue';
 import { onMounted, ref, computed, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessageBox } from "element-plus";
@@ -514,6 +523,8 @@ const saveInvoiceInfo = async () => {
 const arrearsDialogVisible = ref(false);
 const arrearsLoading = ref(false);
 const arrearsList = ref<any[]>([]);
+const arrearsParams = ref({ page: 1, pageSize: 20 });
+const arrearsTotal = ref(0);
 
 const totalArrearsAmount = computed(() => {
   return arrearsList.value.reduce((sum, item) => sum + (Number(item.arrears) || 0), 0).toFixed(2);
@@ -524,8 +535,9 @@ const handleViewArrears = async () => {
   arrearsLoading.value = true;
   try {
     const customerApi = (await import("@/api/customer")).default;
-    const res = await customerApi.getArrearsList();
+    const res = await customerApi.getArrearsList({ page: arrearsParams.value.page, pageSize: arrearsParams.value.pageSize });
     arrearsList.value = res?.list || [];
+    arrearsTotal.value = res?.total || 0;
   } catch (err) {
     showError(err, "加载欠款列表失败");
   } finally {
