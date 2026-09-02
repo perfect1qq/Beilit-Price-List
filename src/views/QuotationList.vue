@@ -34,7 +34,7 @@
 
       <QuotationEditor ref="formRef" :is-view-mode="isViewMode" :rules-disabled="rulesDisabled" :form-model="formModel"
         :editing-history-id="editingHistoryId" v-model:remark="remark" v-model:discount="discount"
-        v-model:final-price="finalPrice" v-model:raw-text="rawText" :subtotal="subtotal"
+        v-model:final-price="finalPrice" v-model:raw-text="rawText" v-model:quotation-date="quotationDate" :subtotal="subtotal"
         :discount-amount="discountAmount" :auto-final-price="autoFinalPrice" :is-manual-final-price="isManualFinalPrice"
         :items="items" :visible-columns="visibleColumns" :hide-action-column="isGuest"
         @handle-discount-change="handleDiscountChange" @handle-manual-final-price-change="handleManualFinalPriceChange"
@@ -105,6 +105,7 @@ const {
   rawText,
   items,
   visibleColumns,
+  quotationDate,
   editingHistoryId,
   isViewMode,
   isEditing,
@@ -186,6 +187,7 @@ const switchToEdit = () => {
       finalPrice: finalPrice.value,
       isManual: isManualFinalPrice.value,
       items: items.value,
+      quotationDate: quotationDate.value,
     },
     'edit',
   )

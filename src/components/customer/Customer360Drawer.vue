@@ -149,6 +149,7 @@
               <AppButton variant="add" label="新增交易账单" size="small" @click="openFinanceAddDialog" />
             </div>
             <el-table :data="customer.orders || []" border style="width: 100%" stripe>
+
               <AutoFitColumn :data="customer.orders || []" prop="orderName" label="账单/订单名称" :min="150" :max="400">
                 <template #default="{ row }">
                   <span style="font-weight: bold;">{{ row.orderName }}</span>
@@ -207,7 +208,8 @@
           <el-input-number v-model="financeForm.orderAmount" :min="0" style="width:100%" />
         </el-form-item>
         <el-form-item label="已收金额(元)">
-          <el-input-number v-model="financeForm.paidAmount" :min="0" style="width:100%" />
+          <el-input-number v-model="financeForm.paidAmount" :min="0" style="width:100%" :disabled="!!editingFinanceId" />
+          <div v-if="editingFinanceId" style="color: #909399; font-size: 12px; line-height: 1.2; margin-top: 4px;">编辑账单时，已收金额由下方“回款记录”自动计算得出。</div>
         </el-form-item>
         <el-form-item label="当前欠款(元)">
           <span style="color: #f56c6c; font-weight: bold;">
@@ -221,8 +223,50 @@
           <span style="margin-left: 8px; color: #909399; font-size: 12px;">根据欠款自动判定</span>
         </el-form-item>
       </el-form>
+      
+      <!-- 回款记录模块 -->
+      <div v-if="editingFinanceId" style="margin-top: 25px; border-top: 1px solid #ebeef5; padding-top: 20px;">
+        <h4 style="margin: 0 0 15px 0; padding-left: 10px; border-left: 4px solid var(--el-color-primary); color: #303133;">分批次回款记录</h4>
+        
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+          <el-row :gutter="12" align="middle">
+            <el-col :span="8">
+              <el-input-number v-model="paymentForm.amount" :min="0" style="width: 100%" :controls="false" placeholder="输入金额(元)" />
+            </el-col>
+            <el-col :span="12">
+              <el-input v-model="paymentForm.remark" placeholder="添加备注（选填）" style="width: 100%" />
+            </el-col>
+            <el-col :span="4">
+              <AppButton type="primary" style="width: 100%" @click="submitPayment" :loading="submittingPayment">记录</AppButton>
+            </el-col>
+          </el-row>
+        </div>
+
+        <el-table :data="currentOrderForPayment?.payments || []" border size="small" style="width: 100%" max-height="250">
+          <el-table-column prop="createdAt" label="回款时间" width="140">
+            <template #default="{ row }">
+              <span style="color: #606266;">{{ new Date(row.createdAt).toLocaleString('zh-CN', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="amount" label="金额(元)" width="100" align="right">
+            <template #default="{ row }">
+              <span style="color: #67c23a; font-weight: bold; font-family: monospace; font-size: 13px;">+{{ row.amount.toLocaleString() }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="remark" label="备注" min-width="120" show-overflow-tooltip />
+          <el-table-column label="操作" width="60" align="center">
+            <template #default="{ row }">
+              <AppButton variant="delete" type="danger" link @click="deletePaymentRecord(row.id)">删除</AppButton>
+            </template>
+          </el-table-column>
+          <template #empty>
+            <span style="color: #909399; font-size: 13px;">暂无回款记录</span>
+          </template>
+        </el-table>
+      </div>
+
       <template #footer>
-        <FormButtons submit-text="保存财务记录" @cancel="showFinanceDialog = false" @submit="submitFinance" />
+        <FormButtons submit-text="保存账单基础信息" @cancel="showFinanceDialog = false" @submit="submitFinance" />
       </template>
     </el-dialog>
 
@@ -242,6 +286,8 @@ import {
   useAddOrderMutation,
   useUpdateOrderMutation,
   useDeleteCustomerOrderMutation,
+  useAddPaymentMutation,
+  useDeletePaymentMutation,
 } from '@/composables/useCustomerQueries'
 import AppButton from '@/components/common/AppButton.vue'
 import AutoFitColumn from '@/components/common/AutoFitColumn.vue'
@@ -421,7 +467,7 @@ const openFinanceAddDialog = () => {
 // 合同同步生成的账单（contractId 非空）不允许在此删除，需通过删除对应合同来移除
 const getFinanceActions = (row: any) => {
   const actions = [
-    { key: 'edit', variant: 'edit' as const, label: '登记回款', onClick: () => openFinanceEditDialog(row) },
+    { key: 'edit', variant: 'edit' as const, label: '编辑账单', onClick: () => openFinanceEditDialog(row) },
   ]
   if (!row.contractId) {
     actions.push({ key: 'delete', variant: 'delete' as const, label: '删除', onClick: () => handleDeleteFinance(row) })
@@ -429,8 +475,62 @@ const getFinanceActions = (row: any) => {
   return actions
 }
 
+const addPaymentMutation = useAddPaymentMutation()
+const deletePaymentMutation = useDeletePaymentMutation()
+
+const currentOrderForPayment = ref<any>(null)
+const paymentForm = ref({ amount: 0, remark: '' })
+const submittingPayment = ref(false)
+
+watch(() => customer.value?.orders, (newOrders) => {
+  if (editingFinanceId.value && currentOrderForPayment.value) {
+    const updated = newOrders?.find((o: any) => o.id === currentOrderForPayment.value.id)
+    if (updated) {
+      currentOrderForPayment.value = updated
+      // Sync the paid amount to the edit form as well
+      financeForm.value.paidAmount = updated.paidAmount || 0
+      financeForm.value.paymentStatus = computePaymentStatus(updated.orderAmount, updated.paidAmount)
+    }
+  }
+}, { deep: true })
+
+const submitPayment = async () => {
+  if (!currentOrderForPayment.value || !props.customerId) return
+  submittingPayment.value = true
+  try {
+    await addPaymentMutation.mutateAsync({
+      orderId: currentOrderForPayment.value.id,
+      data: { ...paymentForm.value },
+      customerId: props.customerId
+    })
+    ElMessage.success('收款记录添加成功')
+    paymentForm.value = { amount: 0, remark: '' }
+    await refetchCustomer()
+    emit('data-changed')
+  } catch (e: any) {
+    ElMessage.error(e.response?.data?.message || e.message || '保存失败')
+  } finally {
+    submittingPayment.value = false
+  }
+}
+
+const deletePaymentRecord = async (paymentId: number) => {
+  if (!props.customerId) return
+  try {
+    await ElMessageBox.confirm('确定要删除这条收款记录吗？', '提示', { type: 'warning' })
+    await deletePaymentMutation.mutateAsync({ paymentId, customerId: props.customerId })
+    ElMessage.success('收款记录删除成功')
+    await refetchCustomer()
+    emit('data-changed')
+  } catch (e: any) {
+    if (e !== 'cancel') ElMessage.error(e.response?.data?.message || e.message || '删除失败')
+  }
+}
+
 const openFinanceEditDialog = (row: any) => {
   editingFinanceId.value = row.id
+  currentOrderForPayment.value = row
+  paymentForm.value = { amount: 0, remark: '' }
   financeForm.value = {
     orderName: row.orderName || '',
     orderAmount: row.orderAmount || 0,

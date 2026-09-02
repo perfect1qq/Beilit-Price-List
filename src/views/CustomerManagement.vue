@@ -4,6 +4,7 @@
       <template #header>
         <CardHeader title="客户管理">
           <template #actions>
+            <AppButton @click="handleViewArrears" plain type="warning">查看所有欠款</AppButton>
             <AppButton variant="add" v-if="canCreate" @click="handleAdd">
               新增客户
             </AppButton>
@@ -231,6 +232,26 @@
       @edit="handleEdit"
       @invoice="handleInvoiceInfo"
     />
+    <el-dialog v-model="arrearsDialogVisible" title="所有已合作客户欠款" width="800px">
+      <el-table :data="arrearsList" v-loading="arrearsLoading" border stripe>
+        <el-table-column prop="companyName" label="公司名称" min-width="150" />
+        <el-table-column prop="customerName" label="客户姓名" width="100" />
+        <el-table-column prop="totalAmount" label="订单总额" width="110" align="right">
+          <template #default="{ row }">¥ {{ row.totalAmount }}</template>
+        </el-table-column>
+        <el-table-column prop="totalPaidAmount" label="已付金额" width="110" align="right">
+          <template #default="{ row }">¥ {{ row.totalPaidAmount }}</template>
+        </el-table-column>
+        <el-table-column prop="arrears" label="欠款金额" width="110" align="right">
+          <template #default="{ row }">
+            <span style="color: #f56c6c; font-weight: bold;">¥ {{ row.arrears }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div style="margin-top: 15px; text-align: right; font-weight: bold; font-size: 16px;">
+        总欠款合计：<span style="color: #f56c6c;">¥ {{ totalArrearsAmount }}</span>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -488,6 +509,28 @@ const saveInvoiceInfo = async () => {
   showSuccess("开票信息保存成功");
   invoiceDialogVisible.value = false;
   void refetchStats();
+};
+
+const arrearsDialogVisible = ref(false);
+const arrearsLoading = ref(false);
+const arrearsList = ref<any[]>([]);
+
+const totalArrearsAmount = computed(() => {
+  return arrearsList.value.reduce((sum, item) => sum + (Number(item.arrears) || 0), 0).toFixed(2);
+});
+
+const handleViewArrears = async () => {
+  arrearsDialogVisible.value = true;
+  arrearsLoading.value = true;
+  try {
+    const customerApi = (await import("@/api/customer")).default;
+    const res = await customerApi.getArrearsList();
+    arrearsList.value = res?.list || [];
+  } catch (err) {
+    showError(err, "加载欠款列表失败");
+  } finally {
+    arrearsLoading.value = false;
+  }
 };
 
 const STATS_FILTER_MAP: Record<string, any> = {

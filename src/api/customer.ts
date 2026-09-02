@@ -30,6 +30,9 @@ interface CustomerStats {
 const list = (params?: CustomerListParams) =>
   request.get<CustomerListResult>('/api/customers', { params })
 
+const getArrearsList = () =>
+  request.get<{ list: any[] }>('/api/customers/arrears')
+
 const getStats = () =>
   request.get<CustomerStats>('/api/customers/stats')
 
@@ -60,8 +63,15 @@ const updateOrder = (orderId: number | string, data: CustomerOrderUpdatePayload)
 const deleteOrder = (orderId: number | string) =>
   request.delete<null>(`/api/customers/orders/${orderId}`)
 
+const addPayment = (orderId: number | string, data: any) =>
+  request.post<{ payment: any }>(`/api/customers/orders/${orderId}/payments`, data)
+
+const deletePayment = (id: number | string) =>
+  request.delete<null>(`/api/customers/payments/${id}`)
+
 const customerApi = {
   list: unwrap(list),
+  getArrearsList: unwrap(getArrearsList),
   getStats: unwrap(getStats),
   getDetail: unwrap(getDetail),
   create: unwrap(create),
@@ -71,7 +81,9 @@ const customerApi = {
   deleteFollowUp: unwrap(deleteFollowUp),
   addOrder: unwrap(addOrder),
   updateOrder: unwrap(updateOrder),
-  deleteOrder: unwrap(deleteOrder)
+  deleteOrder: unwrap(deleteOrder),
+  addPayment: unwrap(addPayment),
+  deletePayment: unwrap(deletePayment)
 }
 
 export default customerApi

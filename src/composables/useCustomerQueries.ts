@@ -235,11 +235,32 @@ export const useUpdateOrderMutation = () => {
 export const useDeleteCustomerOrderMutation = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ orderId, customerId }: { orderId: number; customerId: number }) =>
-      customerApi.deleteOrder(orderId),
-    onSuccess: (_data, { customerId }) => {
-      void queryClient.invalidateQueries({ queryKey: ['customer', customerId] })
-      void queryClient.invalidateQueries({ queryKey: ['customers'] })
-    },
+    mutationFn: ({ orderId }: { orderId: number; customerId: number }) => customerApi.deleteOrder(orderId),
+    onSuccess: (_, { customerId }) => {
+      queryClient.invalidateQueries({ queryKey: ['customer', customerId] })
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+    }
+  })
+}
+
+export const useAddPaymentMutation = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ orderId, data }: { orderId: number; data: any; customerId: number }) => customerApi.addPayment(orderId, data),
+    onSuccess: (_, { customerId }) => {
+      queryClient.invalidateQueries({ queryKey: ['customer', customerId] })
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+    }
+  })
+}
+
+export const useDeletePaymentMutation = () => {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ paymentId }: { paymentId: number; customerId: number }) => customerApi.deletePayment(paymentId),
+    onSuccess: (_, { customerId }) => {
+      queryClient.invalidateQueries({ queryKey: ['customer', customerId] })
+      queryClient.invalidateQueries({ queryKey: ['customers'] })
+    }
   })
 }
