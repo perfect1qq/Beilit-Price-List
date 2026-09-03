@@ -1,6 +1,6 @@
 export enum PaymentStatus {
-  PENDING = '待结款',
-  PAID = '已结款',
+  PENDING = '待催款',
+  PAID = '已结清',
   NONE = '未有款项'
 }
 

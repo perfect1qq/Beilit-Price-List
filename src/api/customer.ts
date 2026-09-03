@@ -30,8 +30,8 @@ interface CustomerStats {
 const list = (params?: CustomerListParams) =>
   request.get<CustomerListResult>('/api/customers', { params })
 
-const getArrearsList = (params?: { page: number, pageSize: number }) =>
-  request.get<{ list: any[], total: number, page: number, pageSize: number }>('/api/customers/arrears', { params })
+const getYearlyOrderStats = (params?: { startMonth?: string; endMonth?: string }) =>
+  request.get<{ list: any[], summary: any }>('/api/customers/yearly-stats', { params })
 
 const getStats = () =>
   request.get<CustomerStats>('/api/customers/stats')
@@ -71,7 +71,7 @@ const deletePayment = (id: number | string) =>
 
 const customerApi = {
   list: unwrap(list),
-  getArrearsList: unwrap(getArrearsList),
+  getYearlyOrderStats: unwrap(getYearlyOrderStats),
   getStats: unwrap(getStats),
   getDetail: unwrap(getDetail),
   create: unwrap(create),

@@ -4,7 +4,7 @@
       <template #header>
         <CardHeader title="客户管理">
           <template #actions>
-            <AppButton @click="handleViewArrears" plain type="warning">查看所有欠款</AppButton>
+            <AppButton @click="handleViewYearlyOrders" plain type="warning">查看所有订单</AppButton>
             <AppButton variant="add" v-if="canCreate" @click="handleAdd">
               新增客户
             </AppButton>
@@ -232,34 +232,49 @@
       @edit="handleEdit"
       @invoice="handleInvoiceInfo"
     />
-    <el-dialog v-model="arrearsDialogVisible" title="所有已合作客户欠款" width="800px">
-      <el-table :data="arrearsList" v-loading="arrearsLoading" border stripe>
-        <el-table-column prop="companyName" label="公司名称" min-width="150" />
-        <el-table-column prop="customerName" label="客户姓名" width="100" />
-        <el-table-column prop="totalAmount" label="订单总额" width="110" align="right">
-          <template #default="{ row }">¥ {{ row.totalAmount }}</template>
-        </el-table-column>
-        <el-table-column prop="totalPaidAmount" label="已付金额" width="110" align="right">
-          <template #default="{ row }">¥ {{ row.totalPaidAmount }}</template>
-        </el-table-column>
-        <el-table-column prop="arrears" label="欠款金额" width="110" align="right">
-          <template #default="{ row }">
-            <span style="color: #f56c6c; font-weight: bold;">¥ {{ row.arrears }}</span>
-          </template>
-        </el-table-column>
-      </el-table>
-      <PagePagination
-        v-if="arrearsTotal > 0"
-        style="margin-top: 15px;"
-        v-model:page="arrearsParams.page"
-        v-model:pageSize="arrearsParams.pageSize"
-        :total="arrearsTotal"
-        @change="handleViewArrears"
+    <el-dialog v-model="yearlyDialogVisible" title="所有订单" width="1000px">
+    <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
+      <el-date-picker
+        v-model="orderFilterDate"
+        type="monthrange"
+        range-separator="至"
+        start-placeholder="开始月份"
+        end-placeholder="结束月份"
+        value-format="YYYY-MM"
+        @change="fetchYearlyOrders"
+        clearable
       />
-      <div style="margin-top: 15px; text-align: right; font-weight: bold; font-size: 16px;">
-        总欠款合计：<span style="color: #f56c6c;">¥ {{ totalArrearsAmount }}</span>
-      </div>
-    </el-dialog>
+    </div>
+    <el-table :data="yearlyList" v-loading="yearlyLoading" border stripe max-height="500">
+      <el-table-column prop="customerName" label="客户名称" min-width="120" />
+      <el-table-column prop="companyName" label="公司名称" min-width="150" />
+      <el-table-column prop="orderName" label="订单名称" min-width="120" />
+      
+      <el-table-column prop="orderAmount" label="订单金额" align="center" min-width="120">
+        <template #default="{ row }">
+          ¥ {{ Number(row.orderAmount || 0).toFixed(2) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="paidAmount" label="已收金额" align="center" min-width="120">
+        <template #default="{ row }">
+          ¥ {{ Number(row.paidAmount || 0).toFixed(2) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="arrears" label="欠款金额" align="center" min-width="120">
+        <template #default="{ row }">
+          <span :style="{ color: row.arrears > 0 ? '#f56c6c' : '#67c23a' }">
+            ¥ {{ Number(row.arrears || 0).toFixed(2) }}
+          </span>
+        </template>
+      </el-table-column>
+    </el-table>
+    <div style="margin-top: 15px; padding: 15px; background: #f5f7fa; border-radius: 8px; display: flex; justify-content: space-around; font-weight: bold; font-size: 15px;">
+      <div>订单数: <span style="color: #409EFF">{{ yearlySummary.orderCount }}</span></div>
+      <div>总金额: <span style="color: #e6a23c">¥ {{ Number(yearlySummary.totalOrderAmount || 0).toFixed(2) }}</span></div>
+      <div>已收总额: <span style="color: #67c23a">¥ {{ Number(yearlySummary.totalPaidAmount || 0).toFixed(2) }}</span></div>
+      <div>欠款合计: <span style="color: #f56c6c">¥ {{ Number(yearlySummary.totalArrears || 0).toFixed(2) }}</span></div>
+    </div>
+  </el-dialog>
   </div>
 </template>
 
@@ -520,32 +535,44 @@ const saveInvoiceInfo = async () => {
   void refetchStats();
 };
 
-const arrearsDialogVisible = ref(false);
-const arrearsLoading = ref(false);
-const arrearsList = ref<any[]>([]);
-const arrearsParams = ref({ page: 1, pageSize: 20 });
-const arrearsTotal = ref(0);
+const yearlyDialogVisible = ref(false);
+const yearlyLoading = ref(false);
+const yearlyList = ref<any[]>([]);
+const yearlySummary = ref<any>({ orderCount: 0, totalOrderAmount: 0, totalPaidAmount: 0, totalArrears: 0 });
+const orderFilterDate = ref<[string, string] | null>(null);
 
-const totalArrearsAmount = computed(() => {
-  return arrearsList.value.reduce((sum, item) => sum + (Number(item.arrears) || 0), 0).toFixed(2);
-});
 
-const handleViewArrears = async () => {
-  arrearsDialogVisible.value = true;
-  arrearsLoading.value = true;
+
+
+const fetchYearlyOrders = async () => {
+  yearlyLoading.value = true;
   try {
     const customerApi = (await import("@/api/customer")).default;
-    const res = await customerApi.getArrearsList({ page: arrearsParams.value.page, pageSize: arrearsParams.value.pageSize });
-    arrearsList.value = res?.list || [];
-    arrearsTotal.value = res?.total || 0;
+    const params: any = {};
+    if (orderFilterDate.value && orderFilterDate.value.length === 2) {
+      params.startMonth = orderFilterDate.value[0];
+      params.endMonth = orderFilterDate.value[1];
+    }
+    const res = await customerApi.getYearlyOrderStats(params);
+    yearlyList.value = res?.list || [];
+    if (res?.summary) {
+      yearlySummary.value = res.summary;
+    } else {
+      yearlySummary.value = { orderCount: 0, totalOrderAmount: 0, totalPaidAmount: 0, totalArrears: 0 };
+    }
   } catch (err) {
-    showError(err, "加载欠款列表失败");
+    showError(err, "加载订单明细失败");
   } finally {
-    arrearsLoading.value = false;
+    yearlyLoading.value = false;
   }
 };
 
-const STATS_FILTER_MAP: Record<string, any> = {
+const handleViewYearlyOrders = async () => {
+  yearlyDialogVisible.value = true;
+  orderFilterDate.value = null; // clear filter by default
+  await fetchYearlyOrders();
+};
+const STATS_FILTER_MAP: Record<string, any> = {
   '未成交': { cooperationStatus: CooperationStatus.UNCOOPERATED },
   '成交': { cooperationStatus: CooperationStatus.COOPERATED },
   '待催款': { paymentStatus: '待催款' },
@@ -556,26 +583,6 @@ const STATS_FILTER_MAP: Record<string, any> = {
   [CustomerType.DEALER]: { customerType: CustomerType.DEALER },
   '终端': { customerType: '终端' },
 };
-
-const activeStat = computed(() => {
-  const c = filters.cooperationStatus;
-  const p = filters.paymentStatus;
-  const o = filters.orderStatus;
-  const i = filters.installationStatus;
-  const t = filters.customerType;
-
-  if (!c && !p && !o && !i && !t) return '';
-  if (c === CooperationStatus.UNCOOPERATED && !p && !o && !i && !t) return '未成交';
-  if (c === CooperationStatus.COOPERATED && !p && !o && !i && !t) return '成交';
-  if (p === '待催款' && !c && !o && !i && !t) return '待催款';
-  if (p === PaymentStatus.PAID && !c && !o && !i && !t) return PaymentStatus.PAID;
-  if (c === CooperationStatus.COOPERATED && o === OrderStatus.NOT_ORDERED && !p && !i && !t) return OrderStatus.NOT_ORDERED;
-  if (o === OrderStatus.ORDERED && !c && !p && !i && !t) return OrderStatus.ORDERED;
-  if (o === OrderStatus.ORDERED && i === InstallationStatus.INSTALLED && !c && !p && !t) return InstallationStatus.INSTALLED;
-  if (t === CustomerType.DEALER && !c && !p && !o && !i) return CustomerType.DEALER;
-  if (t === '终端' && !c && !p && !o && !i) return '终端';
-  return null;
-});
 
 const handleStatClick = (type: string) => {
   filters.cooperationStatus = "";

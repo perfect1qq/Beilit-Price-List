@@ -36,11 +36,11 @@
         </div>
         <div
           class="stat-card stat-settled"
-          :class="{ active: activeStat === '已结款' }"
-          @click="handleStatClick('已结款')"
+          :class="{ active: activeStat === '已结清' }"
+          @click="handleStatClick('已结清')"
         >
           <div class="stat-value">{{ stats.settled }}</div>
-          <div class="stat-label">已结款</div>
+          <div class="stat-label">已结清</div>
         </div>
         <div
           class="stat-card stat-not-ordered"
