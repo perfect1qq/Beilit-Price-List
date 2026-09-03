@@ -30,7 +30,6 @@
         :columns="2"
         empty-description="暂无客户数据"
         :empty-image-size="120"
-        @page-change="() => loadList()"
       >
         <template #card="{ item }">
           <div class="customer-card">
