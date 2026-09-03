@@ -289,17 +289,9 @@ defineExpose({
 const title = computed(() => (props.isEdit ? "编辑客户" : "新增客户"));
 
 const formRules = {
-  companyName: [
-    createRequiredRule("公司名称"),
-    createMaxLengthRule(100, "公司名称"),
-    noSpaceValidator("公司名称"),
-  ],
-  customerName: [
-    createRequiredRule("客户姓名"),
-    createMaxLengthRule(50, "客户姓名"),
-    noSpaceValidator("客户姓名"),
-  ],
-  contactInfo: [createMaxLengthRule(100, "联系方式")],
+  companyName: [createRequiredRule('公司名称'), createMaxLengthRule(50, '公司名称')],
+  status: [createRequiredRule('状态')],
+  region: [createRequiredRule('区域')]
 };
 
 const getDeliveryDate = (days?: number | null, startDate?: string): string => {

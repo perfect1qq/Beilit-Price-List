@@ -31,15 +31,15 @@
           <!-- 编辑解析后的表单 -->
           <div class="editor-section" v-if="hasParsedData">
             <div class="label-heading">2. 微调订单字段</div>
-            <el-form :model="orderForm" label-position="top" size="default">
+            <el-form ref="formRef" :model="orderForm" :rules="rules" label-position="top" size="default">
               <el-row :gutter="10">
                 <el-col :span="12">
-                  <el-form-item label="下单名称" required>
+                  <el-form-item label="下单名称" prop="name">
                     <el-input v-model="orderForm.name" placeholder="请输入下单名称..." />
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                  <el-form-item label="公司名称" required>
+                  <el-form-item label="公司名称" prop="customerName">
                     <el-input v-model="orderForm.customerName" placeholder="如：XX科技公司" />
                   </el-form-item>
                 </el-col>
@@ -64,7 +64,7 @@
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
-                  <el-form-item label="日期">
+                  <el-form-item label="日期" prop="orderDate">
                     <el-input v-model="orderForm.orderDate" placeholder="订单日期" />
                   </el-form-item>
                 </el-col>
@@ -260,6 +260,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { createRequiredRule } from '@/utils/formRules';
 import { useRoute, useRouter } from 'vue-router'
 import { Check, Plus, Delete, Refresh } from '@element-plus/icons-vue'
 import type { UploadFile } from 'element-plus'
@@ -276,6 +277,12 @@ const route = useRoute()
 // 原始粘贴文本
 const rawText = ref('')
 const { submitLoading: saving, withSubmitLock } = useFormSubmit({ lockDuration: 300 })
+const formRef = ref();
+const rules = {
+  name: [createRequiredRule('下单名称')],
+  customerName: [createRequiredRule('公司名称')],
+  orderDate: [createRequiredRule('订单日期')]
+};
 const isEditMode = ref(false)
 const editingId = ref<number | null>(null)
 
@@ -381,13 +388,12 @@ const removeAccessory = (idx: number) => {
 
 // 保存订单
 const saveOrder = async () => {
-  if (!orderForm.name) {
-    showError(new Error('请填写下单名称'), '保存失败')
-    return
-  }
-  if (!orderForm.customerName) {
-    showError(new Error('请填写公司名称'), '保存失败')
-    return
+  if (!formRef.value) return;
+  try {
+    await formRef.value.validate();
+  } catch (err) {
+    showError(new Error('请填写必填项'), '保存失败');
+    return;
   }
   if (orderForm.items.length === 0) {
     showError(new Error('产品明细不能为空'), '保存失败')

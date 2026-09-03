@@ -32,6 +32,7 @@
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
+import { createRequiredRule } from '@/utils/formRules';
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { to } from '@/utils/async'
@@ -71,25 +72,10 @@ const validatePass2 = (_rule: unknown, value: string, callback: (err?: Error) =>
 
 
 const rules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, message: '用户名长度至少为 3 个字符', trigger: 'blur' },
-    { pattern: /^(?=.*[a-zA-Z])[a-zA-Z0-9]+$/, message: '用户名只能包含字母或数字，且必须包含至少一个字母', trigger: 'blur' }
-  ],
-  name: [
-    { required: true, message: '请输入真实姓名', trigger: 'blur' },
-    { min: 2, message: '姓名长度至少为 2 个字符', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请设置登录密码', trigger: 'blur' },
-    { min: 6, message: '密码安全长度至少为 6 个字符', trigger: 'blur' },
-    { max: 100, message: '密码长度不能超过 100 个字符', trigger: 'blur' }
-  ],
-  confirmPassword: [{ validator: validatePass2, trigger: 'blur', required: true }],
-  inviteCode: [
-    { required: true, message: '请输入管理员提供的邀请码', trigger: 'blur' }
-  ]
-}
+  username: [createRequiredRule('账号')],
+  password: [createRequiredRule('密码')],
+  name: [createRequiredRule('姓名')],
+};
 
 
 const handleRegister = async () => {

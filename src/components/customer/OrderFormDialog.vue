@@ -126,6 +126,7 @@
 </template>
 
 <script setup lang="ts">
+import { createRequiredRule } from '@/utils/formRules';
 import { ref, reactive, watch, computed } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import FormButtons from '@/components/common/FormButtons.vue'

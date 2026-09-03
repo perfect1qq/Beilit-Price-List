@@ -12,24 +12,24 @@
         </div>
       </template>
 
-      <el-form label-position="top">
-        <el-form-item label="公司名称">
-          <el-input v-model="companyName" placeholder="请输入公司名称，相同公司名称在历史记录会自动归纳..." />
+      <el-form ref="formRef" :model="formData" :rules="rules" label-position="top">
+        <el-form-item label="公司名称" prop="companyName" required>
+          <el-input v-model="formData.companyName" placeholder="请输入公司名称，相同公司名称在历史记录会自动归纳..." />
         </el-form-item>
 
         <el-form-item label="合同金额(¥)" required>
-          <el-input-number v-model="amount" :min="0" :step="100" placeholder="请输入合同成交金额..." style="width: 100%;" />
+          <el-input-number v-model="formData.amount" :min="0" :step="100" placeholder="请输入合同成交金额..." style="width: 100%;" />
         </el-form-item>
 
-        <el-form-item label="合同标题" required>
-          <el-input v-model="title" placeholder="请输入合同标题..." />
+        <el-form-item label="合同标题" prop="title">
+          <el-input v-model="formData.title" placeholder="请输入合同标题..." />
         </el-form-item>
 
-        <el-form-item label="合同时间">
+        <el-form-item label="合同时间" prop="contractDate">
           <el-date-picker
-            v-model="contractDate"
+            v-model="formData.contractDate"
             type="date"
-            placeholder="选择合同日期（选填）"
+            placeholder="选择合同日期（必填）"
             format="YYYY-MM-DD"
             value-format="YYYY-MM-DD"
             style="width: 100%;"
@@ -96,7 +96,8 @@
 <script setup lang="ts">
 import AppButton from '@/components/common/AppButton.vue'
 
-import { ref, onMounted } from 'vue'
+import { createRequiredRule } from '@/utils/formRules'
+import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { MagicStick } from '@element-plus/icons-vue'
@@ -111,10 +112,18 @@ const router = useRouter()
 
 const isEdit = ref(false)
 const contractId = ref<number>(0)
-const companyName = ref('')
-const amount = ref<number>(0)
-const title = ref('')
-const contractDate = ref<string>('')
+const formRef = ref()
+const formData = reactive({
+  companyName: '',
+  amount: 0,
+  title: '',
+  contractDate: ''
+})
+const rules = {
+  title: [createRequiredRule('合同标题')],
+  contractDate: [createRequiredRule('合同时间')],
+  companyName: [createRequiredRule('公司名称')]
+}
 const { submitLoading: saving, withSubmitLock } = useFormSubmit({ lockDuration: 300 })
 const attachments = ref<any[]>([])
 
@@ -441,11 +450,11 @@ onMounted(async () => {
     contractId.value = id
     try {
       const res = await contractApi.get(id)
-      companyName.value = res.contract.companyName || ''
-      amount.value = res.contract.amount || 0
-      title.value = res.contract.title
+      formData.companyName = res.contract.companyName || ''
+      formData.amount = res.contract.amount || 0
+      formData.title = res.contract.title
       const fallbackDate = res.contract.contractDate || res.contract.createdAt || ''
-      contractDate.value = fallbackDate ? String(fallbackDate).slice(0, 10) : ''
+      formData.contractDate = fallbackDate ? String(fallbackDate).slice(0, 10) : ''
       if (editorRef.value && res.contract.content) {
         editorRef.value.innerHTML = DOMPurify.sanitize(res.contract.content)
       }
@@ -478,7 +487,10 @@ const insertPageBreak = () => {
 
 
 const saveContract = async () => {
-  if (!title.value.trim()) {
+  if (!formData.contractDate) {
+    return ElMessage.warning('请选择合同时间');
+  }
+  if (!formData.title.trim()) {
     return ElMessage.warning('请输入合同标题')
   }
 
@@ -497,23 +509,23 @@ const saveContract = async () => {
 
       if (isEdit.value) {
         await contractApi.update(contractId.value, {
-          companyName: companyName.value,
-          amount: amount.value,
-          title: title.value,
+          companyName: formData.companyName,
+          amount: formData.amount,
+          title: formData.title,
           content: html,
           attachments: JSON.stringify(finalAttachments),
-          contractDate: contractDate.value || null,
+          contractDate: formData.contractDate || null,
         })
         ElMessage.success('合同更新成功')
         router.push('/contract/history')
       } else {
         await contractApi.create({
-          companyName: companyName.value,
-          amount: amount.value,
-          title: title.value,
+          companyName: formData.companyName,
+          amount: formData.amount,
+          title: formData.title,
           content: html,
           attachments: JSON.stringify(finalAttachments),
-          contractDate: contractDate.value || null,
+          contractDate: formData.contractDate || null,
         })
         ElMessage.success('合同创建成功')
         router.push('/contract/history')

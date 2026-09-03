@@ -14,12 +14,12 @@
             <el-form-item label="公司名称" prop="companyName" :rules="companyNameRule">
               <el-input v-model="localFormModel.companyName" placeholder="请输入公司名称" :disabled="isViewMode" />
             </el-form-item>
-            <el-form-item label="报价时间">
+            <el-form-item label="报价时间" prop="quotationDate" :rules="[{ required: !isViewMode && !rulesDisabled, message: '请填写报价时间', trigger: ['blur', 'change'] }]">
               <el-date-picker
                 :model-value="quotationDate"
                 @update:model-value="$emit('update:quotationDate', $event || '')"
                 type="date"
-                placeholder="选择报价日期（选填）"
+                placeholder="选择报价日期（必填）"
                 format="YYYY-MM-DD"
                 value-format="YYYY-MM-DD"
                 style="width: 100%"
@@ -201,7 +201,22 @@ const toNumber = (value: unknown): number | null => {
 const formRef = ref()
 
 defineExpose({
-  validate: (callback?: (valid: boolean) => void) => formRef.value?.validate(callback)
+  validate: async (callback?: (valid: boolean) => void) => {
+    let valid = true;
+    try {
+      await formRef.value?.validate();
+    } catch {
+      valid = false;
+    }
+    if (!props.quotationDate) {
+      const { showError } = require('@/utils/message');
+      showError(new Error('请填写报价时间'), '校验失败');
+      valid = false;
+    }
+    if (callback) callback(valid);
+    if (!valid) return Promise.reject(new Error('Validation failed'));
+    return Promise.resolve(true);
+  }
 })
 
 const quotationNameRule = computed(() => (props.isViewMode || props.rulesDisabled) ? [] : quotationNameBaseRule)

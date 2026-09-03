@@ -29,7 +29,7 @@
           <el-table-column label="长度(mm)" align="center">
             <template #default="{ row, $index }">
               <el-form-item :prop="'items.' + $index + '.length'"
-                :rules="[{ required: true, message: '请输入长度', trigger: 'blur' }, { validator: noSpaceRawValidator, trigger: 'blur' }]">
+                :rules="positiveDecimalRule('长度')">
                 <el-input v-model="row.length" size="small" placeholder="必填" />
               </el-form-item>
             </template>
@@ -37,7 +37,7 @@
           <el-table-column label="规格(mm)" align="center">
             <template #default="{ row, $index }">
               <el-form-item :prop="'items.' + $index + '.spec'"
-                :rules="[{ required: true, message: '请输入规格', trigger: 'blur' }, { validator: noSpaceRawValidator, trigger: 'blur' }]">
+                :rules="positiveDecimalRule('规格')">
                 <el-input v-model="row.spec" size="small" placeholder="必填" />
               </el-form-item>
             </template>

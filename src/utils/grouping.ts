@@ -16,7 +16,7 @@ export interface YearGroup<T> {
 }
 
 const toDateValue = (record: any): number => {
-  const value = record.contractDate || record.createdAt || record.updatedAt || ''
+  const value = record.contractDate || record.quotationDate || record.orderDate || record.createdAt || record.updatedAt || ''
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? 0 : date.getTime()
 }
