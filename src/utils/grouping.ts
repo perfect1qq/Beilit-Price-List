@@ -16,7 +16,7 @@ export interface YearGroup<T> {
 }
 
 const toDateValue = (record: any): number => {
-  const value = record.createdAt || record.updatedAt || ''
+  const value = record.contractDate || record.createdAt || record.updatedAt || ''
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? 0 : date.getTime()
 }
@@ -38,7 +38,7 @@ export const groupByCompany = <T>(records: T[] = [], getCompanyName: (r: T) => s
   const groups: CompanyGroup<T>[] = []
   for (const group of map.values()) {
     const recordsSorted = group.records.sort((a, b) => toDateValue(b) - toDateValue(a))
-    const firstDateStr = (recordsSorted[0] as any)?.createdAt || (recordsSorted[0] as any)?.updatedAt || ''
+    const firstDateStr = (recordsSorted[0] as any)?.contractDate || (recordsSorted[0] as any)?.createdAt || (recordsSorted[0] as any)?.updatedAt || ''
     groups.push({
       companyName: group.companyName,
       count: recordsSorted.length,
@@ -55,7 +55,7 @@ export const groupByYearAndCompany = <T>(records: T[] = [], getCompanyName: (r: 
   const yearMap = new Map<number, T[]>()
 
   for (const record of records) {
-    const date = new Date((record as any).createdAt || (record as any).updatedAt || '')
+    const date = new Date((record as any).contractDate || (record as any).createdAt || (record as any).updatedAt || '')
     if (!Number.isNaN(date.getTime())) {
       const year = date.getFullYear()
       if (!yearMap.has(year)) yearMap.set(year, [])
