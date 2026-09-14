@@ -7,38 +7,18 @@ interface DownloadFileOptions {
 
 /**
  * 通过后端下载接口拉取附件并以浏览器下载方式保存
- * - 先 fetch 拿 blob，失败时回退到 window.open
- * - 复用于订单/合同历史等附件下载场景
+ * - 直接通过新标签页打开，借助浏览器的原生 cookie 传递能力
+ * - 避免跨域 fetch blob 被拦截或产生内存占用问题
  */
-export const downloadFile = async ({ url, name }: DownloadFileOptions): Promise<void> => {
+export const downloadFile = ({ url, name }: DownloadFileOptions): void => {
   const fileName = name || 'download'
-  let msg: { close: () => void } | null = null
-  try {
-    msg = ElMessage.info({ message: `正在准备下载 ${fileName}...`, duration: 0 })
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
-    const downloadUrl = `${baseUrl}/api/upload/download?url=${encodeURIComponent(url)}&name=${encodeURIComponent(fileName)}`
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
+  const downloadUrl = `${baseUrl}/api/upload/download?url=${encodeURIComponent(url)}&name=${encodeURIComponent(fileName)}`
 
-    const response = await fetch(downloadUrl, { credentials: 'include' })
-    if (!response.ok) throw new Error('Network response was not ok')
-
-    const blob = await response.blob()
-    const objectUrl = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = objectUrl
-    a.download = fileName
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(objectUrl)
-
-    if (msg) msg.close()
-    ElMessage.success(`文件 ${fileName} 下载成功`)
-  } catch (error) {
-    console.error('Download failed, falling back to window.open:', error)
-    if (msg) msg.close()
-    ElMessage.warning('下载可能会在后台进行或已被拦截，尝试新窗口打开...')
-    window.open(downloadUrl, '_blank')
-  }
+  // 借助原生标签页打开，由于是同步的 click 事件触发，不会被 popup blocker 拦截
+  // 如果后端返回 Content-Disposition: attachment，浏览器会下载并立即自动关闭该空白标签页
+  window.open(downloadUrl, '_blank')
+  ElMessage.success(`正在准备下载 ${fileName}...`)
 }
 
 export default downloadFile
