@@ -3,8 +3,11 @@
     <template #header>
       <CardHeader title="横梁载重单详情">
         <template #actions>
-          <AppButton variant="back" label="返回列表" @click="$emit('back')" />
-          <AppButton v-if="mode === 'edit'" variant="submit" label="提交修改" @click="$emit('update')" />
+          <div class="toolbar">
+            <AppButton variant="back" label="返回列表" @click="$emit('back')" />
+            <AppButton v-if="mode === 'edit'" variant="add" label="添加一行" @click="$emit('add-row')" />
+            <AppButton v-if="mode === 'edit'" variant="submit" label="提交修改" @click="$emit('update')" />
+          </div>
         </template>
       </CardHeader>
     </template>
@@ -51,8 +54,6 @@
         </el-table-column>
       </el-table>
     </el-form>
-    <AppButton v-if="mode === 'edit'" variant="add" label="添加一行" @click="$emit('add-row')"
-      style="margin-top: 15px; width: 100%" />
   </el-card>
 </template>
 
@@ -99,6 +100,12 @@ const objectSpanMethod = ({ columnIndex, rowIndex }: { columnIndex: number; rowI
 </script>
 
 <style scoped>
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
 .editor-card {
   border-radius: 10px;
   border: 1px solid #e5e7eb;

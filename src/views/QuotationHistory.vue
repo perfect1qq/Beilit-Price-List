@@ -60,7 +60,6 @@
             <template #actions>
               <div class="toolbar">
                 <AppButton @click="backToList">返回列表</AppButton>
-                <AppButton variant="add" v-if="!isViewMode" @click="addRow">手动添加一行</AppButton>
                 <AppButton variant="delete" size="default" v-if="!isViewMode" @click="clearRows">清空当前表格</AppButton>
                 <AppButton variant="save" v-if="!isViewMode" type="success" @click="handleSubmit" :loading="isSubmitting">确认保存报价单</AppButton>
               </div>
@@ -79,6 +78,9 @@
           @restore-auto-final-price="restoreAutoFinalPrice" @update-row-total="updateRowTotal" @remove-row="removeRow">
           <template #parse-action>
             <AppButton variant="primary" v-if="!isViewMode" :icon="MagicStick" @click="handleParseText" :loading="parsing">智能解析粘贴内容</AppButton>
+          </template>
+          <template #detail-action>
+            <AppButton variant="add" v-if="!isGuest && !isViewMode" @click="addRow" size="small">手动添加一行</AppButton>
           </template>
         </QuotationEditor>
       </el-card>

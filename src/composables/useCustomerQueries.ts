@@ -63,7 +63,7 @@ const decorateListItem = (c: ApiCustomerListItem): CustomerListItem => ({
 export const useCustomerListQuery = (filters: MaybeRefOrGetter<CustomerListFilters>) => {
   return useQuery({
     // queryKey 包含 filters 的响应式源，vue-query 会自动追踪变化
-    queryKey: ['customers', 'list', filters],
+    queryKey: computed(() => ['customers', 'list', toValue(filters)]),
     queryFn: async () => {
       const f = toValue(filters)
       const params: Record<string, unknown> = {
@@ -106,7 +106,7 @@ export const useCustomerDetailQuery = (
     return v != null && v > 0
   })
   return useQuery({
-    queryKey: ['customer', id],
+    queryKey: computed(() => ['customer', toValue(id)]),
     enabled,
     queryFn: async () => {
       const res = await customerApi.getDetail(toValue(id)!)

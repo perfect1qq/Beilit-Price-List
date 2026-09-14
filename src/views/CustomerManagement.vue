@@ -316,6 +316,7 @@ import Customer360Drawer from "@/components/customer/Customer360Drawer.vue";
 const router = useRouter();
 const { isGuest, isAdmin, canCreate, canEdit, canDelete } = usePermissions();
 
+const activeStat = ref("");
 const customer360Visible = ref(false);
 const selectedCustomer360Id = ref<number | null>(null);
 
@@ -584,6 +585,7 @@ const handleViewYearlyOrders = async () => {
 };
 
 const handleStatClick = (type: string) => {
+  activeStat.value = type;
   filters.cooperationStatus = "";
   filters.paymentStatus = "";
   filters.orderStatus = "";
