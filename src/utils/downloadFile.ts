@@ -18,7 +18,7 @@ export const downloadFile = async ({ url, name }: DownloadFileOptions): Promise<
     const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
     const downloadUrl = `${baseUrl}/api/upload/download?url=${encodeURIComponent(url)}&name=${encodeURIComponent(fileName)}`
 
-    const response = await fetch(downloadUrl)
+    const response = await fetch(downloadUrl, { credentials: 'include' })
     if (!response.ok) throw new Error('Network response was not ok')
 
     const blob = await response.blob()
@@ -37,7 +37,7 @@ export const downloadFile = async ({ url, name }: DownloadFileOptions): Promise<
     console.error('Download failed, falling back to window.open:', error)
     if (msg) msg.close()
     ElMessage.warning('下载可能会在后台进行或已被拦截，尝试新窗口打开...')
-    window.open(url, '_blank')
+    window.open(downloadUrl, '_blank')
   }
 }
 
