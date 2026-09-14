@@ -575,11 +575,11 @@ const handleViewYearlyOrders = async () => {
 const STATS_FILTER_MAP: Record<string, any> = {
   '未成交': { cooperationStatus: CooperationStatus.UNCOOPERATED },
   '成交': { cooperationStatus: CooperationStatus.COOPERATED },
-  '待催款': { paymentStatus: '待催款' },
-  [PaymentStatus.PAID]: { paymentStatus: PaymentStatus.PAID },
+  '待催款': { paymentStatus: '待催款', cooperationStatus: CooperationStatus.COOPERATED },
+  [PaymentStatus.PAID]: { paymentStatus: PaymentStatus.PAID, cooperationStatus: CooperationStatus.COOPERATED },
   [OrderStatus.NOT_ORDERED]: { cooperationStatus: CooperationStatus.COOPERATED, orderStatus: OrderStatus.NOT_ORDERED },
-  [OrderStatus.ORDERED]: { orderStatus: OrderStatus.ORDERED },
-  [InstallationStatus.INSTALLED]: { orderStatus: OrderStatus.ORDERED, installationStatus: InstallationStatus.INSTALLED },
+  [OrderStatus.ORDERED]: { orderStatus: OrderStatus.ORDERED, cooperationStatus: CooperationStatus.COOPERATED },
+  [InstallationStatus.INSTALLED]: { orderStatus: OrderStatus.ORDERED, installationStatus: InstallationStatus.INSTALLED, cooperationStatus: CooperationStatus.COOPERATED },
   [CustomerType.DEALER]: { customerType: CustomerType.DEALER },
   '终端': { customerType: '终端' },
 };
