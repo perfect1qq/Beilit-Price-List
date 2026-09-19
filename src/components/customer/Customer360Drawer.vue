@@ -78,7 +78,13 @@
             <el-table :data="quotes" border style="width: 100%" stripe>
               <el-table-column prop="name" label="报价单名称" min-width="180">
                 <template #default="{ row }">
-                  <span style="font-weight: bold;">{{ row.name || row.companyName || '-' }}</span>
+                  <span
+                    style="font-weight: bold; cursor: pointer; color: var(--el-color-primary);"
+                    title="点击查看该报价单"
+                    @click="viewQuotationDetail(row)"
+                  >
+                    {{ row.name || row.companyName || '-' }}
+                  </span>
                 </template>
               </el-table-column>
               <el-table-column prop="finalPrice" label="成交总额(元)" width="150" align="center">
@@ -88,6 +94,11 @@
               </el-table-column>
               <el-table-column prop="ownerName" label="提交人" width="120" align="center" />
               <el-table-column prop="createDate" label="创建时间" width="160" align="center" />
+              <el-table-column label="操作" width="130" align="center">
+                <template #default="{ row }">
+                  <AppButton variant="view" size="small" @click="viewQuotationDetail(row)">查看该报价单</AppButton>
+                </template>
+              </el-table-column>
               <el-table-column prop="status" label="状态" width="120" align="center">
                 <template #default="scope">
                   <el-tag :type="scope.row.status === 'approved' ? 'success' : (scope.row.status === 'rejected' ? 'danger' : 'warning')">
@@ -269,6 +280,90 @@
       </template>
     </el-dialog>
 
+    <!-- 查看报价单详情弹窗 -->
+    <el-dialog
+      v-model="quotationPreviewVisible"
+      :title="`报价单详情 - ${currentQuotationDetail?.name || currentQuotationDetail?.companyName || ''}`"
+      width="920px"
+      append-to-body
+      destroy-on-close
+    >
+      <div v-loading="loadingQuotationDetail" style="min-height: 180px;">
+        <template v-if="currentQuotationDetail">
+          <!-- 基础信息概要 -->
+          <el-descriptions :column="3" border size="small" style="margin-bottom: 16px;">
+            <el-descriptions-item label="报价单名称">
+              <b>{{ currentQuotationDetail.name || '-' }}</b>
+            </el-descriptions-item>
+            <el-descriptions-item label="客户公司">
+              {{ currentQuotationDetail.companyName || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="提交人">
+              {{ currentQuotationDetail.ownerName || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="报价日期">
+              {{ currentQuotationDetail.quotationDate ? new Date(currentQuotationDetail.quotationDate).toLocaleDateString() : (currentQuotationDetail.createDate || '-') }}
+            </el-descriptions-item>
+            <el-descriptions-item label="审核状态">
+              <el-tag :type="currentQuotationDetail.status === 'approved' ? 'success' : (currentQuotationDetail.status === 'rejected' ? 'danger' : 'warning')" size="small">
+                {{ currentQuotationDetail.status === 'approved' ? '已通过' : (currentQuotationDetail.status === 'rejected' ? '已拒绝' : '草稿/待定') }}
+              </el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="成交总额">
+              <strong style="color: #f56c6c; font-size: 15px;">
+                ¥ {{ Number(currentQuotationDetail.finalPrice || 0).toLocaleString() }}
+              </strong>
+              <span v-if="currentQuotationDetail.discount" style="color: #909399; font-size: 12px; margin-left: 6px;">
+                ({{ currentQuotationDetail.discount }}% 折扣)
+              </span>
+            </el-descriptions-item>
+            <el-descriptions-item v-if="currentQuotationDetail.remark" label="备注" :span="3">
+              {{ currentQuotationDetail.remark }}
+            </el-descriptions-item>
+          </el-descriptions>
+
+          <!-- 货架明细表格 -->
+          <el-table
+            :data="currentQuotationItems"
+            border
+            stripe
+            size="small"
+            style="width: 100%; max-height: 420px; overflow-y: auto;"
+          >
+            <el-table-column type="index" label="序号" width="55" align="center" />
+            <el-table-column prop="name" label="项目名称" min-width="140" show-overflow-tooltip />
+            <el-table-column prop="spec" label="规格型号" min-width="160" show-overflow-tooltip />
+            <el-table-column prop="color" label="颜色" width="90" align="center" />
+            <el-table-column label="数量" width="90" align="center">
+              <template #default="{ row }">
+                {{ row.quantity ?? row.qty ?? '-' }} {{ row.unit || '' }}
+              </template>
+            </el-table-column>
+            <el-table-column label="单价(元)" width="110" align="right">
+              <template #default="{ row }">
+                ¥ {{ Number(row.price ?? row.unitPrice ?? 0).toFixed(2) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="金额(元)" width="120" align="right">
+              <template #default="{ row }">
+                <b style="color: #409eff;">¥ {{ Number(row.total ?? row.amount ?? row.totalPrice ?? ((Number(row.quantity ?? row.qty ?? 0)) * (Number(row.price ?? row.unitPrice ?? 0)))).toFixed(2) }}</b>
+              </template>
+            </el-table-column>
+            <el-table-column prop="remark" label="备注" min-width="110" show-overflow-tooltip />
+          </el-table>
+        </template>
+      </div>
+
+      <template #footer>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <el-button type="primary" link @click="goToQuotationPage">
+            前往报价单完整页面 (编辑/打印/导出) →
+          </el-button>
+          <AppButton @click="quotationPreviewVisible = false">关闭</AppButton>
+        </div>
+      </template>
+    </el-dialog>
+
   </el-drawer>
 </template>
 
@@ -412,6 +507,51 @@ const goCreateQuotation = () => {
   router.push({
     path: '/quotation',
     query: { companyName: customer.value.companyName || customer.value.customerName }
+  })
+}
+
+// ---- 查看报价单详情 ----
+const quotationPreviewVisible = ref(false)
+const loadingQuotationDetail = ref(false)
+const currentQuotationDetail = ref<any>(null)
+
+const currentQuotationItems = computed(() => {
+  if (!currentQuotationDetail.value?.items) return []
+  const raw = currentQuotationDetail.value.items
+  if (Array.isArray(raw)) return raw
+  if (typeof raw === 'string') {
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return []
+    }
+  }
+  return []
+})
+
+const viewQuotationDetail = async (row: any) => {
+  currentQuotationDetail.value = row
+  quotationPreviewVisible.value = true
+  loadingQuotationDetail.value = true
+  try {
+    const res: any = await quotationApi.get(row.id)
+    if (res?.quotation) {
+      currentQuotationDetail.value = res.quotation
+    }
+  } catch (e: any) {
+    ElMessage.error(e?.message || '获取报价单详情失败')
+  } finally {
+    loadingQuotationDetail.value = false
+  }
+}
+
+const goToQuotationPage = () => {
+  if (!currentQuotationDetail.value?.id) return
+  quotationPreviewVisible.value = false
+  visible.value = false
+  router.push({
+    path: '/quotation/history',
+    query: { id: currentQuotationDetail.value.id, mode: 'view' }
   })
 }
 

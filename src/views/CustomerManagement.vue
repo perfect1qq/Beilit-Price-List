@@ -143,39 +143,6 @@
                 <span class="delivery-date-value">{{ item.workshopDeliveryDate || '—' }}</span>
                 <span v-if="item.workshopDeliveryDate" class="delivery-remaining" :class="getRemainingClass(item.workshopDeliveryDate, item.installationStatus)">({{ getRemainingText(item.workshopDeliveryDate, item.installationStatus) }})</span>
               </div>
-
-              <div v-if="item.latestFollowUp" class="info-row follow-up-info">
-                <span class="label">最新跟进：</span>
-                <div class="follow-up-content">
-                  <span
-                    class="follow-up-text"
-                    >{{ (item.latestFollowUp as FollowUpData).content }}</span
-                  >
-                  <span class="follow-up-meta">
-                    <span class="follow-up-time">{{ formatDate((item.latestFollowUp as FollowUpData).createdAt as
-                      string) }}</span>
-                  </span>
-                </div>
-              </div>
-              <div
-                v-else-if="Number(item.followUpCount) > 0"
-                class="info-row follow-up-info"
-              >
-                <span class="label">跟进记录：</span>
-                <el-tag size="small" type="info"
-                  >{{ Number(item.followUpCount) }} 条记录</el-tag
-                >
-              </div>
-              <div
-                v-else
-                class="info-row follow-up-info follow-up-empty"
-                @click.stop="handleViewFollowUps(item)"
-              >
-                <span class="label">最新跟进：</span>
-                <div class="follow-up-content">
-                  <span class="follow-up-text follow-up-empty-text">暂无跟进记录，点击添加跟进</span>
-                </div>
-              </div>
             </div>
 
           </div>
@@ -197,16 +164,6 @@
       :delivery-start-date="editingDeliveryStartDate"
       :workshop-delivery-start-date="editingWorkshopDeliveryStartDate"
       @submit="handleFormSubmit"
-    />
-
-      <FollowUpHistoryDrawer
-      v-model="followUpHistoryVisible"
-      :customer-id="currentCustomer?.id || 0"
-      :customer-name="currentCustomer?.companyName || ''"
-      :follow-ups="currentCustomer?.followUps || []"
-      :can-create="canCreate"
-      :is-guest="isGuest"
-      @follow-up-change="handleRecordChange"
     />
 
     <el-dialog v-model="invoiceDialogVisible" title="开票信息" width="500px">
@@ -231,49 +188,111 @@
       @edit="handleEdit"
       @invoice="handleInvoiceInfo"
     />
-    <el-dialog v-model="yearlyDialogVisible" title="所有订单" width="1000px">
-    <div style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
-      <el-date-picker
-        v-model="orderFilterDate"
-        type="monthrange"
-        range-separator="至"
-        start-placeholder="开始月份"
-        end-placeholder="结束月份"
-        value-format="YYYY-MM"
-        @change="fetchYearlyOrders"
-        clearable
-      />
-    </div>
-    <el-table :data="yearlyList" v-loading="yearlyLoading" border stripe max-height="500">
-      <el-table-column prop="customerName" label="客户名称" min-width="120" />
-      <el-table-column prop="companyName" label="公司名称" min-width="150" />
-      <el-table-column prop="orderName" label="订单名称" min-width="120" />
-      
-      <el-table-column prop="orderAmount" label="订单金额" align="center" min-width="120">
-        <template #default="{ row }">
-          ¥ {{ Number(row.orderAmount || 0).toFixed(2) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="paidAmount" label="已收金额" align="center" min-width="120">
-        <template #default="{ row }">
-          ¥ {{ Number(row.paidAmount || 0).toFixed(2) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="arrears" label="欠款金额" align="center" min-width="120">
-        <template #default="{ row }">
-          <span :style="{ color: row.arrears > 0 ? '#f56c6c' : '#67c23a' }">
-            ¥ {{ Number(row.arrears || 0).toFixed(2) }}
-          </span>
-        </template>
-      </el-table-column>
-    </el-table>
-    <div style="margin-top: 15px; padding: 15px; background: #f5f7fa; border-radius: 8px; display: flex; justify-content: space-around; font-weight: bold; font-size: 15px;">
-      <div>订单数: <span style="color: #409EFF">{{ yearlySummary.orderCount }}</span></div>
-      <div>总金额: <span style="color: #e6a23c">¥ {{ Number(yearlySummary.totalOrderAmount || 0).toFixed(2) }}</span></div>
-      <div>已收总额: <span style="color: #67c23a">¥ {{ Number(yearlySummary.totalPaidAmount || 0).toFixed(2) }}</span></div>
-      <div>欠款合计: <span style="color: #f56c6c">¥ {{ Number(yearlySummary.totalArrears || 0).toFixed(2) }}</span></div>
-    </div>
-  </el-dialog>
+    <el-dialog v-model="yearlyDialogVisible" title="所有订单明细与欠款统计" width="1050px" top="8vh">
+      <!-- 顶部筛选与搜索栏 -->
+      <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <el-radio-group v-model="arrearsFilterType" size="default">
+            <el-radio-button value="all">全部 ({{ rawYearlyList.length }})</el-radio-button>
+            <el-radio-button value="hasArrears">
+              <span style="color: #f56c6c; font-weight: 600;">仅看欠款 ({{ countWithArrears }})</span>
+            </el-radio-button>
+            <el-radio-button value="settled">已结清 ({{ countSettled }})</el-radio-button>
+          </el-radio-group>
+
+          <el-date-picker
+            v-model="orderFilterDate"
+            type="monthrange"
+            range-separator="至"
+            start-placeholder="开始月份"
+            end-placeholder="结束月份"
+            value-format="YYYY-MM"
+            @change="fetchYearlyOrders"
+            clearable
+            style="width: 240px;"
+          />
+        </div>
+
+        <el-input
+          v-model="orderSearchKeyword"
+          placeholder="搜索客户/公司/订单..."
+          :prefix-icon="Search"
+          clearable
+          style="width: 220px;"
+        />
+      </div>
+
+      <!-- 表格 -->
+      <el-table
+        :data="filteredYearlyList"
+        v-loading="yearlyLoading"
+        border
+        stripe
+        max-height="480"
+        :default-sort="{ prop: 'arrears', order: 'descending' }"
+      >
+        <el-table-column type="index" label="#" width="55" align="center" />
+        <el-table-column prop="customerName" label="客户名称" min-width="110" show-overflow-tooltip sortable />
+        <el-table-column prop="companyName" label="公司名称" min-width="180" show-overflow-tooltip sortable />
+        <el-table-column prop="orderName" label="订单名称" min-width="120" show-overflow-tooltip />
+        
+        <el-table-column prop="orderAmount" label="订单金额" align="right" min-width="120" sortable>
+          <template #default="{ row }">
+            <span style="font-weight: 500;">¥ {{ Number(row.orderAmount || 0).toFixed(2) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="paidAmount" label="已收金额" align="right" min-width="120" sortable>
+          <template #default="{ row }">
+            <span style="color: #67c23a; font-weight: 500;">¥ {{ Number(row.paidAmount || 0).toFixed(2) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="arrears" label="欠款金额" align="right" min-width="130" sortable>
+          <template #default="{ row }">
+            <span v-if="row.arrears > 0" style="color: #f56c6c; font-weight: bold; background: #fef0f0; padding: 3px 8px; border-radius: 4px; border: 1px solid #fde2e2;">
+              ¥ {{ Number(row.arrears || 0).toFixed(2) }}
+            </span>
+            <span v-else style="color: #67c23a; font-weight: 500; background: #f0f9eb; padding: 3px 8px; border-radius: 4px; border: 1px solid #e1f3d8;">
+              已结清
+            </span>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <!-- 底部统计栏（支持点击快捷过滤） -->
+      <div class="yearly-summary-bar">
+        <div
+          class="summary-card clickable"
+          :class="{ active: arrearsFilterType === 'all' }"
+          @click="arrearsFilterType = 'all'"
+          title="点击查看全部订单"
+        >
+          <span class="summary-lbl">订单数</span>
+          <span class="summary-val" style="color: #409EFF">{{ currentSummary.orderCount }} 笔</span>
+        </div>
+        <div class="summary-card">
+          <span class="summary-lbl">总金额</span>
+          <span class="summary-val" style="color: #e6a23c">¥ {{ Number(currentSummary.totalOrderAmount || 0).toFixed(2) }}</span>
+        </div>
+        <div
+          class="summary-card clickable"
+          :class="{ active: arrearsFilterType === 'settled' }"
+          @click="arrearsFilterType = 'settled'"
+          title="点击仅看已结清"
+        >
+          <span class="summary-lbl">已收总额</span>
+          <span class="summary-val" style="color: #67c23a">¥ {{ Number(currentSummary.totalPaidAmount || 0).toFixed(2) }}</span>
+        </div>
+        <div
+          class="summary-card clickable"
+          :class="{ active: arrearsFilterType === 'hasArrears' }"
+          @click="arrearsFilterType = 'hasArrears'"
+          title="点击快速筛选仅看欠款"
+        >
+          <span class="summary-lbl" style="color: #f56c6c;">欠款合计 (点击仅看欠款)</span>
+          <span class="summary-val" style="color: #f56c6c">¥ {{ Number(currentSummary.totalArrears || 0).toFixed(2) }}</span>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -284,7 +303,7 @@ import PagePagination from '@/components/common/PagePagination.vue';
 import { onMounted, ref, computed, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessageBox } from "element-plus";
-import { Plus, Edit, Delete } from "@element-plus/icons-vue";
+import { Plus, Edit, Delete, Search } from "@element-plus/icons-vue";
 import { to } from "@/utils/async";
 import { formatDate, getRemainingDays } from "@/utils/date";
 import { showError, showSuccess } from "@/utils/message";
@@ -302,7 +321,6 @@ import type {
   CustomerCreatePayload,
   CustomerUpdatePayload,
   CustomerListItem,
-  FollowUpData,
 } from "@/types";
 import { DEFAULT_PAGE_SIZE } from "@/constants/table";
 
@@ -310,7 +328,6 @@ import SearchBar from "@/components/common/SearchBar.vue";
 import CardHeader from "@/components/common/CardHeader.vue";
 import CardList from "@/components/common/CardList.vue";
 import CustomerFormDrawer from "@/components/customer/CustomerFormDrawer.vue";
-import FollowUpHistoryDrawer from "@/components/customer/FollowUpHistoryDrawer.vue";
 import Customer360Drawer from "@/components/customer/Customer360Drawer.vue";
 
 const router = useRouter();
@@ -425,16 +442,6 @@ const handleRecordChange = () => {
   void refetchStats();
 };
 
-const openDrawerWithDetail = async (item: CustomerListItem, drawerRef: { value: boolean }, _errorMsg: string) => {
-  // 详情由 360 抽屉自行用 useCustomerDetailQuery 加载，这里只控制显隐
-  selectedCustomer360Id.value = item.id;
-  drawerRef.value = true;
-};
-
-// 跟进记录抽屉
-const followUpHistoryVisible = ref(false);
-const handleViewFollowUps = (item: CustomerListItem) => openDrawerWithDetail(item, followUpHistoryVisible, "加载跟进记录失败");
-
 const openCustomer360 = (id: number) => {
   selectedCustomer360Id.value = id;
   customer360Visible.value = true;
@@ -537,12 +544,59 @@ const saveInvoiceInfo = async () => {
 
 const yearlyDialogVisible = ref(false);
 const yearlyLoading = ref(false);
-const yearlyList = ref<any[]>([]);
-const yearlySummary = ref<any>({ orderCount: 0, totalOrderAmount: 0, totalPaidAmount: 0, totalArrears: 0 });
+const rawYearlyList = ref<any[]>([]);
 const orderFilterDate = ref<[string, string] | null>(null);
+const arrearsFilterType = ref<'all' | 'hasArrears' | 'settled'>('all');
+const orderSearchKeyword = ref('');
 
+const countWithArrears = computed(() => {
+  return rawYearlyList.value.filter(item => Number(item.arrears || 0) > 0).length;
+});
 
+const countSettled = computed(() => {
+  return rawYearlyList.value.filter(item => Number(item.arrears || 0) <= 0).length;
+});
 
+const filteredYearlyList = computed(() => {
+  let list = rawYearlyList.value;
+
+  if (arrearsFilterType.value === 'hasArrears') {
+    list = list.filter(item => Number(item.arrears || 0) > 0);
+  } else if (arrearsFilterType.value === 'settled') {
+    list = list.filter(item => Number(item.arrears || 0) <= 0);
+  }
+
+  const kw = orderSearchKeyword.value.trim().toLowerCase();
+  if (kw) {
+    list = list.filter(item => 
+      String(item.customerName || '').toLowerCase().includes(kw) ||
+      String(item.companyName || '').toLowerCase().includes(kw) ||
+      String(item.orderName || '').toLowerCase().includes(kw)
+    );
+  }
+
+  return list;
+});
+
+const currentSummary = computed(() => {
+  const list = filteredYearlyList.value;
+  return list.reduce((acc, cur) => {
+    const orderAmount = Number(cur.orderAmount || 0);
+    const paidAmount = Number(cur.paidAmount || 0);
+    const arrears = Math.max(0, orderAmount - paidAmount);
+
+    acc.orderCount += 1;
+    acc.totalOrderAmount += orderAmount;
+    acc.totalPaidAmount += paidAmount;
+    acc.totalArrears += arrears;
+    return acc;
+  }, {
+    orderCount: 0,
+    totalOrderAmount: 0,
+    totalPaidAmount: 0,
+    totalArrears: 0
+  });
+});
 
 const fetchYearlyOrders = async () => {
   yearlyLoading.value = true;
@@ -554,12 +608,7 @@ const fetchYearlyOrders = async () => {
       params.endMonth = orderFilterDate.value[1];
     }
     const res = await customerApi.getYearlyOrderStats(params);
-    yearlyList.value = res?.list || [];
-    if (res?.summary) {
-      yearlySummary.value = res.summary;
-    } else {
-      yearlySummary.value = { orderCount: 0, totalOrderAmount: 0, totalPaidAmount: 0, totalArrears: 0 };
-    }
+    rawYearlyList.value = res?.list || [];
   } catch (err) {
     showError(err, "加载订单明细失败");
   } finally {
@@ -567,9 +616,11 @@ const fetchYearlyOrders = async () => {
   }
 };
 
-const handleViewYearlyOrders = async () => {
+const handleViewYearlyOrders = async (defaultFilter: 'all' | 'hasArrears' | 'settled' = 'all') => {
   yearlyDialogVisible.value = true;
-  orderFilterDate.value = null; // clear filter by default
+  orderFilterDate.value = null;
+  arrearsFilterType.value = defaultFilter;
+  orderSearchKeyword.value = '';
   await fetchYearlyOrders();
 };
 const STATS_FILTER_MAP: Record<string, any> = {
@@ -669,61 +720,6 @@ onMounted(() => {
   font-weight: 500;
 }
 
-.follow-up-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  background: #f5f7fa;
-  border-radius: 6px;
-  padding: 8px 10px;
-  margin-top: 4px;
-}
-
-.follow-up-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 100%;
-}
-
-.follow-up-text {
-  color: #606266;
-  font-size: 13px;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.follow-up-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.follow-up-time {
-  color: #909399;
-  font-size: 12px;
-}
-
-/* 无跟进记录时的提示块 */
-.follow-up-empty {
-  cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.follow-up-empty:hover {
-  background-color: #eff6ff;
-}
-
-.follow-up-empty-text {
-  color: #3b82f6;
-  font-weight: 500;
-}
-
 .delivery-info {
   display: flex;
   align-items: center;
@@ -795,6 +791,47 @@ onMounted(() => {
     width: 100% !important;
     flex: none !important;
   }
+}
+
+.yearly-summary-bar {
+  margin-top: 15px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 12px;
+}
+.yearly-summary-bar .summary-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+.yearly-summary-bar .summary-card.clickable {
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+.yearly-summary-bar .summary-card.clickable:hover {
+  background: #e2e8f0;
+}
+.yearly-summary-bar .summary-card.active {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
+.yearly-summary-bar .summary-lbl {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+.yearly-summary-bar .summary-val {
+  font-size: 16px;
+  font-weight: 700;
 }
 </style>
 

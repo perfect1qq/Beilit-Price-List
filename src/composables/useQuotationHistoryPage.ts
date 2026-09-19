@@ -135,6 +135,23 @@ export const useQuotationHistoryPage = () => {
     }
   )
 
+  watch(
+    () => route.query.id,
+    async (queryId) => {
+      if (queryId) {
+        const queryMode = String(route.query.mode || 'view')
+        const detail = await fetchQuotationRecord(Number(queryId))
+        if (detail) {
+          rulesDisabled.value = queryMode !== 'edit'
+          loadRecord(detail, queryMode)
+          formModel.name = name.value
+          formModel.companyName = companyName.value
+          viewState.value = 'detail'
+        }
+      }
+    }
+  )
+
   onMounted(async () => {
     try {
       const queryKeyword = route.query.keyword

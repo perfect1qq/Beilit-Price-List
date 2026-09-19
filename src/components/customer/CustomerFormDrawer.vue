@@ -100,7 +100,6 @@
             v-model="localData.deliveryDays"
             :min="1"
             :max="365"
-            :disabled="localData.cooperationStatus !== '已合作'"
             controls-position="right"
             placeholder="天数"
             style="width: 140px"
@@ -120,7 +119,6 @@
             v-model="localData.workshopDeliveryDays"
             :min="1"
             :max="365"
-            :disabled="localData.cooperationStatus !== '已合作'"
             controls-position="right"
             placeholder="天数"
             style="width: 140px"
@@ -243,8 +241,6 @@ watch(
     }
     if (val !== "已合作") {
       localData.orderStatus = "未下单";
-      localData.deliveryDays = null;
-      localData.workshopDeliveryDays = null;
     }
   }
 );
@@ -278,7 +274,16 @@ const handleSubmit = async () => {
     return;
   }
   loading.value = true;
-  emit("submit", { ...localData });
+  const cleanDeliveryDays = (val: unknown) => {
+    if (val === null || val === undefined || (val as any) === '') return null;
+    const n = Number(val);
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : null;
+  };
+  emit("submit", {
+    ...localData,
+    deliveryDays: cleanDeliveryDays(localData.deliveryDays),
+    workshopDeliveryDays: cleanDeliveryDays(localData.workshopDeliveryDays),
+  });
 };
 
 // 由父组件完成异步操作后调用，关闭按钮 loading
