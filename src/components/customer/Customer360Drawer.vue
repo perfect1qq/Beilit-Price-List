@@ -76,7 +76,7 @@
               <AppButton type="primary" size="small" label="跳转至新增报价单" @click="goCreateQuotation" />
             </div>
             <el-table :data="quotes" border style="width: 100%" stripe>
-              <el-table-column prop="name" label="报价单名称" min-width="180">
+              <AutoFitColumn :data="quotes" prop="name" label="报价单名称" :min="180" :max="400">
                 <template #default="{ row }">
                   <span
                     style="font-weight: bold; cursor: pointer; color: var(--el-color-primary);"
@@ -86,26 +86,26 @@
                     {{ row.name || row.companyName || '-' }}
                   </span>
                 </template>
-              </el-table-column>
-              <el-table-column prop="finalPrice" label="成交总额(元)" width="150" align="center">
+              </AutoFitColumn>
+              <AutoFitColumn :data="quotes" prop="finalPrice" label="成交总额(元)" :min="130" :max="180" align="center">
                 <template #default="{ row }">
                   <span style="color: #f56c6c; font-weight: bold;">¥ {{ Number(row.finalPrice || 0).toLocaleString() }}</span>
                 </template>
-              </el-table-column>
-              <el-table-column prop="ownerName" label="提交人" width="120" align="center" />
-              <el-table-column prop="createDate" label="创建时间" width="160" align="center" />
-              <el-table-column label="操作" width="130" align="center">
+              </AutoFitColumn>
+              <AutoFitColumn :data="quotes" prop="ownerName" label="提交人" :min="100" :max="140" align="center" />
+              <AutoFitColumn :data="quotes" prop="createDate" label="创建时间" :min="130" :max="180" align="center" />
+              <AutoFitColumn :data="quotes" label="操作" :min="130" :max="160" align="center">
                 <template #default="{ row }">
                   <AppButton variant="view" size="small" @click="viewQuotationDetail(row)">查看该报价单</AppButton>
                 </template>
-              </el-table-column>
-              <el-table-column prop="status" label="状态" width="120" align="center">
+              </AutoFitColumn>
+              <AutoFitColumn :data="quotes" prop="status" label="状态" :min="110" :max="130" align="center">
                 <template #default="scope">
                   <el-tag :type="scope.row.status === 'approved' ? 'success' : (scope.row.status === 'rejected' ? 'danger' : 'warning')">
                     {{ scope.row.status === 'approved' ? '已通过' : (scope.row.status === 'rejected' ? '已拒绝' : '草稿/待定') }}
                   </el-tag>
                 </template>
-              </el-table-column>
+              </AutoFitColumn>
             </el-table>
             <el-empty v-if="quotes.length === 0" description="该客户暂未生成报价单" :image-size="60" />
           </div>
@@ -119,14 +119,14 @@
               </AppButton>
             </div>
             <el-table :data="orders" border style="width: 100%" stripe>
-              <el-table-column prop="name" label="下单名称" min-width="180">
+              <AutoFitColumn :data="orders" prop="name" label="下单名称" :min="180" :max="360">
                 <template #default="{ row }">
                   <span style="font-weight: bold;">{{ row.name || '-' }}</span>
                 </template>
-              </el-table-column>
-              <el-table-column prop="deliveryAddress" label="交货地址" min-width="180" show-overflow-tooltip />
-              <el-table-column prop="orderDate" label="下单日期" width="140" align="center" />
-              <el-table-column prop="ownerName" label="业务员" width="120" align="center" />
+              </AutoFitColumn>
+              <AutoFitColumn :data="orders" prop="deliveryAddress" label="交货地址" :min="180" :max="400" show-overflow-tooltip />
+              <AutoFitColumn :data="orders" prop="orderDate" label="下单日期" :min="120" :max="160" align="center" />
+              <AutoFitColumn :data="orders" prop="ownerName" label="业务员" :min="100" :max="140" align="center" />
             </el-table>
             <el-empty v-if="orders.length === 0" description="该客户暂无真实车间下单记录" :image-size="60" />
           </div>
@@ -138,16 +138,16 @@
               <AppButton type="primary" size="small" label="跳转至新增合同" @click="goCreateContract" />
             </div>
             <el-table :data="contracts" border style="width: 100%" stripe>
-              <el-table-column prop="title" label="合同标题" min-width="200" />
-              <el-table-column prop="amount" label="合同确定总额(元)" width="180" align="center">
+              <AutoFitColumn :data="contracts" prop="title" label="合同标题" :min="180" :max="400" />
+              <AutoFitColumn :data="contracts" prop="amount" label="合同确定总额(元)" :min="140" :max="200" align="center">
                 <template #default="scope">
                   <strong style="color: #f56c6c;">¥ {{ Number(scope.row.amount || 0).toLocaleString() }}</strong>
                 </template>
-              </el-table-column>
-              <el-table-column prop="contractDate" label="合同时间" width="140" align="center">
+              </AutoFitColumn>
+              <AutoFitColumn :data="contracts" prop="contractDate" label="合同时间" :min="120" :max="160" align="center">
                 <template #default="scope">{{ scope.row.contractDate ? new Date(scope.row.contractDate).toLocaleDateString() : (scope.row.createdAt ? new Date(scope.row.createdAt).toLocaleDateString() : '-') }}</template>
-              </el-table-column>
-              <el-table-column prop="ownerName" label="录入人" width="120" align="center" />
+              </AutoFitColumn>
+              <AutoFitColumn :data="contracts" prop="ownerName" label="录入人" :min="100" :max="140" align="center" />
             </el-table>
             <el-empty v-if="contracts.length === 0" description="该客户暂未签订正式合同" :image-size="60" />
           </div>
@@ -331,36 +331,37 @@
             style="width: 100%; max-height: 420px; overflow-y: auto;"
           >
             <el-table-column type="index" label="序号" width="55" align="center" />
-            <el-table-column prop="name" label="项目名称" min-width="140" show-overflow-tooltip />
-            <el-table-column prop="spec" label="规格型号" min-width="160" show-overflow-tooltip />
-            <el-table-column prop="color" label="颜色" width="90" align="center" />
-            <el-table-column label="数量" width="90" align="center">
+            <AutoFitColumn :data="currentQuotationItems" prop="name" label="项目名称" :min="140" :max="260" align="left" show-overflow-tooltip />
+            <AutoFitColumn :data="currentQuotationItems" prop="spec" label="规格型号" :min="160" :max="300" align="left" show-overflow-tooltip />
+            <AutoFitColumn :data="currentQuotationItems" prop="color" label="颜色" :min="80" :max="120" align="center" />
+            <AutoFitColumn :data="currentQuotationItems" label="数量" :min="80" :max="120" align="center">
               <template #default="{ row }">
                 {{ row.quantity ?? row.qty ?? '-' }} {{ row.unit || '' }}
               </template>
-            </el-table-column>
-            <el-table-column label="单价(元)" width="110" align="right">
+            </AutoFitColumn>
+            <AutoFitColumn :data="currentQuotationItems" label="单价(元)" :min="100" :max="140" align="right">
               <template #default="{ row }">
                 ¥ {{ Number(row.price ?? row.unitPrice ?? 0).toFixed(2) }}
               </template>
-            </el-table-column>
-            <el-table-column label="金额(元)" width="120" align="right">
+            </AutoFitColumn>
+            <AutoFitColumn :data="currentQuotationItems" label="金额(元)" :min="110" :max="150" align="right">
               <template #default="{ row }">
                 <b style="color: #409eff;">¥ {{ Number(row.total ?? row.amount ?? row.totalPrice ?? ((Number(row.quantity ?? row.qty ?? 0)) * (Number(row.price ?? row.unitPrice ?? 0)))).toFixed(2) }}</b>
               </template>
-            </el-table-column>
-            <el-table-column prop="remark" label="备注" min-width="110" show-overflow-tooltip />
+            </AutoFitColumn>
+            <AutoFitColumn :data="currentQuotationItems" prop="remark" label="备注" :min="110" :max="220" align="left" show-overflow-tooltip />
           </el-table>
         </template>
       </div>
 
       <template #footer>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <el-button type="primary" link @click="goToQuotationPage">
-            前往报价单完整页面 (编辑/打印/导出) →
-          </el-button>
-          <AppButton @click="quotationPreviewVisible = false">关闭</AppButton>
-        </div>
+        <FormButtons
+          cancel-text="关闭"
+          submit-text="前往报价单完整页面"
+          submit-type="primary"
+          @cancel="quotationPreviewVisible = false"
+          @submit="goToQuotationPage"
+        />
       </template>
     </el-dialog>
 
