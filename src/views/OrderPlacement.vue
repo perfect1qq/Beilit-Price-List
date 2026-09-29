@@ -327,7 +327,7 @@ const handleAutoParse = debounce(() => {
   if (!rawText.value.trim()) return
   const { header, items, accessories } = parseOrderText(rawText.value)
 
-  orderForm.name = header.name || orderForm.name
+  orderForm.name = (header as any).name || orderForm.name
   orderForm.customerName = header.customerName || orderForm.customerName
   orderForm.phone = header.phone || orderForm.phone
   orderForm.fax = header.fax || orderForm.fax
@@ -335,6 +335,7 @@ const handleAutoParse = debounce(() => {
   orderForm.deliveryAddress = header.deliveryAddress || orderForm.deliveryAddress
   orderForm.orderDate = header.orderDate || orderForm.orderDate
   orderForm.deliveryDays = header.deliveryDays || orderForm.deliveryDays
+  if (header.remark) orderForm.remark = header.remark
 
   if (items.length > 0) orderForm.items = items
   if (accessories.length > 0) orderForm.accessories = accessories
@@ -348,7 +349,7 @@ const handleManualParse = () => {
   const { header, items, accessories } = parseOrderText(rawText.value)
 
   Object.assign(orderForm, {
-    name: header.name,
+    name: (header as any).name || orderForm.name,
     customerName: header.customerName,
     phone: header.phone,
     fax: header.fax,
@@ -356,6 +357,7 @@ const handleManualParse = () => {
     deliveryAddress: header.deliveryAddress,
     orderDate: header.orderDate || formatDate(new Date()),
     deliveryDays: header.deliveryDays,
+    remark: header.remark || orderForm.remark,
     items,
     accessories
   })

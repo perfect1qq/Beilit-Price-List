@@ -10,6 +10,7 @@ export interface OrderParseResult {
     contactPerson: string
     orderDate: string
     deliveryDays: string
+    remark: string
   }
   items: OrderItem[]
   accessories: AccessoryItem[]
@@ -34,7 +35,8 @@ export const parseOrderText = (text: string): OrderParseResult => {
     fax: '',
     contactPerson: '',
     orderDate: '',
-    deliveryDays: ''
+    deliveryDays: '',
+    remark: ''
   }
   const items: OrderItem[] = []
   const accessories: AccessoryItem[] = []
@@ -47,7 +49,8 @@ export const parseOrderText = (text: string): OrderParseResult => {
     { name: 'deliveryAddress', labels: ['送货地址', '送货'] },
     { name: 'fax', labels: ['传真'] },
     { name: 'contactPerson', labels: ['联系人'] },
-    { name: 'orderDate', labels: ['日期'] }
+    { name: 'orderDate', labels: ['日期'] },
+    { name: 'remark', labels: ['备注'] }
   ]
 
   for (const line of lines) {
@@ -58,13 +61,24 @@ export const parseOrderText = (text: string): OrderParseResult => {
       mode = 'items'
       continue
     }
-    if (line.startsWith('配件：') || line.startsWith('配件:') || (line.includes('脚板') && line.includes('='))) {
+
+    // 判断是否进入配件区域：
+    // 1. 明确的“配件：”或“配件”标题
+    // 2. 独立成行的“脚板 = xx”（不能是带序号的表格行，如 "2 立柱2 ... 反焊脚板"）
+    const isNumberedItemLine = /^\d+[\s\t]+/.test(line)
+    if (
+      line.startsWith('配件：') ||
+      line.startsWith('配件:') ||
+      /^配件[\s\t]*[:：]?$/.test(line) ||
+      (!isNumberedItemLine && /^脚板\s*=/.test(line))
+    ) {
       mode = 'accessories'
-      if (line.startsWith('配件：') || line.startsWith('配件:')) {
+      if (line.startsWith('配件：') || line.startsWith('配件:') || /^配件[\s\t]*[:：]?$/.test(line)) {
         continue
       }
     }
-    if (line.includes('工期：') || line.includes('工期:')) {
+
+    if (line.startsWith('备注') || line.includes('工期：') || line.includes('工期:')) {
       mode = 'footer'
     }
 
@@ -135,13 +149,20 @@ export const parseOrderText = (text: string): OrderParseResult => {
           qty: matchAcc[2].trim()
         })
       } else {
-        if (!line.includes('工期')) {
+        if (!line.includes('工期') && !line.startsWith('备注')) {
           accessories.push({
             id: Date.now() + Math.random(),
             name: line.trim(),
             qty: ''
           })
         }
+      }
+    }
+
+    if (line.startsWith('备注')) {
+      const val = line.replace(/^备注[\s\t:：]*/, '').trim()
+      if (val) {
+        header.remark = header.remark ? `${header.remark}\n${val}` : val
       }
     }
 
