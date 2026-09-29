@@ -71,6 +71,9 @@
                 <el-col :span="12">
                   <el-form-item label="工期天数">
                     <el-input v-model="orderForm.deliveryDays" placeholder="工期天数，如 13天" />
+                    <div v-if="calculatedDeliveryDate" class="delivery-hint">
+                      预计交货日期：{{ calculatedDeliveryDate }}
+                    </div>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -243,13 +246,16 @@
             <!-- 条款脚部 -->
             <div class="sheet-footer">
               <el-row>
-                <el-col :span="12">
+                <el-col :span="14">
                   <div class="footer-item">
                     <span class="foot-label">交货工期：</span>
                     <span class="foot-value highlight-days">{{ orderForm.deliveryDays || '协商确定' }}</span>
+                    <span v-if="calculatedDeliveryDate" class="delivery-calc-badge">
+                      （预计交货日期：{{ calculatedDeliveryDate }}）
+                    </span>
                   </div>
                 </el-col>
-                <el-col :span="12" class="text-right">
+                <el-col :span="10" class="text-right">
                   <div class="footer-item" v-if="orderForm.remark">
                     <span class="foot-label">备注条款：</span>
                     <span class="foot-value">{{ orderForm.remark }}</span>
@@ -275,6 +281,7 @@ import { debounce } from '@/utils/debounce'
 import orderApi, { type AccessoryItem } from '@/api/order'
 import { useFormSubmit } from '@/composables/useFormSubmit'
 import { parseOrderText } from '@/utils/orderTextParser'
+import { calculateDeliveryDate } from '@/utils/date'
 import FileUpload from '@/components/common/FileUpload.vue'
 import AttachmentList from '@/components/common/AttachmentList.vue'
 const router = useRouter()
@@ -305,6 +312,10 @@ const orderForm = reactive({
   items: [{ id: Date.now(), name: '', spec: '', qty: '', material: '', color: '', other: '' }],
   accessories: [] as AccessoryItem[],
   remark: ''
+})
+
+const calculatedDeliveryDate = computed(() => {
+  return calculateDeliveryDate(orderForm.orderDate, orderForm.deliveryDays)
 })
 
 const fileList = ref<UploadFile[]>([])
@@ -784,6 +795,20 @@ onMounted(async () => {
   font-weight: bold;
   color: #d97706;
   font-size: 14px;
+}
+
+.delivery-calc-badge {
+  margin-left: 12px;
+  font-weight: bold;
+  color: #1d4ed8;
+  font-size: 13px;
+}
+
+.delivery-hint {
+  font-size: 12px;
+  color: #2563eb;
+  margin-top: 4px;
+  line-height: 1.2;
 }
 
 .signature-row {

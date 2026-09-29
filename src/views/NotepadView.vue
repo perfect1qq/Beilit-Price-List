@@ -2,7 +2,7 @@
   <div class="notepad-container">
     <div class="notepad-sidebar">
       <div class="sidebar-header">
-        <el-input v-model="keyword" placeholder="搜索笔记..." clearable size="default" @input="onKeywordChange">
+        <el-input v-model="keyword" placeholder="搜索笔记..." clearable size="default" @input="onKeywordChange" @clear="onKeywordChange">
           <template #prefix>
             <el-icon>
               <Search />

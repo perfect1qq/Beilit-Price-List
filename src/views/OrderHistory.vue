@@ -127,13 +127,16 @@
 
         <div class="sheet-footer">
           <el-row>
-            <el-col :span="12">
+            <el-col :span="14">
               <div class="footer-item">
                 <span class="foot-label">交货工期：</span>
                 <span class="foot-value highlight-days">{{ currentOrder.deliveryDays || '协商确定' }}</span>
+                <span v-if="calculatedDeliveryDate" class="delivery-calc-badge">
+                  （预计交货日期：{{ calculatedDeliveryDate }}）
+                </span>
               </div>
             </el-col>
-            <el-col :span="12" class="text-right">
+            <el-col :span="10" class="text-right">
               <div class="footer-item" v-if="currentOrder.remark">
                 <span class="foot-label">备注条款：</span>
                 <span class="foot-value">{{ currentOrder.remark }}</span>
@@ -158,6 +161,7 @@ import SearchBar from '@/components/common/SearchBar.vue'
 import ActionButtons from '@/components/common/ActionButtons.vue'
 import GroupedHistoryList from '@/components/common/GroupedHistoryList.vue'
 import { groupByYearAndCompany } from '@/utils/grouping'
+import { calculateDeliveryDate } from '@/utils/date'
 import { useOrderListQuery, useOrderDetailQuery, useDeleteOrderMutation } from '@/composables/useHistoryQueries'
 
 const router = useRouter()
@@ -213,6 +217,10 @@ const currentOrderAttachments = computed<any[]>(() => {
   } catch {
     return []
   }
+})
+
+const calculatedDeliveryDate = computed(() => {
+  return calculateDeliveryDate(currentOrder.value?.orderDate, currentOrder.value?.deliveryDays)
 })
 
 // 检查是否有编辑权限
@@ -476,6 +484,13 @@ const confirmDelete = async (row: OrderData) => {
   font-weight: bold;
   color: #d97706;
   font-size: 14px;
+}
+
+.delivery-calc-badge {
+  margin-left: 12px;
+  font-weight: bold;
+  color: #1d4ed8;
+  font-size: 13px;
 }
 
 .signature-row {

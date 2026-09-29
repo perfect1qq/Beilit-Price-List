@@ -33,6 +33,7 @@ export const useNotepad = () => {
   const isIndeterminate = computed(() => checkedIds.value.size > 0 && checkedIds.value.size < noteList.value.length)
 
   let saveTimer: ReturnType<typeof setTimeout> | null = null
+  let searchTimer: ReturnType<typeof setTimeout> | null = null
 
   const getFolderCount = (folder: string): number => folderCountMap.value[folder] || 0
 
@@ -250,6 +251,10 @@ export const useNotepad = () => {
       if (saveTimer) {
         clearTimeout(saveTimer)
         saveTimer = null
+      }
+      if (searchTimer) {
+        clearTimeout(searchTimer)
+        searchTimer = null
       }
     })
 
