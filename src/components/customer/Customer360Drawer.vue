@@ -189,25 +189,26 @@
               <h4 style="margin: 0; padding-left: 10px; border-left: 4px solid var(--el-color-primary);">财务账单与收款明细</h4>
               <AppButton variant="add" label="新增交易账单" size="small" @click="openFinanceAddDialog" />
             </div>
-            <el-table :data="customer.orders || []" border style="width: 100%" stripe>
+            <el-table :data="displayFinanceOrders" border style="width: 100%" stripe>
 
-              <AutoFitColumn :data="customer.orders || []" prop="orderName" label="账单/订单名称" :min="150" :max="400">
+              <AutoFitColumn :data="displayFinanceOrders" prop="orderName" label="账单/订单名称" :min="150" :max="400">
                 <template #default="{ row }">
                   <span style="font-weight: bold;">{{ row.orderName }}</span>
+                  <el-tag v-if="row.isContractVirtual" size="small" type="warning" style="margin-left: 6px;">同步中</el-tag>
                 </template>
               </AutoFitColumn>
-              <AutoFitColumn :data="customer.orders || []" prop="orderAmount" label="账单总额(元)" :min="130" :max="200" align="center">
+              <AutoFitColumn :data="displayFinanceOrders" prop="orderAmount" label="账单总额(元)" :min="130" :max="200" align="center">
                 <template #default="{ row }">¥ {{ Number(row.orderAmount || 0).toLocaleString() }}</template>
               </AutoFitColumn>
-              <AutoFitColumn :data="customer.orders || []" prop="paidAmount" label="已收金额(元)" :min="130" :max="200" align="center">
+              <AutoFitColumn :data="displayFinanceOrders" prop="paidAmount" label="已收金额(元)" :min="130" :max="200" align="center">
                 <template #default="{ row }">¥ {{ Number(row.paidAmount || 0).toLocaleString() }}</template>
               </AutoFitColumn>
-              <AutoFitColumn :data="customer.orders || []" label="当前欠款(元)" :min="130" :max="200" align="center">
+              <AutoFitColumn :data="displayFinanceOrders" label="当前欠款(元)" :min="130" :max="200" align="center">
                 <template #default="{ row }">
                   <strong style="color: #f56c6c;">¥ {{ Math.max(0, (row.orderAmount || 0) - (row.paidAmount || 0)).toLocaleString() }}</strong>
                 </template>
               </AutoFitColumn>
-              <AutoFitColumn :data="customer.orders || []" prop="paymentStatus" label="结款状态" :min="120" :max="180" align="center">
+              <AutoFitColumn :data="displayFinanceOrders" prop="paymentStatus" label="结款状态" :min="120" :max="180" align="center">
                 <template #default="scope">
                   <el-tag :type="getPaymentStatusInfo(scope.row).type">
                     {{ getPaymentStatusInfo(scope.row).label }}
@@ -222,7 +223,7 @@
                 </template>
               </el-table-column>
             </el-table>
-            <el-empty v-if="!(customer.orders && customer.orders.length)" description="该客户暂无交易账单记录" :image-size="60" />
+            <el-empty v-if="!displayFinanceOrders.length" description="该客户暂无交易账单记录" :image-size="60" />
           </div>
         </el-tab-pane>
 
@@ -442,7 +443,9 @@ watch(() => props.modelValue, (newVal) => {
 
 watch(visible, (newVal) => {
   emit('update:modelValue', newVal)
-  if (!newVal) {
+  if (newVal) {
+    refetchCustomer()
+  } else {
     activeTab.value = 'overview'
   }
 })
@@ -547,6 +550,40 @@ const displayCooperationStatus = computed(() => {
   return customer.value?.cooperationStatus || '未合作'
 })
 
+const displayFinanceOrders = computed(() => {
+  const serverOrders = customer.value?.orders || []
+  const linkedContractIds = new Set(
+    serverOrders
+      .filter((o: any) => o.contractId != null)
+      .map((o: any) => o.contractId)
+  )
+
+  // 找出 contracts 中有金额但尚未关联到 orders 中的合同
+  const unlinked = contracts.value.filter(
+    (c: any) => Number(c.amount) > 0 && !linkedContractIds.has(c.id)
+  )
+
+  if (unlinked.length === 0) {
+    return serverOrders
+  }
+
+  // 兜底合成展示行（若网络响应存在微小时差，依然能立即展示合同账单）
+  const virtualRows = unlinked.map((c: any) => ({
+    id: `virtual-contract-${c.id}`,
+    customerId: customer.value?.id,
+    contractId: c.id,
+    orderName: c.title || `${c.companyName || ''} - 合同项目`,
+    orderAmount: Number(c.amount) || 0,
+    paidAmount: 0,
+    orderStatus: '已下单',
+    paymentStatus: '待催款',
+    isContractVirtual: true,
+    createdAt: c.contractDate || c.createdAt,
+  }))
+
+  return [...serverOrders, ...virtualRows]
+})
+
 const goCreateContract = () => {
   if (!customer.value) return
   visible.value = false
@@ -591,10 +628,13 @@ const openFinanceAddDialog = () => {
 
 // 合同同步生成的账单（contractId 非空）不允许在此删除，需通过删除对应合同来移除
 const getFinanceActions = (row: any) => {
-  const actions = [
-    { key: 'edit', variant: 'edit' as const, label: '编辑账单', onClick: () => openFinanceEditDialog(row) },
-  ]
-  if (!row.contractId) {
+  const actions: any[] = []
+  if (!row.isContractVirtual) {
+    actions.push({ key: 'edit', variant: 'edit' as const, label: '登记回款 / 编辑', onClick: () => openFinanceEditDialog(row) })
+  } else {
+    actions.push({ key: 'sync', variant: 'edit' as const, label: '立即同步', onClick: async () => { await refetchCustomer(); ElMessage.success('已同步最新账单') } })
+  }
+  if (!row.contractId && !row.isContractVirtual) {
     actions.push({ key: 'delete', variant: 'delete' as const, label: '删除', onClick: () => handleDeleteFinance(row) })
   }
   return actions
@@ -625,9 +665,9 @@ const submitPayment = async () => {
     ElMessage.warning('回款金额必须大于 0')
     return
   }
-  const customerArrears = Math.max(0, (customer.value?.totalAmount || 0) - (customer.value?.totalPaidAmount || 0));
-  if (paymentForm.value.amount > customerArrears) {
-    ElMessage.warning(`回款金额不能超过该客户的总欠款金额 (最多还能登记: ¥${customerArrears})`)
+  const maxArrears = computedArrears.value > 0 ? computedArrears.value : Math.max(0, (customer.value?.totalAmount || 0) - (customer.value?.totalPaidAmount || 0));
+  if (maxArrears > 0 && paymentForm.value.amount > maxArrears) {
+    ElMessage.warning(`回款金额不能超过该客户的总欠款金额 (最多还能登记: ¥${maxArrears})`)
     return
   }
   submittingPayment.value = true
@@ -680,10 +720,10 @@ const submitFinance = async () => {
 
   const originalPaidAmount = currentOrderForPayment.value?.paidAmount || 0;
   const increase = financeForm.value.paidAmount - originalPaidAmount;
-  const customerArrears = Math.max(0, (customer.value?.totalAmount || 0) - (customer.value?.totalPaidAmount || 0));
+  const maxArrears = computedArrears.value > 0 ? computedArrears.value : Math.max(0, (customer.value?.totalAmount || 0) - (customer.value?.totalPaidAmount || 0));
 
-  if (increase > customerArrears) {
-    ElMessage.warning(`已收金额的新增量不能超过该客户的总欠款 (最多还能增加: ¥${customerArrears})`)
+  if (maxArrears > 0 && increase > maxArrears) {
+    ElMessage.warning(`已收金额的新增量不能超过该客户的总欠款 (最多还能增加: ¥${maxArrears})`)
     return
   }
   
