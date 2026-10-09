@@ -211,11 +211,20 @@
             clearable
             style="width: 240px;"
           />
+
+          <AppButton
+            v-if="hasGroupedRows"
+            size="small"
+            plain
+            @click="toggleExpandAll"
+          >
+            {{ isAllExpanded ? '全部折叠' : '全部展开' }}
+          </AppButton>
         </div>
 
         <el-input
           v-model="orderSearchKeyword"
-          placeholder="搜索客户/公司/订单..."
+          placeholder="搜索公司/订单/合同时间..."
           :prefix-icon="Search"
           clearable
           style="width: 220px;"
@@ -224,26 +233,69 @@
 
       <!-- 表格 -->
       <el-table
-        :data="filteredYearlyList"
+        ref="yearlyTableRef"
+        :data="groupedYearlyList"
+        row-key="rowKey"
         v-loading="yearlyLoading"
         border
         stripe
         max-height="480"
-        :default-sort="{ prop: 'arrears', order: 'descending' }"
+        :default-sort="{ prop: 'contractDate', order: 'descending' }"
+        :row-class-name="getTableRowClassName"
+        @row-click="handleYearlyRowClick"
       >
-        <el-table-column type="index" label="#" width="55" align="center" />
-        <el-table-column prop="customerName" label="客户名称" min-width="110" show-overflow-tooltip sortable />
-        <el-table-column prop="companyName" label="公司名称" min-width="180" show-overflow-tooltip sortable />
-        <el-table-column prop="orderName" label="订单名称" min-width="120" show-overflow-tooltip />
+        <el-table-column label="#" width="65" align="center">
+          <template #default="scope">
+            <span v-if="!scope.row.isChild" style="font-weight: 500;">
+              {{ getRowDisplayIndex(scope.row, scope) }}
+            </span>
+            <span v-else style="color: #909399; font-size: 12px;">
+              {{ getRowDisplayIndex(scope.row, scope) }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="contractDate" label="合同时间" min-width="120" align="center" sortable>
+          <template #default="{ row }">
+            <span :style="row.isGroup ? 'font-weight: 600;' : ''">
+              {{ formatDateOnly(row.contractDate || row.createdAt) || '-' }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="companyName" label="公司名称" min-width="200" show-overflow-tooltip sortable>
+          <template #default="{ row }">
+            <template v-if="row.isGroup">
+              <span style="font-weight: bold; color: var(--el-color-primary);">{{ row.companyName }}</span>
+              <el-tag size="small" type="primary" round style="margin-left: 6px;">{{ row.children?.length }} 笔</el-tag>
+            </template>
+            <template v-else-if="row.isChild">
+              <span style="color: #909399; padding-left: 8px;">↳ {{ row.companyName }}</span>
+            </template>
+            <template v-else>
+              <span>{{ row.companyName }}</span>
+            </template>
+          </template>
+        </el-table-column>
+        <el-table-column prop="orderName" label="订单名称" min-width="140" show-overflow-tooltip>
+          <template #default="{ row }">
+            <template v-if="row.isGroup">
+              <span style="color: #409eff; font-size: 13px;">
+                多笔汇总 ({{ row.children?.length }} 笔订单)
+              </span>
+            </template>
+            <template v-else>
+              <span>{{ row.orderName }}</span>
+            </template>
+          </template>
+        </el-table-column>
         
         <el-table-column prop="orderAmount" label="订单金额" align="right" min-width="120" sortable>
           <template #default="{ row }">
-            <span style="font-weight: 500;">¥ {{ Number(row.orderAmount || 0).toFixed(2) }}</span>
+            <span :style="{ fontWeight: row.isGroup ? 'bold' : '500' }">¥ {{ Number(row.orderAmount || 0).toFixed(2) }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="paidAmount" label="已收金额" align="right" min-width="120" sortable>
           <template #default="{ row }">
-            <span style="color: #67c23a; font-weight: 500;">¥ {{ Number(row.paidAmount || 0).toFixed(2) }}</span>
+            <span style="color: #67c23a;" :style="{ fontWeight: row.isGroup ? 'bold' : '500' }">¥ {{ Number(row.paidAmount || 0).toFixed(2) }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="arrears" label="欠款金额" align="right" min-width="130" sortable>
@@ -305,7 +357,7 @@ import { useRouter } from "vue-router";
 import { ElMessageBox } from "element-plus";
 import { Plus, Edit, Delete, Search } from "@element-plus/icons-vue";
 import { to } from "@/utils/async";
-import { formatDate, getRemainingDays } from "@/utils/date";
+import { formatDate, formatDateOnly, getRemainingDays } from "@/utils/date";
 import { showError, showSuccess } from "@/utils/message";
 import { usePermissions } from "@/composables/usePermissions";
 import { useCustomerForm } from "@/composables/useCustomer";
@@ -569,9 +621,10 @@ const filteredYearlyList = computed(() => {
   const kw = orderSearchKeyword.value.trim().toLowerCase();
   if (kw) {
     list = list.filter(item => 
-      String(item.customerName || '').toLowerCase().includes(kw) ||
       String(item.companyName || '').toLowerCase().includes(kw) ||
-      String(item.orderName || '').toLowerCase().includes(kw)
+      String(item.orderName || '').toLowerCase().includes(kw) ||
+      String(item.contractDate || item.createdAt || '').toLowerCase().includes(kw) ||
+      String(item.customerName || '').toLowerCase().includes(kw)
     );
   }
 
@@ -598,6 +651,118 @@ const currentSummary = computed(() => {
   });
 });
 
+const yearlyTableRef = ref<any>(null);
+const isAllExpanded = ref(false);
+
+const groupedYearlyList = computed(() => {
+  const list = filteredYearlyList.value;
+  if (!list || list.length === 0) return [];
+
+  // 按公司名称分组：相同公司名称的订单折叠收拢为树状结构
+  const map = new Map<string, any[]>();
+  for (const item of list) {
+    const comp = (item.companyName || '未命名公司').trim();
+    const arr = map.get(comp) || [];
+    arr.push(item);
+    map.set(comp, arr);
+  }
+
+  const result: any[] = [];
+  let itemCounter = 1;
+
+  for (const [companyName, items] of map.entries()) {
+    if (items.length === 1) {
+      result.push({
+        ...items[0],
+        rowKey: `order-${items[0].id || itemCounter++}`,
+        isGroup: false,
+      });
+    } else {
+      const totalOrderAmount = items.reduce((sum, it) => sum + Number(it.orderAmount || 0), 0);
+      const totalPaidAmount = items.reduce((sum, it) => sum + Number(it.paidAmount || 0), 0);
+      const totalArrears = Math.max(0, totalOrderAmount - totalPaidAmount);
+
+      const dates = items
+        .map(it => it.contractDate || it.createdAt)
+        .filter(Boolean)
+        .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+      const latestDate = dates[0] || '';
+
+      const sortedChildren = [...items].sort((a, b) => {
+        const da = new Date(a.contractDate || a.createdAt || 0).getTime();
+        const db = new Date(b.contractDate || b.createdAt || 0).getTime();
+        return db - da;
+      });
+
+      result.push({
+        rowKey: `company-${companyName}-${itemCounter++}`,
+        isGroup: true,
+        companyName,
+        contractDate: latestDate,
+        orderName: `多笔汇总 (${items.length} 笔订单)`,
+        orderAmount: totalOrderAmount,
+        paidAmount: totalPaidAmount,
+        arrears: totalArrears,
+        children: sortedChildren.map((it, cIdx) => ({
+          ...it,
+          rowKey: `child-${it.id || itemCounter}-${cIdx}`,
+          isChild: true,
+          childIndex: cIdx + 1,
+          parentCompanyName: companyName,
+        }))
+      });
+    }
+  }
+
+  // 默认排序：按合同时间从近到远排序（最新排在最前）
+  result.sort((a, b) => {
+    const da = new Date(a.contractDate || a.createdAt || 0).getTime();
+    const db = new Date(b.contractDate || b.createdAt || 0).getTime();
+    return db - da;
+  });
+
+  return result;
+});
+
+const getRowDisplayIndex = (row: any, scope?: any) => {
+  if (row.isChild) {
+    return row.childIndex ? `↳ ${row.childIndex}` : '↳';
+  }
+  // 优先从当前表格排好序的顶层数据中获取行号，确保无论用户如何点击表头排序，序号永远是 1, 2, 3... 严格按顺序显示
+  const storeData = scope?.store?.states?.data?.value || yearlyTableRef.value?.store?.states?.data?.value;
+  if (Array.isArray(storeData) && storeData.length > 0) {
+    const idx = storeData.findIndex((it: any) => it.rowKey === row.rowKey);
+    if (idx !== -1) return idx + 1;
+  }
+  const fallbackIdx = groupedYearlyList.value.findIndex((it: any) => it.rowKey === row.rowKey);
+  return fallbackIdx !== -1 ? fallbackIdx + 1 : 1;
+};
+
+const hasGroupedRows = computed(() => {
+  return groupedYearlyList.value.some(it => it.isGroup);
+});
+
+const toggleExpandAll = () => {
+  isAllExpanded.value = !isAllExpanded.value;
+  if (!yearlyTableRef.value) return;
+  const groups = groupedYearlyList.value.filter(it => it.isGroup);
+  for (const g of groups) {
+    yearlyTableRef.value.toggleRowExpansion(g, isAllExpanded.value);
+  }
+};
+
+const handleYearlyRowClick = (row: any) => {
+  if (row.isGroup && yearlyTableRef.value) {
+    yearlyTableRef.value.toggleRowExpansion(row);
+  }
+};
+
+const getTableRowClassName = ({ row }: { row: any }) => {
+  if (row.isGroup) return 'table-group-row';
+  if (row.isChild) return 'table-child-row';
+  return '';
+};
+
 const fetchYearlyOrders = async () => {
   yearlyLoading.value = true;
   try {
@@ -621,6 +786,7 @@ const handleViewYearlyOrders = async (defaultFilter: 'all' | 'hasArrears' | 'set
   orderFilterDate.value = null;
   arrearsFilterType.value = defaultFilter;
   orderSearchKeyword.value = '';
+  isAllExpanded.value = false;
   await fetchYearlyOrders();
 };
 const STATS_FILTER_MAP: Record<string, any> = {
@@ -832,6 +998,20 @@ onMounted(() => {
 .yearly-summary-bar .summary-val {
   font-size: 16px;
   font-weight: 700;
+}
+
+:deep(.table-group-row) {
+  cursor: pointer;
+  background-color: #fafbfc;
+}
+:deep(.table-group-row:hover) {
+  background-color: #f1f5f9 !important;
+}
+:deep(.table-child-row) {
+  background-color: #fcfdfd;
+}
+:deep(.table-child-row:hover) {
+  background-color: #f8fafc !important;
 }
 </style>
 

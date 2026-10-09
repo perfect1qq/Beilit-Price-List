@@ -121,12 +121,23 @@
             <el-table :data="orders" border style="width: 100%" stripe>
               <AutoFitColumn :data="orders" prop="name" label="下单名称" :min="180" :max="360">
                 <template #default="{ row }">
-                  <span style="font-weight: bold;">{{ row.name || '-' }}</span>
+                  <span
+                    style="font-weight: bold; cursor: pointer; color: var(--el-color-primary);"
+                    title="点击查看该下单"
+                    @click="viewOrderDetail(row)"
+                  >
+                    {{ row.name || '-' }}
+                  </span>
                 </template>
               </AutoFitColumn>
               <AutoFitColumn :data="orders" prop="deliveryAddress" label="交货地址" :min="180" :max="400" show-overflow-tooltip />
               <AutoFitColumn :data="orders" prop="orderDate" label="下单日期" :min="120" :max="160" align="center" />
               <AutoFitColumn :data="orders" prop="ownerName" label="业务员" :min="100" :max="140" align="center" />
+              <AutoFitColumn :data="orders" label="操作" :min="130" :max="160" align="center">
+                <template #default="{ row }">
+                  <AppButton variant="view" size="small" @click="viewOrderDetail(row)">查看该下单</AppButton>
+                </template>
+              </AutoFitColumn>
             </el-table>
             <el-empty v-if="orders.length === 0" description="该客户暂无真实车间下单记录" :image-size="60" />
           </div>
@@ -138,7 +149,17 @@
               <AppButton type="primary" size="small" label="跳转至新增合同" @click="goCreateContract" />
             </div>
             <el-table :data="contracts" border style="width: 100%" stripe>
-              <AutoFitColumn :data="contracts" prop="title" label="合同标题" :min="180" :max="400" />
+              <AutoFitColumn :data="contracts" prop="title" label="合同标题" :min="180" :max="400">
+                <template #default="{ row }">
+                  <span
+                    style="font-weight: bold; cursor: pointer; color: var(--el-color-primary);"
+                    title="点击查看该合同"
+                    @click="viewContractDetail(row)"
+                  >
+                    {{ row.title || '-' }}
+                  </span>
+                </template>
+              </AutoFitColumn>
               <AutoFitColumn :data="contracts" prop="amount" label="合同确定总额(元)" :min="140" :max="200" align="center">
                 <template #default="scope">
                   <strong style="color: #f56c6c;">¥ {{ Number(scope.row.amount || 0).toLocaleString() }}</strong>
@@ -148,6 +169,11 @@
                 <template #default="scope">{{ scope.row.contractDate ? new Date(scope.row.contractDate).toLocaleDateString() : (scope.row.createdAt ? new Date(scope.row.createdAt).toLocaleDateString() : '-') }}</template>
               </AutoFitColumn>
               <AutoFitColumn :data="contracts" prop="ownerName" label="录入人" :min="100" :max="140" align="center" />
+              <AutoFitColumn :data="contracts" label="操作" :min="130" :max="160" align="center">
+                <template #default="{ row }">
+                  <AppButton variant="view" size="small" @click="viewContractDetail(row)">查看该合同</AppButton>
+                </template>
+              </AutoFitColumn>
             </el-table>
             <el-empty v-if="contracts.length === 0" description="该客户暂未签订正式合同" :image-size="60" />
           </div>
@@ -280,90 +306,27 @@
       </template>
     </el-dialog>
 
-    <!-- 查看报价单详情弹窗 -->
-    <el-dialog
+    <!-- 详情预览弹窗组件（封装调用，各自独立逻辑） -->
+    <QuotationPreviewDialog
       v-model="quotationPreviewVisible"
-      :title="`报价单详情 - ${currentQuotationDetail?.name || currentQuotationDetail?.companyName || ''}`"
-      width="920px"
-      append-to-body
-      destroy-on-close
-    >
-      <div v-loading="loadingQuotationDetail" style="min-height: 180px;">
-        <template v-if="currentQuotationDetail">
-          <!-- 基础信息概要 -->
-          <el-descriptions :column="3" border size="small" style="margin-bottom: 16px;">
-            <el-descriptions-item label="报价单名称">
-              <b>{{ currentQuotationDetail.name || '-' }}</b>
-            </el-descriptions-item>
-            <el-descriptions-item label="客户公司">
-              {{ currentQuotationDetail.companyName || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="提交人">
-              {{ currentQuotationDetail.ownerName || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="报价日期">
-              {{ currentQuotationDetail.quotationDate ? new Date(currentQuotationDetail.quotationDate).toLocaleDateString() : (currentQuotationDetail.createDate || '-') }}
-            </el-descriptions-item>
-            <el-descriptions-item label="审核状态">
-              <el-tag :type="currentQuotationDetail.status === 'approved' ? 'success' : (currentQuotationDetail.status === 'rejected' ? 'danger' : 'warning')" size="small">
-                {{ currentQuotationDetail.status === 'approved' ? '已通过' : (currentQuotationDetail.status === 'rejected' ? '已拒绝' : '草稿/待定') }}
-              </el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item label="成交总额">
-              <strong style="color: #f56c6c; font-size: 15px;">
-                ¥ {{ Number(currentQuotationDetail.finalPrice || 0).toLocaleString() }}
-              </strong>
-              <span v-if="currentQuotationDetail.discount" style="color: #909399; font-size: 12px; margin-left: 6px;">
-                ({{ currentQuotationDetail.discount }}% 折扣)
-              </span>
-            </el-descriptions-item>
-            <el-descriptions-item v-if="currentQuotationDetail.remark" label="备注" :span="3">
-              {{ currentQuotationDetail.remark }}
-            </el-descriptions-item>
-          </el-descriptions>
+      :quotation-id="selectedQuotationId"
+      :initial-data="selectedQuotation"
+      @navigate="visible = false"
+    />
 
-          <!-- 货架明细表格 -->
-          <el-table
-            :data="currentQuotationItems"
-            border
-            stripe
-            size="small"
-            style="width: 100%; max-height: 420px; overflow-y: auto;"
-          >
-            <el-table-column type="index" label="序号" width="55" align="center" />
-            <AutoFitColumn :data="currentQuotationItems" prop="name" label="项目名称" :min="140" :max="260" align="left" show-overflow-tooltip />
-            <AutoFitColumn :data="currentQuotationItems" prop="spec" label="规格型号" :min="160" :max="300" align="left" show-overflow-tooltip />
-            <AutoFitColumn :data="currentQuotationItems" prop="color" label="颜色" :min="80" :max="120" align="center" />
-            <AutoFitColumn :data="currentQuotationItems" label="数量" :min="80" :max="120" align="center">
-              <template #default="{ row }">
-                {{ row.quantity ?? row.qty ?? '-' }} {{ row.unit || '' }}
-              </template>
-            </AutoFitColumn>
-            <AutoFitColumn :data="currentQuotationItems" label="单价(元)" :min="100" :max="140" align="right">
-              <template #default="{ row }">
-                ¥ {{ Number(row.price ?? row.unitPrice ?? 0).toFixed(2) }}
-              </template>
-            </AutoFitColumn>
-            <AutoFitColumn :data="currentQuotationItems" label="金额(元)" :min="110" :max="150" align="right">
-              <template #default="{ row }">
-                <b style="color: #409eff;">¥ {{ Number(row.total ?? row.amount ?? row.totalPrice ?? ((Number(row.quantity ?? row.qty ?? 0)) * (Number(row.price ?? row.unitPrice ?? 0)))).toFixed(2) }}</b>
-              </template>
-            </AutoFitColumn>
-            <AutoFitColumn :data="currentQuotationItems" prop="remark" label="备注" :min="110" :max="220" align="left" show-overflow-tooltip />
-          </el-table>
-        </template>
-      </div>
+    <OrderPreviewDialog
+      v-model="orderPreviewVisible"
+      :order-id="selectedOrderId"
+      :initial-data="selectedOrder"
+      @navigate="visible = false"
+    />
 
-      <template #footer>
-        <FormButtons
-          cancel-text="关闭"
-          submit-text="前往报价单完整页面"
-          submit-type="primary"
-          @cancel="quotationPreviewVisible = false"
-          @submit="goToQuotationPage"
-        />
-      </template>
-    </el-dialog>
+    <ContractPreviewDialog
+      v-model="contractPreviewVisible"
+      :contract-id="selectedContractId"
+      :initial-data="selectedContract"
+      @navigate="visible = false"
+    />
 
   </el-drawer>
 </template>
@@ -388,6 +351,9 @@ import AppButton from '@/components/common/AppButton.vue'
 import AutoFitColumn from '@/components/common/AutoFitColumn.vue'
 import ActionButtons from '@/components/common/ActionButtons.vue'
 import FormButtons from '@/components/common/FormButtons.vue'
+import QuotationPreviewDialog from '@/components/customer/QuotationPreviewDialog.vue'
+import OrderPreviewDialog from '@/components/customer/OrderPreviewDialog.vue'
+import ContractPreviewDialog from '@/components/customer/ContractPreviewDialog.vue'
 
 const props = defineProps<{
   modelValue: boolean
@@ -513,47 +479,35 @@ const goCreateQuotation = () => {
 
 // ---- 查看报价单详情 ----
 const quotationPreviewVisible = ref(false)
-const loadingQuotationDetail = ref(false)
-const currentQuotationDetail = ref<any>(null)
+const selectedQuotationId = ref<number | null>(null)
+const selectedQuotation = ref<any>(null)
 
-const currentQuotationItems = computed(() => {
-  if (!currentQuotationDetail.value?.items) return []
-  const raw = currentQuotationDetail.value.items
-  if (Array.isArray(raw)) return raw
-  if (typeof raw === 'string') {
-    try {
-      return JSON.parse(raw)
-    } catch {
-      return []
-    }
-  }
-  return []
-})
-
-const viewQuotationDetail = async (row: any) => {
-  currentQuotationDetail.value = row
+const viewQuotationDetail = (row: any) => {
+  selectedQuotationId.value = row.id
+  selectedQuotation.value = row
   quotationPreviewVisible.value = true
-  loadingQuotationDetail.value = true
-  try {
-    const res: any = await quotationApi.get(row.id)
-    if (res?.quotation) {
-      currentQuotationDetail.value = res.quotation
-    }
-  } catch (e: any) {
-    ElMessage.error(e?.message || '获取报价单详情失败')
-  } finally {
-    loadingQuotationDetail.value = false
-  }
 }
 
-const goToQuotationPage = () => {
-  if (!currentQuotationDetail.value?.id) return
-  quotationPreviewVisible.value = false
-  visible.value = false
-  router.push({
-    path: '/quotation/history',
-    query: { id: currentQuotationDetail.value.id, mode: 'view' }
-  })
+// ---- 查看车间下单详情 ----
+const orderPreviewVisible = ref(false)
+const selectedOrderId = ref<number | null>(null)
+const selectedOrder = ref<any>(null)
+
+const viewOrderDetail = (row: any) => {
+  selectedOrderId.value = row.id
+  selectedOrder.value = row
+  orderPreviewVisible.value = true
+}
+
+// ---- 查看合同详情 ----
+const contractPreviewVisible = ref(false)
+const selectedContractId = ref<number | null>(null)
+const selectedContract = ref<any>(null)
+
+const viewContractDetail = (row: any) => {
+  selectedContractId.value = row.id
+  selectedContract.value = row
+  contractPreviewVisible.value = true
 }
 
 const goCreateOrder = () => {
