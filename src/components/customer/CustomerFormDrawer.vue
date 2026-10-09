@@ -295,6 +295,7 @@ const title = computed(() => (props.isEdit ? "编辑客户" : "新增客户"));
 
 const formRules = {
   companyName: [createRequiredRule('公司名称'), createMaxLengthRule(50, '公司名称')],
+  customerName: [createRequiredRule('客户姓名'), createMaxLengthRule(50, '客户姓名')],
   status: [createRequiredRule('状态')],
   region: [createRequiredRule('区域')]
 };
