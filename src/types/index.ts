@@ -478,6 +478,7 @@ export interface ApiError {
 
 export interface ContractData {
   id: number
+  customerId?: number | null
   companyName: string
   title: string
   content: string

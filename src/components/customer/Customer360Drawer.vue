@@ -23,17 +23,21 @@
           <p>
             联系人: <strong>{{ customer.customerName }}</strong> | 
             电话: <strong>{{ customer.contactInfo || '-' }}</strong> | 
-            类型: <strong>{{ customer.customerType || '-' }}</strong>
+            类型: <strong>{{ customer.customerType || '-' }}</strong> |
+            状态: 
+            <el-tag :type="displayCooperationStatus === '已合作' ? 'success' : 'info'" size="small" style="font-weight: bold; margin-left: 2px;">
+              {{ displayCooperationStatus }}
+            </el-tag>
           </p>
         </div>
         <div class="dash-stats">
           <div class="stat-box">
             <div class="lbl">累计合作总额</div>
-            <div class="val">¥{{ (customer.totalAmount || 0).toLocaleString() }}</div>
+            <div class="val">¥{{ computedTotalAmount.toLocaleString() }}</div>
           </div>
-          <div class="stat-box" :class="{ danger: (customer.totalAmount || 0) > (customer.totalPaidAmount || 0) }">
+          <div class="stat-box" :class="{ danger: computedArrears > 0 }">
             <div class="lbl">当前欠款</div>
-            <div class="val">¥{{ Math.max(0, (customer.totalAmount || 0) - (customer.totalPaidAmount || 0)).toLocaleString() }}</div>
+            <div class="val">¥{{ computedArrears.toLocaleString() }}</div>
           </div>
         </div>
         <div class="dash-actions" style="display: flex; flex-direction: column; gap: 8px; margin-left: 20px; padding-left: 20px; border-left: 1px solid var(--border-color);">
@@ -519,12 +523,39 @@ const goCreateOrder = () => {
   })
 }
 
+const computedTotalAmount = computed(() => {
+  const customerTotal = Number(customer.value?.totalAmount) || 0
+  const ordersTotal = (customer.value?.orders || []).reduce((sum: number, o: any) => sum + (Number(o.orderAmount) || 0), 0)
+  const contractsTotal = contracts.value.reduce((sum: number, c: any) => sum + (Number(c.amount) || 0), 0)
+  return Math.max(customerTotal, ordersTotal, contractsTotal)
+})
+
+const computedTotalPaid = computed(() => {
+  const customerPaid = Number(customer.value?.totalPaidAmount) || 0
+  const ordersPaid = (customer.value?.orders || []).reduce((sum: number, o: any) => sum + (Number(o.paidAmount) || 0), 0)
+  return Math.max(customerPaid, ordersPaid)
+})
+
+const computedArrears = computed(() => {
+  return Math.max(0, computedTotalAmount.value - computedTotalPaid.value)
+})
+
+const displayCooperationStatus = computed(() => {
+  if (computedTotalAmount.value > 0 || contracts.value.length > 0 || (customer.value?.orders && customer.value.orders.length > 0)) {
+    return '已合作'
+  }
+  return customer.value?.cooperationStatus || '未合作'
+})
+
 const goCreateContract = () => {
   if (!customer.value) return
   visible.value = false
   router.push({
     path: '/contract',
-    query: { companyName: customer.value.companyName || customer.value.customerName }
+    query: {
+      customerId: customer.value.id,
+      companyName: customer.value.companyName || customer.value.customerName
+    }
   })
 }
 

@@ -114,6 +114,7 @@ const isEdit = ref(false)
 const contractId = ref<number>(0)
 const formRef = ref()
 const formData = reactive({
+  customerId: null as number | null,
   companyName: '',
   amount: 0,
   title: '',
@@ -444,6 +445,13 @@ const getEditorHtml = (): string => {
 }
 
 onMounted(async () => {
+  if (route.query.companyName) {
+    formData.companyName = String(route.query.companyName).trim()
+  }
+  if (route.query.customerId) {
+    formData.customerId = Number(route.query.customerId)
+  }
+
   const id = Number(route.query.id)
   if (id) {
     isEdit.value = true
@@ -509,6 +517,7 @@ const saveContract = async () => {
 
       if (isEdit.value) {
         await contractApi.update(contractId.value, {
+          customerId: formData.customerId,
           companyName: formData.companyName,
           amount: formData.amount,
           title: formData.title,
@@ -520,6 +529,7 @@ const saveContract = async () => {
         router.push('/contract/history')
       } else {
         await contractApi.create({
+          customerId: formData.customerId,
           companyName: formData.companyName,
           amount: formData.amount,
           title: formData.title,
