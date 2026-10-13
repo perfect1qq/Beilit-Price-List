@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="user-card-item">
     <div class="card-header">
       <h3 class="username">{{ user.username }}</h3>
@@ -52,7 +52,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { PropType } from 'vue'
-import { Lock, Delete, Edit } from '@element-plus/icons-vue'
+import { Lock, Edit } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/date'
 import { ROLES } from '@/types'
 import type { EditableUserInfo } from '@/types'

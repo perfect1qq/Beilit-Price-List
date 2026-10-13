@@ -77,8 +77,7 @@ import {
   Notebook,
   Tickets,
   Suitcase,
-  Box,
-  Stamp
+  Box
 } from '@element-plus/icons-vue'
 
 const route = useRoute()

@@ -74,16 +74,21 @@ export const useUserManagement = () => {
     resetDialog.visible = true
   }
 
-  const confirmReset = async (resetDialogRef: { load: (fn: () => Promise<unknown>) => Promise<unknown> } | null) => {
+  const confirmReset = async (resetDialogRef: { load: (fn: () => Promise<unknown>) => Promise<unknown> } | null): Promise<boolean> => {
     if (!resetDialog.password) {
-      return showWarning('请输入新密码')
+      showWarning('请输入新密码')
+      return false
     }
     if (resetDialog.password.length < 6) {
-      return showWarning('密码长度至少为 6 位')
+      showWarning('密码长度至少为 6 位')
+      return false
+    }
+    if (!resetDialogRef) {
+      return false
     }
 
     try {
-      await resetDialogRef?.load(() =>
+      await resetDialogRef.load(() =>
         userApi.resetPassword(resetDialog.userId as number | string, resetDialog.password)
       )
       showSuccess(`用户 ${resetDialog.username} 的密码已成功重置`)
@@ -91,8 +96,10 @@ export const useUserManagement = () => {
       resetDialog.password = ''
       resetDialog.userId = null
       resetDialog.username = ''
+      return true
     } catch (err) {
       showError(err, '重置失败')
+      return false
     }
   }
 

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <header class="memo-header">
     <div class="header-top">
       <div class="header-left">
@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Plus, Search } from '@element-plus/icons-vue'
+import { Search } from '@element-plus/icons-vue'
 
 const props = defineProps({
   keyword: { type: String, default: '' },

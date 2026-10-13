@@ -239,7 +239,8 @@ export const useMemoManagement = () => {
         editorVisible.value = false
         const idx = list.value.findIndex((m: MemoData) => m.id === editingId.value)
         if (idx !== -1 && res) {
-          const updated = { ...list.value[idx], ...res }
+          const { memo } = res
+          const updated = { ...list.value[idx], ...(memo || res) }
           list.value = [...list.value.slice(0, idx), updated, ...list.value.slice(idx + 1)]
         }
       }

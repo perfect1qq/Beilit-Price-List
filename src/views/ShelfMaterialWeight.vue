@@ -160,7 +160,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Plus, Delete } from '@element-plus/icons-vue'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 import CardHeader from '@/components/common/CardHeader.vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -329,7 +328,7 @@ const calculateWeight = (row: MaterialRow): string => {
   
   let weight = row.expandedSurface * row.thickness * row.density
   
-  if (row.materialName && row.materialName.includes('双C抱焊梁')) {
+  if ((row.materialName && row.materialName.includes('双C抱焊梁')) || (row.name && row.name.includes('双C抱焊梁'))) {
     weight = weight * 2
   }
   

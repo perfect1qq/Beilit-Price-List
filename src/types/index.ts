@@ -283,6 +283,11 @@ export interface CustomerListItem extends CustomerData {
   workshopDeliveryDate?: string
 }
 
+export interface ApiCustomerListItem extends Omit<CustomerListItem, 'deliveryStartDate' | 'workshopDeliveryStartDate'> {
+  deliveryStartDate?: string | null
+  workshopDeliveryStartDate?: string | null
+}
+
 export type CustomerListResult = PaginatedResult<CustomerListItem>
 
 export interface CustomerDetailData extends CustomerData {

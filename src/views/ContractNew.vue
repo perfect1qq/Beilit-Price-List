@@ -524,6 +524,9 @@ const insertPageBreak = () => {
 
 
 const saveContract = async () => {
+  if (formRef.value) {
+    await formRef.value.validate()
+  }
   if (!formData.contractDate) {
     return ElMessage.warning('请选择合同时间');
   }

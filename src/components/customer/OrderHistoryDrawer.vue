@@ -96,6 +96,7 @@
 </template>
 
 <script setup lang="ts">
+// @deprecated - 未被任何文件引用
 import { ref, computed } from 'vue'
 import type { PropType } from 'vue'
 import { Plus, Edit, Delete } from '@element-plus/icons-vue'

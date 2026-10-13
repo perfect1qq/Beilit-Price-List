@@ -126,6 +126,7 @@
 </template>
 
 <script setup lang="ts">
+// @deprecated - 未被任何文件引用（仅被已弃用的 OrderHistoryDrawer 引用）
 import { createRequiredRule } from '@/utils/formRules';
 import { ref, reactive, watch, computed } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'

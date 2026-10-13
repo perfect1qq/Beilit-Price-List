@@ -187,7 +187,6 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { Edit, Plus, Refresh } from '@element-plus/icons-vue'
 import { usePermissions } from '@/composables/usePermissions'
 import { useMediumShelfWeight } from '@/composables/useMediumShelfWeight'
 import { TABLE_HEADER_STYLE } from '@/constants/table'

@@ -59,12 +59,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
 defineOptions({ name: 'QuotationList' })
-import {
-  Delete,
-  Check,
-  MagicStick,
-  Plus,
-} from '@element-plus/icons-vue'
+import { MagicStick } from '@element-plus/icons-vue'
 import quotationApi from '@/api/quotation'
 import { useQuotationDraft } from '@/composables/useQuotationDraft'
 import { useQuotationHistory } from '@/composables/useQuotationHistory'

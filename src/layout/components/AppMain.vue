@@ -4,12 +4,9 @@
   <section class="app-main">
     <router-view v-slot="{ Component, route }">
       <transition name="fade-transform" mode="out-in">
-        <div :key="route.fullPath" class="main-transition-wrapper">
-
-          <keep-alive :include="cachedViews" :max="5">
-            <component :is="Component" :key="route.fullPath" />
-          </keep-alive>
-        </div>
+        <keep-alive :include="cachedViews" :max="5">
+          <component :is="Component" :key="route.name || route.path" />
+        </keep-alive>
       </transition>
     </router-view>
   </section>

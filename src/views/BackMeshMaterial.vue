@@ -129,7 +129,6 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { Plus, Delete } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 // --- 状态定义 ---

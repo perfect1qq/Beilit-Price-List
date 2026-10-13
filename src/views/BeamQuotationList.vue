@@ -1,6 +1,6 @@
 <template>
   <div class="beam-quotation-page">
-    <el-form ref="formRef" :model="{ recordName, items }" :disabled="isGuest">
+    <el-form ref="formRef" :model="formModel" :disabled="isGuest">
       <el-card shadow="never" class="editor-card">
         <template #header>
         <CardHeader title="横梁载重单编辑">
@@ -16,12 +16,12 @@
         </CardHeader>
       </template>
 
-      <el-table :data="items" border stripe style="width: 100%" :header-cell-style="TABLE_HEADER_STYLE"
+      <el-table :data="formModel.items" border stripe style="width: 100%" :header-cell-style="TABLE_HEADER_STYLE"
         class="smart-table" :span-method="objectSpanMethod">
           <el-table-column label="横梁名称" align="center" width="220">
             <template #default="{}">
               <el-form-item prop="recordName" :rules="beamNameRule" style="margin-bottom: 0;">
-                <el-input v-model="recordName" size="small" placeholder="请输入横梁名称，如：XX项目重型货架横梁" :disabled="isGuest" />
+                <el-input v-model="formModel.recordName" size="small" placeholder="请输入横梁名称，如：XX项目重型货架横梁" :disabled="isGuest" />
               </el-form-item>
             </template>
           </el-table-column>
@@ -61,13 +61,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, reactive } from 'vue'
 defineOptions({ name: 'BeamQuotationList' })
-import { Plus, Delete, Check } from '@element-plus/icons-vue'
 import beamApi from '../api/beam'
 import { to } from '@/utils/async'
 import { showWarning, showError, showSuccess } from '@/utils/message'
-import { beamNameRule, positiveDecimalRule, noSpaceRawValidator } from '@/utils/formRules'
+import { beamNameRule, positiveDecimalRule } from '@/utils/formRules'
 import { usePermissions } from '@/composables/usePermissions'
 import { useFormSubmit } from '@/composables/useFormSubmit'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
@@ -75,49 +74,54 @@ import CardHeader from '@/components/common/CardHeader.vue'
 
 const { isGuest } = usePermissions()
 
-const recordName = ref('')
-const items = ref<Array<{ length: string; spec: string; maxLoad: string }>>([{ length: '', spec: '', maxLoad: '' }])
+const formModel = reactive<{
+  recordName: string
+  items: Array<{ length: string; spec: string; maxLoad: string }>
+}>({
+  recordName: '',
+  items: [{ length: '', spec: '', maxLoad: '' }]
+})
 const { submitLoading: saving, withSubmitLock } = useFormSubmit({ lockDuration: 300 })
 const formRef = ref<InstanceType<typeof import('element-plus')['ElForm']> | null>(null)
 
 const objectSpanMethod = ({ columnIndex, rowIndex }: { columnIndex: number; rowIndex: number }) => {
   if (columnIndex === 0) {
     if (rowIndex === 0) {
-      return { rowspan: items.value.length, colspan: 1 }
+      return { rowspan: formModel.items.length, colspan: 1 }
     } else {
       return { rowspan: 0, colspan: 0 }
     }
   }
 }
 
-const addRow = () => items.value.push({ length: '', spec: '', maxLoad: '' })
+const addRow = () => formModel.items.push({ length: '', spec: '', maxLoad: '' })
 
 const deleteRow = (index: number) => {
-  if (items.value.length <= 1) {
+  if (formModel.items.length <= 1) {
     return showWarning('至少需要保留一行数据！')
   }
-  items.value.splice(index, 1)
+  formModel.items.splice(index, 1)
 }
 
 const handleSave = async () => {
   const [validateErr] = await to(formRef.value?.validate() ?? Promise.resolve(undefined))
   if (validateErr) return
 
-  const [, checkRes] = await to(beamApi.checkName(recordName.value.trim()))
+  const [, checkRes] = await to(beamApi.checkName(formModel.recordName.trim()))
   if (checkRes?.exists) {
     return showWarning('历史记录中已存在同名的横梁名称，请更换横梁名称！')
   }
 
   await withSubmitLock(async () => {
-    const [err] = await to(beamApi.create({ name: recordName.value, items: items.value }))
+    const [err] = await to(beamApi.create({ name: formModel.recordName, items: formModel.items }))
     if (err) {
       showError('保存失败，请检查网络或后端接口')
       return
     }
     showSuccess('新增成功')
     formRef.value?.resetFields()
-    recordName.value = ''
-    items.value = [{ length: '', spec: '', maxLoad: '' }]
+    formModel.recordName = ''
+    formModel.items = [{ length: '', spec: '', maxLoad: '' }]
   })
 }
 

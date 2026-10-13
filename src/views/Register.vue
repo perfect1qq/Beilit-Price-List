@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <AuthLayout card-title="申请创建账号" card-subtitle="填写基本员工信息与邀请码加入倍力特管理平台">
 
     <el-form ref="formRef" :model="form" :rules="rules" class="form" @keyup.enter="handleRegister">
@@ -75,6 +75,10 @@ const rules = {
   username: [createRequiredRule('账号')],
   password: [createRequiredRule('密码')],
   name: [createRequiredRule('姓名')],
+  confirmPassword: [
+    createRequiredRule('确认密码'),
+    { validator: validatePass2, trigger: 'blur' }
+  ],
 };
 
 

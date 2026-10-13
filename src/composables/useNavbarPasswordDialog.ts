@@ -28,24 +28,30 @@ export const useNavbarPasswordDialog = ({ onSuccess, dialogRef }: NavbarPassword
     form: { oldPassword: '', newPassword: '', confirmPassword: '' }
   })
 
-  const confirmChangePass = async (): Promise<void> => {
+  const confirmChangePass = async (): Promise<boolean> => {
     const { oldPassword, newPassword, confirmPassword } = changePassDialog.form
-    if (!oldPassword || !newPassword) { ElMessage.warning('请填写必填项'); return }
-    if (newPassword !== confirmPassword) { ElMessage.warning('两次输入的新密码不一致'); return }
-    if (newPassword.length < 6) { ElMessage.warning('密码长度至少为 6 位'); return }
-    if (newPassword.length > 100) { ElMessage.warning('密码长度不能超过 100 位'); return }
+    if (!oldPassword || !newPassword) { ElMessage.warning('请填写必填项'); return false }
+    if (newPassword !== confirmPassword) { ElMessage.warning('两次输入的新密码不一致'); return false }
+    if (newPassword.length < 6) { ElMessage.warning('密码长度至少为 6 位'); return false }
+    if (newPassword.length > 100) { ElMessage.warning('密码长度不能超过 100 位'); return false }
+
+    if (!dialogRef?.value) {
+      return false
+    }
 
     try {
-      await dialogRef?.value?.load(() =>
+      await dialogRef.value.load(() =>
         userApi.changePassword({ oldPassword, newPassword })
       )
       ElMessage.success('密码修改成功，请重新登录')
       changePassDialog.visible = false
       changePassDialog.form = { oldPassword: '', newPassword: '', confirmPassword: '' }
       onSuccess?.()
+      return true
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }
       ElMessage.error(err?.response?.data?.message || '修改失败')
+      return false
     }
   }
 

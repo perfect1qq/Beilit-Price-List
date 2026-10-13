@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="usd-conversion-page">
     <el-card class="box-card">
       <template #header>
@@ -146,7 +146,7 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { Plus, Delete, InfoFilled } from '@element-plus/icons-vue'
+import { InfoFilled } from '@element-plus/icons-vue'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 import { useUsdCalculator } from '@/composables/useUsdCalculator'
 import CardHeader from '@/components/common/CardHeader.vue'

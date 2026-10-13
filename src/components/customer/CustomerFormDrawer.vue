@@ -175,7 +175,6 @@ import FormButtons from "@/components/common/FormButtons.vue";
 import {
   createRequiredRule,
   createMaxLengthRule,
-  noSpaceValidator,
 } from "@/utils/formRules";
 import { addDays, formatDate } from "@/utils/date";
 import type { CustomerCreatePayload, CustomerUpdatePayload } from "@/types";
@@ -296,8 +295,8 @@ const title = computed(() => (props.isEdit ? "编辑客户" : "新增客户"));
 const formRules = {
   companyName: [createRequiredRule('公司名称'), createMaxLengthRule(50, '公司名称')],
   customerName: [createRequiredRule('客户姓名'), createMaxLengthRule(50, '客户姓名')],
-  status: [createRequiredRule('状态')],
-  region: [createRequiredRule('区域')]
+  cooperationStatus: [createRequiredRule('合作状态')],
+  customerType: [createRequiredRule('客户类型')]
 };
 
 const getDeliveryDate = (days?: number | null, startDate?: string): string => {

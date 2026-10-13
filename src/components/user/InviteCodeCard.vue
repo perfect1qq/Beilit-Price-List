@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <el-card shadow="never" class="card invite-code-card">
     <div class="invite-section">
       <div class="invite-left">
@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { Key, CopyDocument, Refresh } from '@element-plus/icons-vue'
+import { Key, CopyDocument } from '@element-plus/icons-vue'
 
 defineProps({
   code: { type: String, default: '' },

@@ -22,8 +22,8 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUpdated, type Component } from 'vue'
 import {
-  Plus, Delete, Edit, Check, Refresh, ArrowLeft, Close, View, MagicStick,
-  Download, Upload, Search, Lock, CopyDocument, Clock, Star,
+  Plus, Delete, Edit, Check, Refresh, ArrowLeft, Close, View,
+  Download, Upload, Search,
 } from '@element-plus/icons-vue'
 
 /**

@@ -87,7 +87,7 @@
                     title="点击查看该报价单"
                     @click="viewQuotationDetail(row)"
                   >
-                    {{ row.name || row.companyName || '-' }}
+                    {{ (row.name || row.companyName || '-') + (row.createDate ? '；' + row.createDate : '') }}
                   </span>
                 </template>
               </AutoFitColumn>
@@ -130,7 +130,7 @@
                     title="点击查看该下单"
                     @click="viewOrderDetail(row)"
                   >
-                    {{ row.name || '-' }}
+                    {{ (row.name || '-') + (row.orderDate ? '；' + row.orderDate : '') }}
                   </span>
                 </template>
               </AutoFitColumn>
@@ -160,7 +160,7 @@
                     title="点击查看该合同"
                     @click="viewContractDetail(row)"
                   >
-                    {{ row.title || '-' }}
+                    {{ (row.title || '-') + ((row.contractDate || row.createdAt) ? '；' + new Date(row.contractDate || row.createdAt).toLocaleDateString() : '') }}
                   </span>
                 </template>
               </AutoFitColumn>
@@ -193,7 +193,7 @@
 
               <AutoFitColumn :data="displayFinanceOrders" prop="orderName" label="账单/订单名称" :min="150" :max="400">
                 <template #default="{ row }">
-                  <span style="font-weight: bold;">{{ row.orderName }}</span>
+                  <span style="font-weight: bold;">{{ row.orderName + (row.createdAt ? '；' + new Date(row.createdAt).toLocaleDateString() : '') }}</span>
                   <el-tag v-if="row.isContractVirtual" size="small" type="warning" style="margin-left: 6px;">同步中</el-tag>
                 </template>
               </AutoFitColumn>
@@ -458,6 +458,7 @@ watch(customer, async (c) => {
     orders.value = []
     return
   }
+  const currentCustomerId = customer.value?.id
   const companyName = c.companyName || c.customerName || ''
   if (!companyName) return
 
@@ -467,6 +468,7 @@ watch(customer, async (c) => {
       contractApi.list({ keyword: companyName, page: 1, pageSize: 100 }),
       orderApi.list({ keyword: companyName, page: 1, pageSize: 100 }),
     ])
+    if (customer.value?.id !== currentCustomerId) return
     quotes.value = qRes?.list || []
     contracts.value = cRes?.list || []
     orders.value = oRes?.list || []

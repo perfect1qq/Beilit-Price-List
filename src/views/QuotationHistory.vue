@@ -89,17 +89,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, nextTick } from "vue";
-import { useRoute } from "vue-router";
+import { computed } from "vue";
 defineOptions({ name: "QuotationHistory" });
-import { Delete, Check, MagicStick, Plus, Setting } from "@element-plus/icons-vue";
-import type { UploadFile, UploadFiles } from 'element-plus'
+import { MagicStick } from "@element-plus/icons-vue";
 import SearchBar from '@/components/common/SearchBar.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import { usePermissions } from "@/composables/usePermissions";
 import { useUserStore } from "@/stores/user";
 import { formatMoney } from "@/utils/number";
-import { TABLE_HEADER_STYLE } from "@/constants/table";
 import QuotationEditor from "@/components/quotation/QuotationEditor.vue";
 import GroupedHistoryList from "@/components/common/GroupedHistoryList.vue";
 import { useQuotationHistoryPage } from "@/composables/useQuotationHistoryPage";
@@ -107,7 +104,6 @@ import type { HistoryRecord } from "@/composables/useQuotationHistory";
 
 const { isAdmin, isGuest } = usePermissions();
 const userStore = useUserStore();
-const route = useRoute();
 const currentUserId = computed(() => userStore.user?.id);
 
 const {

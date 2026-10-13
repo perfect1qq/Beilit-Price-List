@@ -351,11 +351,10 @@
 <script setup lang="ts">
 import { CooperationStatus, CustomerType, PaymentStatus, OrderStatus, InstallationStatus } from '@/constants/enums';
 import CustomerStats from './customer/CustomerStats.vue';
-import PagePagination from '@/components/common/PagePagination.vue';
 import { onMounted, ref, computed, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessageBox } from "element-plus";
-import { Plus, Edit, Delete, Search } from "@element-plus/icons-vue";
+import { Delete, Search } from "@element-plus/icons-vue";
 import { to } from "@/utils/async";
 import { formatDate, formatDateOnly, getRemainingDays } from "@/utils/date";
 import { showError, showSuccess } from "@/utils/message";
@@ -383,7 +382,7 @@ import CustomerFormDrawer from "@/components/customer/CustomerFormDrawer.vue";
 import Customer360Drawer from "@/components/customer/Customer360Drawer.vue";
 
 const router = useRouter();
-const { isGuest, isAdmin, canCreate, canEdit, canDelete } = usePermissions();
+const { isGuest, canCreate, canDelete } = usePermissions();
 
 const activeStat = ref("");
 const customer360Visible = ref(false);
@@ -405,26 +404,6 @@ const filters = reactive<CustomerListFilters>({
 const searchKeyword = computed({
   get: () => filters.keyword,
   set: (v: string) => { filters.keyword = v },
-});
-const filterCooperationStatus = computed({
-  get: () => filters.cooperationStatus,
-  set: (v: string) => { filters.cooperationStatus = v; filters.page = 1 },
-});
-const filterCustomerType = computed({
-  get: () => filters.customerType,
-  set: (v: string) => { filters.customerType = v; filters.page = 1 },
-});
-const filterPaymentStatus = computed({
-  get: () => filters.paymentStatus,
-  set: (v: string) => { filters.paymentStatus = v; filters.page = 1 },
-});
-const filterOrderStatus = computed({
-  get: () => filters.orderStatus,
-  set: (v: string) => { filters.orderStatus = v; filters.page = 1 },
-});
-const filterInstallationStatus = computed({
-  get: () => filters.installationStatus,
-  set: (v: string) => { filters.installationStatus = v; filters.page = 1 },
 });
 const page = computed({
   get: () => filters.page,
@@ -452,17 +431,6 @@ const stats = computed(() => statsData.value || {
 });
 
 const handleSearch = () => {
-  filters.page = 1;
-  void refetchList();
-};
-
-const handleResetFilter = () => {
-  filters.keyword = "";
-  filters.cooperationStatus = "";
-  filters.customerType = "";
-  filters.paymentStatus = "";
-  filters.orderStatus = "";
-  filters.installationStatus = "";
   filters.page = 1;
   void refetchList();
 };

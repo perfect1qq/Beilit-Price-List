@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="page">
     <el-card shadow="never" class="page-card">
       <template #header>
@@ -444,15 +444,10 @@ onMounted(() => {
 .input-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  flex: 1;
-  min-width: 120px;
-}
-
-.input-item {
-  display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1;
+  min-width: 120px;
 }
 
 .input-item label {

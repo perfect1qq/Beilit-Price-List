@@ -274,7 +274,6 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { createRequiredRule } from '@/utils/formRules';
 import { useRoute, useRouter } from 'vue-router'
-import { Check, Plus, Delete, Refresh } from '@element-plus/icons-vue'
 import type { UploadFile } from 'element-plus'
 import { showError, showSuccess } from '@/utils/message'
 import { debounce } from '@/utils/debounce'
@@ -504,9 +503,6 @@ onMounted(async () => {
           accessories: order.accessories ? JSON.parse(order.accessories) : []
         })
         
-        if (res.order.accessories) {
-          orderForm.accessories = JSON.parse(res.order.accessories)
-        }
         if (res.order.attachments) {
           try {
             const files = JSON.parse(res.order.attachments) as Array<{ name?: string; url: string }>

@@ -6,7 +6,7 @@ import { useListQueryState } from '@/composables/useListQueryState'
 import { useFormSubmit } from '@/composables/useFormSubmit'
 import { DEFAULT_PAGE_SIZE } from '@/constants/table'
 import { formatDate, addDays } from '@/utils/date'
-import type { CustomerListItem, CustomerCreatePayload, CustomerUpdatePayload, CustomerDetailData } from '@/types'
+import type { CustomerListItem, ApiCustomerListItem, CustomerCreatePayload, CustomerUpdatePayload, CustomerDetailData } from '@/types'
 
 export interface CustomerStats {
   total: number

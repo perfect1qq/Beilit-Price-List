@@ -141,7 +141,6 @@
 <script setup lang="ts">
 import { ref, computed, onBeforeUnmount } from 'vue'
 import type { PropType } from 'vue'
-import { Delete } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { formatMoney } from '@/utils/number'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
@@ -149,6 +148,7 @@ import { quotationNameRule as quotationNameBaseRule, companyNameRule as companyN
 import type { QuotationCreatePayload, QuotationItem } from '@/types'
 import { quotationApi } from '@/api/quotation'
 import { to } from '@/utils/async'
+import { showError } from '@/utils/message'
 
 const props = defineProps({
   isViewMode: Boolean,
@@ -218,7 +218,6 @@ defineExpose({
       valid = false;
     }
     if (!props.quotationDate) {
-      const { showError } = require('@/utils/message');
       showError(new Error('请填写报价时间'), '校验失败');
       valid = false;
     }

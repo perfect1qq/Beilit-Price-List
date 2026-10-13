@@ -53,7 +53,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Refresh } from '@element-plus/icons-vue'
 import SearchBar from '@/components/common/SearchBar.vue'
 import CardList from '@/components/common/CardList.vue'
 import AsyncDialog from '@/components/common/AsyncDialog.vue'

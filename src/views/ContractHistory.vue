@@ -18,7 +18,7 @@
       </template>
 
       <div class="history-content-wrap" v-loading="loading">
-        <el-empty v-if="!groupedContracts.length" :description="keyword ? '未搜索到匹配的合同' : '暂无合同记录'" />
+        <el-empty v-if="!groupedContracts.length" :description="filters.keyword ? '未搜索到匹配的合同' : '暂无合同记录'" />
         
         <GroupedHistoryList v-else :data="groupedContracts">
           <template #default="{ records }">
@@ -70,7 +70,7 @@ const filters = ref({
 })
 
 // 列表查询（自动响应 filters 变化）
-const { data, isLoading: loading, isFetching } = useContractListQuery(filters)
+const { data, isLoading: loading } = useContractListQuery(filters)
 const rawData = computed<ContractData[]>(() => data.value?.list || [])
 
 // 删除 mutation

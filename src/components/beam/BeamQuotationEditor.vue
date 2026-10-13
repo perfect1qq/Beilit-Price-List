@@ -60,7 +60,7 @@
 <script setup lang="ts">
 import type { PropType } from 'vue'
 import { computed } from 'vue'
-import { beamNameRule, recordNameRule, positiveDecimalRule, noSpaceRawValidator } from '@/utils/formRules'
+import { recordNameRule, positiveDecimalRule } from '@/utils/formRules'
 import { TABLE_HEADER_STYLE } from '@/constants/table'
 import CardHeader from '@/components/common/CardHeader.vue'
 import AppButton from '@/components/common/AppButton.vue'
