@@ -170,6 +170,20 @@
                 </template>
               </AutoFitColumn>
 
+              <AutoFitColumn :data="displayFinanceOrders" prop="isInvoiced" label="是否开票" :min="100" :max="130" align="center">
+                <template #default="{ row }">
+                  <el-switch
+                    :model-value="Boolean(row.isInvoiced)"
+                    :disabled="row.isContractVirtual"
+                    inline-prompt
+                    active-text="已开票"
+                    inactive-text="未开票"
+                    style="--el-switch-on-color: #10b981;"
+                    @change="(val: boolean | string | number) => quickToggleInvoice(row, Boolean(val))"
+                  />
+                </template>
+              </AutoFitColumn>
+
               <AutoFitColumn :data="displayFinanceOrders" label="工期与预计交期" :min="210" :max="320">
                 <template #default="{ row }">
                   <div class="delivery-schedule-cell">
@@ -437,6 +451,15 @@
             </el-form-item>
           </el-col>
         </el-row>
+        <el-form-item label="是否开发票">
+          <el-switch
+            v-model="financeForm.isInvoiced"
+            inline-prompt
+            active-text="已开票"
+            inactive-text="未开票"
+            style="--el-switch-on-color: #10b981;"
+          />
+        </el-form-item>
         <div style="margin: 12px 0 14px 0; padding: 12px 14px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
           <div style="font-weight: 600; font-size: 13px; color: #334155; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
             <span>📅 工期计划与预计交期自动推算</span>
@@ -706,6 +729,7 @@ const defaultFinanceForm = () => ({
   paymentStatus: '待结款',
   orderStatus: '生产中',
   installationStatus: '待安装',
+  isInvoiced: false,
   workshopDeliveryDays: undefined as number | undefined,
   workshopDeliveryStartDate: new Date().toISOString().split('T')[0],
   deliveryDays: undefined as number | undefined,
@@ -900,6 +924,7 @@ const displayFinanceOrders = computed(() => {
     paidAmount: 0,
     orderStatus: '已下单',
     paymentStatus: '待催款',
+    isInvoiced: false,
     isContractVirtual: true,
     createdAt: c.contractDate || c.createdAt,
   }))
@@ -1029,6 +1054,26 @@ const quickUpdateOrderStatus = async (row: any, field: 'orderStatus' | 'installa
   }
 }
 
+// 快速切换开票状态
+const quickToggleInvoice = async (row: any, val: boolean) => {
+  if (!props.customerId || row.isContractVirtual) return
+  const prev = row.isInvoiced
+  row.isInvoiced = val
+  try {
+    await updateOrderMutation.mutateAsync({
+      orderId: row.id,
+      data: { isInvoiced: val },
+      customerId: props.customerId
+    })
+    ElMessage.success(val ? '已标记为已开票' : '已标记为未开票')
+    await refetchCustomer()
+    emit('data-changed')
+  } catch (e: any) {
+    row.isInvoiced = prev
+    ElMessage.error(e.response?.data?.message || e.message || '更新开票状态失败')
+  }
+}
+
 const getFinanceActions = (row: any) => {
   const actions: any[] = []
   if (!row.isContractVirtual) {
@@ -1141,6 +1186,7 @@ const openFinanceEditDialog = (row: any) => {
     paymentStatus: computePaymentStatus(row.orderAmount, row.paidAmount),
     orderStatus: row.orderStatus || '生产中',
     installationStatus: row.installationStatus || '待安装',
+    isInvoiced: Boolean(row.isInvoiced),
     workshopDeliveryDays: row.workshopDeliveryDays,
     workshopDeliveryStartDate: row.workshopDeliveryStartDate ? row.workshopDeliveryStartDate.split('T')[0] : (row.createdAt ? row.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]),
     deliveryDays: row.deliveryDays,
@@ -1175,6 +1221,7 @@ const submitFinance = async () => {
           paymentStatus: financeForm.value.paymentStatus,
           orderStatus: financeForm.value.orderStatus,
           installationStatus: financeForm.value.installationStatus,
+          isInvoiced: financeForm.value.isInvoiced,
           workshopDeliveryDays: financeForm.value.workshopDeliveryDays,
           workshopDeliveryStartDate: financeForm.value.workshopDeliveryStartDate,
           deliveryDays: financeForm.value.deliveryDays,

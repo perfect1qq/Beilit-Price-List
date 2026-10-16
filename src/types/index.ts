@@ -231,6 +231,7 @@ export interface CustomerOrderData {
   orderStatus: string
   paymentStatus: string
   installationStatus: string
+  isInvoiced: boolean
   deliveryDays: number | null
   deliveryStartDate: string | null
   workshopDeliveryDays: number | null
@@ -249,6 +250,7 @@ export interface CustomerOrderCreatePayload {
   orderStatus?: string
   paymentStatus?: string
   installationStatus?: string
+  isInvoiced?: boolean
   deliveryDays?: number | null
   workshopDeliveryDays?: number | null
   remark?: string
@@ -261,6 +263,7 @@ export interface CustomerOrderUpdatePayload {
   orderStatus?: string
   paymentStatus?: string
   installationStatus?: string
+  isInvoiced?: boolean
   deliveryDays?: number | null
   workshopDeliveryDays?: number | null
   remark?: string
