@@ -32,6 +32,7 @@ const BackMeshMaterial = () => import('../views/BackMeshMaterial.vue')
 const MemoManagement = () => import('../views/MemoManagement.vue')
 const UsdConversion = () => import('../views/UsdConversion.vue')
 const CustomerManagement = () => import('../views/CustomerManagement.vue')
+const CustomerReorderManagement = () => import('../views/CustomerReorderManagement.vue')
 const NotepadView = () => import('../views/NotepadView.vue')
 const ContractLayout = () => import('../views/ContractLayout.vue')
 const ContractNew = () => import('../views/ContractNew.vue')
@@ -200,8 +201,12 @@ const routes: RouteRecordRaw[] = [
         {
           path: 'customer-management',
           name: 'CustomerManagement',
-          component: CustomerManagement,
+          component: CustomerReorderManagement,
           meta: { title: '客户管理', requiresPermission: 'customer:write' },
+        },
+        {
+          path: 'customer-reorder',
+          redirect: '/customer-management',
         },
 
       {
@@ -248,7 +253,7 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHashHistory(import.meta.env.BASE_URL),
   routes,
-  scrollBehavior(to: RouteLocationNormalized, from: RouteLocationNormalized, savedPosition: { top: number; left: number } | null) {
+  scrollBehavior(_to: RouteLocationNormalized, _from: RouteLocationNormalized, savedPosition: { top: number; left: number } | null) {
     if (savedPosition) return savedPosition
     return { top: 0, left: 0 }
   },

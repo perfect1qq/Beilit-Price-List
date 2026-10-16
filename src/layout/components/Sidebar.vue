@@ -104,6 +104,7 @@ const iconMap: Record<string, Component> = {
   '/memo-management': ChatLineSquare,
   '/notepad': Notebook,
   '/customer-management': User,
+  '/customer-reorder': Suitcase,
   '/home': House,
   '/quotation/history': Clock,
   '/beam-quotation/history': Clock,

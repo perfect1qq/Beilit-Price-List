@@ -281,6 +281,8 @@ export interface CustomerListItem extends CustomerData {
   latestFollowUp: FollowUpData | null
   deliveryDate?: string
   workshopDeliveryDate?: string
+  hasPendingScheduleOrder?: boolean
+  hasPlacedOrder?: boolean
 }
 
 export interface ApiCustomerListItem extends Omit<CustomerListItem, 'deliveryStartDate' | 'workshopDeliveryStartDate'> {

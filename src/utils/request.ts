@@ -151,7 +151,7 @@ service.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
     if (config.signal) {
       const abortHandler = () => controller.abort()
-      config.signal.addEventListener('abort', abortHandler, { once: true })
+      ;(config.signal as any)?.addEventListener?.('abort', abortHandler, { once: true })
       ;(config as any).__abortHandler = abortHandler
     }
     ;(config as unknown as Record<string, unknown>).signal = controller.signal
@@ -183,7 +183,7 @@ service.interceptors.response.use(
     }
 
     if (config.signal && (config as any).__abortHandler) {
-      config.signal.removeEventListener('abort', (config as any).__abortHandler)
+      ;(config.signal as any)?.removeEventListener?.('abort', (config as any).__abortHandler)
     }
 
     const payload = response?.data

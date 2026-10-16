@@ -11,6 +11,8 @@ interface CustomerListParams extends PaginationParams {
   paymentStatus?: string
   orderStatus?: string
   installationStatus?: string
+  reorderFilter?: string
+  orderExecutionStatus?: string
 }
 
 interface CustomerStats {
@@ -25,6 +27,12 @@ interface CustomerStats {
   installed: number
   dealer: number
   terminal: number
+  repeatBuyers?: number
+  firstTimeBuyers?: number
+  potential?: number
+  producing?: number
+  reorderInstall?: number
+  pendingSchedule?: number
 }
 
 const list = (params?: CustomerListParams) =>

@@ -30,6 +30,8 @@ export interface CustomerListFilters {
   paymentStatus: string
   orderStatus: string
   installationStatus: string
+  reorderFilter?: string
+  orderExecutionStatus?: string
   page: number
   pageSize: number
 }
@@ -81,6 +83,10 @@ export const useCustomerListQuery = (filters: MaybeRefOrGetter<CustomerListFilte
         params.orderStatus = f.orderStatus.trim()
       if (f.installationStatus?.trim())
         params.installationStatus = f.installationStatus.trim()
+      if (f.reorderFilter?.trim())
+        params.reorderFilter = f.reorderFilter.trim()
+      if (f.orderExecutionStatus?.trim())
+        params.orderExecutionStatus = f.orderExecutionStatus.trim()
 
       const res = await customerApi.list(params)
       return {

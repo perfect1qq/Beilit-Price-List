@@ -75,6 +75,8 @@ export const useCustomerList = () => {
 
       customerList.value = (res?.list || []).map((c: ApiCustomerListItem) => ({
         ...c,
+        deliveryStartDate: c.deliveryStartDate ?? null,
+        workshopDeliveryStartDate: c.workshopDeliveryStartDate ?? null,
         deliveryDate: c.deliveryDays && c.deliveryDays > 0
           ? formatDate(addDays(c.deliveryDays, c.deliveryStartDate || c.createdAt))
           : '',
@@ -168,8 +170,12 @@ export const useCustomerForm = () => {
       discountPoints: row.discountPoints || '',
       remark: row.remark,
       paymentStatus: row.paymentStatus || '未有款项',
-      orderStatus: row.orderStatus || '未下单',
-      installationStatus: row.installationStatus || '待安装'
+      orderStatus: row.orderStatus && row.orderStatus !== '未下单' ? row.orderStatus : '待排产',
+      installationStatus: row.installationStatus || '待安装',
+      orderCount: row.orderCount || 0,
+      totalAmount: row.totalAmount || 0,
+      totalPaidAmount: row.totalPaidAmount || 0,
+      contractCount: (row as any).contractCount || 0,
     })
     dialogVisible.value = true
   }
