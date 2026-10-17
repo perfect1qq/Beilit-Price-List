@@ -45,7 +45,7 @@
                   >
                     {{ item.cooperationStatus || '未合作' }}
                   </el-tag>
-                  <!-- 订单/车间状态徽章：当客户名下同时存在待排产与已下单/生产中订单时，两类徽章均直观展示 -->
+                  <!-- 订单/车间状态徽章：当客户名下同时存在待排产与未开票等状态时直观展示 -->
                   <template v-if="item.cooperationStatus === '已合作'">
                     <el-tag
                       v-if="item.hasPendingScheduleOrder || item.orderStatus === '待排产'"
@@ -55,11 +55,11 @@
                       待排产
                     </el-tag>
                     <el-tag
-                      v-if="item.hasPlacedOrder || (item.orderStatus === '已下单' && !item.hasPendingScheduleOrder) || ((item.orderCount || 0) > 0 && !item.hasPendingScheduleOrder)"
-                      type="primary"
+                      v-if="item.hasUninvoicedOrder"
+                      type="info"
                       size="small"
                     >
-                      已下单
+                      未开票
                     </el-tag>
                   </template>
                   <!-- 结款状态 -->
@@ -777,7 +777,8 @@ const handleViewYearlyOrders = async (defaultFilter: 'all' | 'hasArrears' | 'set
   '已合作': { cooperationStatus: '已合作' },
   '未合作': { cooperationStatus: '未合作' },
   '待排产': { cooperationStatus: '已合作', orderStatus: '待排产' },
-  '已下单': { cooperationStatus: '已合作', orderStatus: '已下单' },
+  '未开票': { cooperationStatus: '已合作', reorderFilter: 'uninvoiced' },
+  '已下单': { cooperationStatus: '已合作', reorderFilter: 'uninvoiced' },
   '待催款': { paymentStatus: '待催款', cooperationStatus: '已合作' },
   '已结清': { paymentStatus: '已结清', cooperationStatus: '已合作' },
   '待现场安装': { orderExecutionStatus: 'pendingInstall' },

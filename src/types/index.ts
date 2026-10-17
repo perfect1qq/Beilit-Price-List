@@ -286,6 +286,7 @@ export interface CustomerListItem extends CustomerData {
   workshopDeliveryDate?: string
   hasPendingScheduleOrder?: boolean
   hasPlacedOrder?: boolean
+  hasUninvoicedOrder?: boolean
 }
 
 export interface ApiCustomerListItem extends Omit<CustomerListItem, 'deliveryStartDate' | 'workshopDeliveryStartDate'> {

@@ -40,14 +40,14 @@
       <div class="stat-label">待排产</div>
     </div>
 
-    <!-- 5. 已下单（原车间生产中改为已下单） -->
+    <!-- 5. 未开票（合作客户+未开票客户） -->
     <div
-      class="stat-card stat-ordered"
-      :class="{ active: activeStat === '已下单' }"
-      @click="handleStatClick('已下单')"
+      class="stat-card stat-uninvoiced"
+      :class="{ active: activeStat === '未开票' }"
+      @click="handleStatClick('未开票')"
     >
-      <div class="stat-value">{{ stats.ordered ?? 0 }}</div>
-      <div class="stat-label">已下单</div>
+      <div class="stat-value">{{ stats.uninvoiced ?? stats.ordered ?? 0 }}</div>
+      <div class="stat-label">未开票</div>
     </div>
 
     <!-- 6. 待催款客户 -->
@@ -158,8 +158,9 @@ const handleStatClick = (stat: string) => {
 .stat-pending-schedule .stat-value {
   color: #f59e0b;
 }
-.stat-ordered .stat-value {
-  color: #2563eb;
+.stat-ordered .stat-value,
+.stat-uninvoiced .stat-value {
+  color: #0284c7;
 }
 .stat-pending .stat-value {
   color: #ef4444;
