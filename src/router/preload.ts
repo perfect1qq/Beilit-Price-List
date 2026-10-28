@@ -7,7 +7,8 @@ const p0Preloaders: Preloader[] = [
 
 const p1Preloaders: Preloader[] = [
   () => import('@/views/QuotationList.vue'),
-  () => import('@/views/NotepadView.vue')
+  () => import('@/views/NotepadView.vue'),
+  () => import('@/views/MemoManagement.vue')
 ]
 
 const reportPreloadError = (group: string, index: number, error: unknown): void => {

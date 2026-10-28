@@ -4,7 +4,7 @@
   <section class="app-main">
     <router-view v-slot="{ Component, route }">
       <transition name="fade-transform" mode="out-in">
-        <keep-alive :include="cachedViews" :max="5">
+        <keep-alive :include="cachedViews" :max="6">
           <component :is="Component" :key="route.name || route.path" />
         </keep-alive>
       </transition>
@@ -29,7 +29,8 @@ const cachedViews = ref([
   'BeamQuotationList',
   'QuotationHistory',
   'BeamQuotationHistory',
-  'NotepadView'
+  'NotepadView',
+  'MemoManagement'
 ])
 </script>
 

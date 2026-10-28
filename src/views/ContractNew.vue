@@ -14,12 +14,8 @@
 
       <el-form ref="formRef" :model="formData" :rules="rules" label-position="top">
         <el-form-item label="公司名称" prop="companyName" required>
-          <el-autocomplete
+          <CompanyNameAutocomplete
             v-model="formData.companyName"
-            :fetch-suggestions="queryCustomerSuggestions"
-            placeholder="请输入公司名称，支持从已有客户中联想选择..."
-            style="width: 100%;"
-            clearable
             @select="onCustomerSelect"
           />
         </el-form-item>
@@ -111,7 +107,7 @@ import { MagicStick } from '@element-plus/icons-vue'
 import * as dompurify from 'dompurify'
 const DOMPurify = (dompurify as any).default || dompurify
 import contractApi from '@/api/contract'
-import customerApi from '@/api/customer'
+import CompanyNameAutocomplete from '@/components/common/CompanyNameAutocomplete.vue'
 import { useFormSubmit } from '@/composables/useFormSubmit'
 import FileUpload from '@/components/common/FileUpload.vue'
 
@@ -135,20 +131,6 @@ const rules = {
 }
 const { submitLoading: saving, withSubmitLock } = useFormSubmit({ lockDuration: 300 })
 const attachments = ref<any[]>([])
-
-const queryCustomerSuggestions = async (queryString: string, cb: (results: any[]) => void) => {
-  try {
-    const res = await customerApi.list({ keyword: queryString || '', page: 1, pageSize: 20 })
-    const list = res?.list || []
-    const results = list.map((c: any) => ({
-      value: c.companyName || c.customerName,
-      customer: c,
-    }))
-    cb(results)
-  } catch {
-    cb([])
-  }
-}
 
 const onCustomerSelect = (item: any) => {
   if (item?.customer) {

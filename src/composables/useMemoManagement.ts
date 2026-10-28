@@ -22,6 +22,8 @@ interface DateGroup {
   items: MemoData[]
 }
 
+const USER_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone
+
 const toLocalDateStr = (date: Date): string => {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -67,6 +69,7 @@ const groupByDate = (items: MemoData[]): DateGroup[] => {
 export const useMemoManagement = () => {
   const { isGuest } = usePermissions()
   const list = shallowRef<MemoData[]>([])
+  const initialLoading = ref(true)
   const { loading, run: runListLoad, isLatest } = useCancelableLoader()
   const { submitLoading: saving, withSubmitLock } = useFormSubmit({ lockDuration: 300 })
   const { keyword, page, pageSize, resetToFirstPage } = useListQueryState({ page: 1, pageSize: DEFAULT_PAGE_SIZE, keyword: '' })
@@ -142,51 +145,55 @@ export const useMemoManagement = () => {
     todoVisibleCount.value = 10
   })
 
-  const activeDatePanels = ref<string[]>([])
-  const activeDoneDatePanels = ref<string[]>([])
-  const activeListDatePanels = ref<string[]>([])
+  const activeDatePanels = ref<string | string[]>('')
+  const activeDoneDatePanels = ref<string | string[]>('')
+  const activeListDatePanels = ref<string | string[]>('')
   const emptyDescription = computed(() => '暂无待办任务，给自己定个目标吧')
 
   const loadList = async () => {
-    await runListLoad(async ({ seq }) => {
-      const params: Record<string, unknown> = {
-        page: 1,
-        pageSize: LIST_ALL_PAGE_SIZE,
-        keyword: keyword.value.trim(),
-        filter: activeFilter.value,
-        tz: Intl.DateTimeFormat().resolvedOptions().timeZone
-      }
+    try {
+      await runListLoad(async ({ seq }) => {
+        const params: Record<string, unknown> = {
+          page: 1,
+          pageSize: LIST_ALL_PAGE_SIZE,
+          keyword: keyword.value.trim(),
+          filter: activeFilter.value,
+          tz: USER_TIMEZONE
+        }
 
-      const res: MemoListResult = await memoApi.list(params)
+        const res: MemoListResult = await memoApi.list(params)
 
-      if (!isLatest(seq)) return
+        if (!isLatest(seq)) return
 
-      list.value = res.list || []
+        list.value = res.list || []
 
-      if (activeFilter.value === 'all') {
-        Object.assign(stats, {
-          total: res.total || 0,
-          todoTotal: res.todoTotal || 0,
-          doneTotal: res.doneTotal || 0,
-          pinnedTotal: res.pinnedTotal || 0
-        })
-      }
-    })
+        if (activeFilter.value === 'all') {
+          Object.assign(stats, {
+            total: res.total || 0,
+            todoTotal: res.todoTotal || 0,
+            doneTotal: res.doneTotal || 0,
+            pinnedTotal: res.pinnedTotal || 0
+          })
+        }
+      })
+    } finally {
+      initialLoading.value = false
+    }
   }
 
   const handlePageChange = (newPage: number) => {
     page.value = newPage
-    activeDatePanels.value = []
-    activeDoneDatePanels.value = []
-    activeListDatePanels.value = []
+    activeDatePanels.value = ''
+    activeDoneDatePanels.value = ''
+    activeListDatePanels.value = ''
   }
 
   const handleSizeChange = (newSize: number) => {
     pageSize.value = newSize
     page.value = 1
-    activeDatePanels.value = []
-    activeDoneDatePanels.value = []
-    activeListDatePanels.value = []
+    activeDatePanels.value = ''
+    activeDoneDatePanels.value = ''
+    activeListDatePanels.value = ''
   }
 
   const openCreate = () => {
@@ -336,6 +343,16 @@ export const useMemoManagement = () => {
     highlightId.value = route.query.highlight ? Number(typeof route.query.highlight === 'string' ? route.query.highlight : route.query.highlight[0]) : undefined
     await loadList()
     if (highlightId.value) {
+      const target = list.value.find((m: MemoData) => m.id === highlightId.value)
+      if (target) {
+        const dateKey = target.createdAt ? toLocalDateStr(new Date(target.createdAt)) : '未知日期'
+        if (isBoardMode.value) {
+          if (target.completed) activeDoneDatePanels.value = dateKey
+          else activeDatePanels.value = dateKey
+        } else {
+          activeListDatePanels.value = dateKey
+        }
+      }
       nextTick(() => {
         const el = document.querySelector(`[data-memo-id="${highlightId.value}"]`)
         if (el) {
@@ -358,6 +375,7 @@ export const useMemoManagement = () => {
     list,
     total,
     loading,
+    initialLoading,
     saving,
     keyword,
     page,

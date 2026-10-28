@@ -6,9 +6,9 @@
       <MemoFilter v-model:keyword="keyword" :is-guest="isGuest" @keyword-input="onKeywordInput" @create="openCreate" />
 
       <div class="memo-content">
-        <el-skeleton :loading="loading && !list.length" animated :rows="12">
+        <el-skeleton :loading="(initialLoading || loading) && !list.length" animated :rows="12">
           <template #default>
-            <div v-show="isBoardMode" class="board-grid">
+            <div v-if="isBoardMode" class="board-grid">
               <section class="column todo-column">
                 <div class="column-head">
                   <span class="col-indicator todo"></span>
@@ -25,9 +25,9 @@
                           <span class="date-count">{{ group.count }}条</span>
                         </div>
                       </template>
-                      <div class="task-list">
+                      <div v-if="isPanelRendered('todo', group.key, activeDatePanels)" class="task-list">
                         <MemoCard v-for="item in group.items" :key="item.id" :item="item" board-mode :is-guest="isGuest"
-                          @toggle-completed="toggleCompleted" @edit="openEdit" @toggle-pinned="togglePinned"
+                          :highlight-id="highlightId" @toggle-completed="toggleCompleted" @edit="openEdit" @toggle-pinned="togglePinned"
                           @history="openHistory" @remove="removeMemo" />
                       </div>
                     </el-collapse-item>
@@ -55,9 +55,9 @@
                           <span class="date-count">{{ group.count }}条</span>
                         </div>
                       </template>
-                      <div class="task-list">
+                      <div v-if="isPanelRendered('done', group.key, activeDoneDatePanels)" class="task-list">
                         <MemoCard v-for="item in group.items" :key="item.id" :item="item" board-mode :is-guest="isGuest"
-                          @toggle-completed="toggleCompleted" @edit="openEdit" @toggle-pinned="togglePinned"
+                          :highlight-id="highlightId" @toggle-completed="toggleCompleted" @edit="openEdit" @toggle-pinned="togglePinned"
                           @history="openHistory" @remove="removeMemo" />
                       </div>
                     </el-collapse-item>
@@ -74,7 +74,7 @@
               </section>
             </div>
 
-            <div v-show="!isBoardMode" class="list-view">
+            <div v-else class="list-view">
               <div v-if="pagedGroups.length" class="date-grouped-list">
                 <el-collapse v-model="activeListDatePanels" accordion>
                   <el-collapse-item v-for="group in pagedGroups" :key="group.key" :name="group.key">
@@ -84,9 +84,9 @@
                         <span class="date-count">{{ group.count }}条</span>
                       </div>
                     </template>
-                    <div class="task-list">
+                    <div v-if="isPanelRendered('list', group.key, activeListDatePanels)" class="task-list">
                       <MemoCard v-for="item in group.items" :key="item.id" :item="item" board-mode :is-guest="isGuest"
-                        @toggle-completed="toggleCompleted" @edit="openEdit" @toggle-pinned="togglePinned"
+                        :highlight-id="highlightId" @toggle-completed="toggleCompleted" @edit="openEdit" @toggle-pinned="togglePinned"
                         @history="openHistory" @remove="removeMemo" />
                     </div>
                   </el-collapse-item>
@@ -116,7 +116,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, reactive, ref } from 'vue'
+defineOptions({ name: 'MemoManagement' })
 import MemoStatsRow from '@/components/memo/MemoStatsRow.vue'
 import MemoEditorDrawer from '@/components/memo/MemoEditorDrawer.vue'
 import MemoHistoryDrawer from '@/components/memo/MemoHistoryDrawer.vue'
@@ -131,7 +132,9 @@ const {
   list,
   total,
   loading,
+  initialLoading,
   saving,
+  highlightId,
   keyword,
   page,
   pageSize,
@@ -169,6 +172,16 @@ const {
   init,
   cleanup,
 } = useMemoManagement()
+
+const visitedPanels = reactive(new Set<string>())
+const isPanelRendered = (scope: string, key: string, activeModel: string | string[]) => {
+  const cacheKey = `${scope}:${key}`
+  const isActive = Array.isArray(activeModel) ? activeModel.includes(key) : activeModel === key
+  if (isActive && !visitedPanels.has(cacheKey)) {
+    visitedPanels.add(cacheKey)
+  }
+  return isActive || visitedPanels.has(cacheKey)
+}
 
 const onSaveMemo = () => saveMemo(() => memoEditorRef.value?.validate())
 

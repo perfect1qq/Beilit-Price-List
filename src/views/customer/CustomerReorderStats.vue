@@ -40,7 +40,17 @@
       <div class="stat-label">待排产</div>
     </div>
 
-    <!-- 5. 未开票（合作客户+未开票客户） -->
+    <!-- 5. 待现场安装订单客户 -->
+    <div
+      class="stat-card stat-pending-install"
+      :class="{ active: activeStat === '待现场安装' }"
+      @click="handleStatClick('待现场安装')"
+    >
+      <div class="stat-value">{{ stats.reorderInstall ?? stats.pendingInstall ?? 0 }}</div>
+      <div class="stat-label">待现场安装</div>
+    </div>
+
+    <!-- 6. 未开票（合作客户+未开票客户） -->
     <div
       class="stat-card stat-uninvoiced"
       :class="{ active: activeStat === '未开票' }"
@@ -50,7 +60,7 @@
       <div class="stat-label">未开票</div>
     </div>
 
-    <!-- 6. 待催款客户 -->
+    <!-- 7. 待催款客户 -->
     <div
       class="stat-card stat-pending"
       :class="{ active: activeStat === '待催款' }"
@@ -60,7 +70,7 @@
       <div class="stat-label">待催款</div>
     </div>
 
-    <!-- 7. 已结清客户 -->
+    <!-- 8. 已结清客户 -->
     <div
       class="stat-card stat-settled"
       :class="{ active: activeStat === '已结清' }"
@@ -68,16 +78,6 @@
     >
       <div class="stat-value">{{ stats.settled ?? 0 }}</div>
       <div class="stat-label">已结清</div>
-    </div>
-
-    <!-- 8. 待现场安装订单客户 -->
-    <div
-      class="stat-card stat-pending-install"
-      :class="{ active: activeStat === '待现场安装' }"
-      @click="handleStatClick('待现场安装')"
-    >
-      <div class="stat-value">{{ stats.reorderInstall ?? stats.pendingInstall ?? 0 }}</div>
-      <div class="stat-label">待现场安装</div>
     </div>
 
     <!-- 9. 渠道：经销商 -->

@@ -40,7 +40,7 @@
                 </el-col>
                 <el-col :span="12">
                   <el-form-item label="公司名称" prop="customerName">
-                    <el-input v-model="orderForm.customerName" placeholder="如：XX科技公司" />
+                    <CompanyNameAutocomplete v-model="orderForm.customerName" />
                   </el-form-item>
                 </el-col>
                 <el-col :span="12">
@@ -283,6 +283,7 @@ import { parseOrderText } from '@/utils/orderTextParser'
 import { calculateDeliveryDate } from '@/utils/date'
 import FileUpload from '@/components/common/FileUpload.vue'
 import AttachmentList from '@/components/common/AttachmentList.vue'
+import CompanyNameAutocomplete from '@/components/common/CompanyNameAutocomplete.vue'
 const router = useRouter()
 const route = useRoute()
 

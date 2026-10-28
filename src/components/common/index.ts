@@ -10,8 +10,9 @@ import AppButton from './AppButton.vue'
 import ActionButtons from './ActionButtons.vue'
 import FormButtons from './FormButtons.vue'
 import AttachmentList from './AttachmentList.vue'
+import CompanyNameAutocomplete from './CompanyNameAutocomplete.vue'
 
-export { AsyncDialog, FormDialog, AutoFitColumn, PagePagination, SearchBar, CardHeader, CardList, AppButton, ActionButtons, FormButtons, AttachmentList }
+export { AsyncDialog, FormDialog, AutoFitColumn, PagePagination, SearchBar, CardHeader, CardList, AppButton, ActionButtons, FormButtons, AttachmentList, CompanyNameAutocomplete }
 
 export default {
   install(app: App): void {
@@ -26,5 +27,6 @@ export default {
     app.component('ActionButtons', ActionButtons)
     app.component('FormButtons', FormButtons)
     app.component('AttachmentList', AttachmentList)
+    app.component('CompanyNameAutocomplete', CompanyNameAutocomplete)
   }
 }

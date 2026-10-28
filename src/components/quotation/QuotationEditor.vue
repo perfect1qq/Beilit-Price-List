@@ -12,7 +12,7 @@
                 @blur="handleNameBlur" />
             </el-form-item>
             <el-form-item label="公司名称" prop="companyName" :rules="companyNameRule">
-              <el-input v-model="localFormModel.companyName" placeholder="请输入公司名称" :disabled="isViewMode" />
+              <CompanyNameAutocomplete v-model="localFormModel.companyName" :disabled="isViewMode" @select="handleNameBlur" @blur="handleNameBlur" />
             </el-form-item>
             <el-form-item label="报价时间" prop="quotationDate" :rules="[{ required: !isViewMode && !rulesDisabled, message: '请填写报价时间', trigger: ['blur', 'change'] }]">
               <el-date-picker
@@ -149,6 +149,7 @@ import type { QuotationCreatePayload, QuotationItem } from '@/types'
 import { quotationApi } from '@/api/quotation'
 import { to } from '@/utils/async'
 import { showError } from '@/utils/message'
+import CompanyNameAutocomplete from '@/components/common/CompanyNameAutocomplete.vue'
 
 const props = defineProps({
   isViewMode: Boolean,
