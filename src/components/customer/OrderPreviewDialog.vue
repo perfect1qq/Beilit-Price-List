@@ -94,7 +94,7 @@
     <template #footer>
       <FormButtons
         cancel-text="关闭"
-        submit-text="前往下单完整页面"
+        submit-text="前往修改该下单"
         submit-type="primary"
         @cancel="visible = false"
         @submit="goToOrderPage"
@@ -233,7 +233,7 @@ const goToOrderPage = () => {
   emit('navigate', current)
   router.push({
     path: '/order',
-    query: { id: current.id, mode: 'view' }
+    query: { id: current.id, mode: 'edit' }
   })
 }
 </script>

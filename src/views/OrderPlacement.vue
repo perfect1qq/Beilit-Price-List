@@ -6,7 +6,7 @@
         <el-card class="input-card" shadow="never">
           <template #header>
             <div class="card-title">
-              <span>新建订单</span>
+              <span>{{ isEditMode ? '编辑订单' : '新建订单' }}</span>
             </div>
           </template>
 
@@ -271,7 +271,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useQueryClient } from '@tanstack/vue-query'
 import { createRequiredRule } from '@/utils/formRules';
 import { useRoute, useRouter } from 'vue-router'
 import type { UploadFile } from 'element-plus'
@@ -286,6 +287,7 @@ import AttachmentList from '@/components/common/AttachmentList.vue'
 import CompanyNameAutocomplete from '@/components/common/CompanyNameAutocomplete.vue'
 const router = useRouter()
 const route = useRoute()
+const queryClient = useQueryClient()
 
 // 原始粘贴文本
 const rawText = ref('')
@@ -438,11 +440,11 @@ const saveOrder = async () => {
           orderDate: orderForm.orderDate,
           deliveryDays: orderForm.deliveryDays,
           items: JSON.stringify(orderForm.items),
-          accessories: orderForm.accessories.length > 0 ? JSON.stringify(orderForm.accessories) : undefined,
+          accessories: orderForm.accessories.length > 0 ? JSON.stringify(orderForm.accessories) : (isEditMode.value ? '' : undefined),
           attachments: fileList.value.length > 0 ? JSON.stringify(fileList.value.map(f => ({
             name: f.name,
             url: f.response?.data?.url || f.url
-          }))) : undefined,
+          }))) : (isEditMode.value ? '' : undefined),
           rawText: rawText.value,
           remark: orderForm.remark
         }
@@ -454,6 +456,11 @@ const saveOrder = async () => {
         await orderApi.create(payload)
         showSuccess('订单保存成功！')
       }
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['orders'] }),
+        queryClient.invalidateQueries({ queryKey: ['customers'] })
+      ])
 
       // 跳转历史列表
       router.push('/order/history')
@@ -468,62 +475,124 @@ const cancelEdit = () => {
   router.push('/order/history')
 }
 
-// 打印订单
+const createEmptyItem = () => ({
+  id: Date.now() + Math.random(),
+  name: '',
+  spec: '',
+  qty: '',
+  material: '',
+  color: '',
+  other: ''
+})
 
+const resetOrderForm = (prefillCustomerName = '') => {
+  editingId.value = null
+  isEditMode.value = false
+  rawText.value = ''
+  fileList.value = []
+  Object.assign(orderForm, {
+    name: '',
+    customerName: prefillCustomerName,
+    phone: '',
+    fax: '',
+    contactPerson: '',
+    deliveryAddress: '',
+    orderDate: prefillCustomerName ? formatDate(new Date()) : '',
+    deliveryDays: '',
+    remark: '',
+    items: [createEmptyItem()],
+    accessories: []
+  })
+}
 
-// 初始化加载（若是编辑模式）
-onMounted(async () => {
-  const idStr = route.query.id as string
-  const modeStr = route.query.mode as string
-  
-  if (idStr) {
-    const id = parseInt(idStr, 10)
-    if (!isNaN(id)) {
-      editingId.value = id
-      isEditMode.value = (modeStr !== 'view')
-      
-      try {
-        const res = await orderApi.getDetail(id)
-        const order = res.order
-        
-        Object.assign(orderForm, {
-          name: order.name || '',
-          customerName: order.customerName,
-          phone: order.phone || '',
-          fax: order.fax || '',
-          contactPerson: order.contactPerson || '',
-          deliveryAddress: order.deliveryAddress || '',
-          orderDate: order.orderDate || '',
-          deliveryDays: order.deliveryDays || '',
-          remark: order.remark || '',
-          items: order.items ? JSON.parse(order.items).map((it: any) => ({
-            ...it,
-            id: it.id || Date.now() + Math.random(),
-            other: it.other
-          })) : [],
-          accessories: order.accessories ? JSON.parse(order.accessories) : []
-        })
-        
-        if (res.order.attachments) {
-          try {
-            const files = JSON.parse(res.order.attachments) as Array<{ name?: string; url: string }>
-            fileList.value = files.map((f) => ({
-              name: f.name,
-              url: f.url,
-              status: 'success'
-            })) as UploadFile[]
-          } catch (e) {
-            console.warn('解析附件失败', e)
-          }
+let loadSeq = 0
+const syncFromRoute = async () => {
+  const seq = ++loadSeq
+  const rawId = Array.isArray(route.query.id) ? route.query.id[0] : route.query.id
+  const id = rawId ? parseInt(String(rawId), 10) : NaN
+
+  if (!Number.isNaN(id) && id > 0) {
+    editingId.value = id
+    isEditMode.value = true
+
+    try {
+      const res = await orderApi.getDetail(id)
+      if (seq !== loadSeq) return
+      const order = res.order
+
+      const parsedItems = order.items
+        ? (typeof order.items === 'string' ? JSON.parse(order.items) : order.items)
+        : []
+      const parsedAccessories = order.accessories
+        ? (typeof order.accessories === 'string' ? JSON.parse(order.accessories) : order.accessories)
+        : []
+
+      Object.assign(orderForm, {
+        name: order.name || '',
+        customerName: order.customerName || '',
+        phone: order.phone || '',
+        fax: order.fax || '',
+        contactPerson: order.contactPerson || '',
+        deliveryAddress: order.deliveryAddress || '',
+        orderDate: order.orderDate || '',
+        deliveryDays: order.deliveryDays || '',
+        remark: order.remark || '',
+        items: Array.isArray(parsedItems)
+          ? parsedItems.map((it: any) => ({
+              ...it,
+              id: it.id || Date.now() + Math.random(),
+              other: it.other
+            }))
+          : [],
+        accessories: Array.isArray(parsedAccessories) ? parsedAccessories : []
+      })
+
+      if (order.attachments) {
+        try {
+          const files = (typeof order.attachments === 'string'
+            ? JSON.parse(order.attachments)
+            : order.attachments) as Array<{ name?: string; url: string }>
+          fileList.value = Array.isArray(files)
+            ? (files.map((f) => ({
+                name: f.name || '附件',
+                url: f.url,
+                status: 'success'
+              })) as UploadFile[])
+            : []
+        } catch (e) {
+          console.warn('解析附件失败', e)
+          fileList.value = []
         }
-        
-        rawText.value = order.rawText || ''
-      } catch (err: any) {
-        showError(err, '加载订单详情失败')
+      } else {
+        fileList.value = []
       }
+
+      rawText.value = order.rawText || ''
+    } catch (err: any) {
+      if (seq !== loadSeq) return
+      showError(err, '加载订单详情失败')
+    }
+    return
+  }
+
+  const rawCustomerName = Array.isArray(route.query.customerName)
+    ? route.query.customerName[0]
+    : route.query.customerName
+  resetOrderForm(rawCustomerName ? String(rawCustomerName).trim() : '')
+}
+
+onMounted(() => {
+  void syncFromRoute()
+})
+
+watch(
+  () => [route.query.id, route.query.customerName],
+  () => {
+    if (route.path === '/order') {
+      void syncFromRoute()
     }
   }
-})
+)
 </script>
 
 <style scoped>

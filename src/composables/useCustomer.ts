@@ -16,7 +16,7 @@ const INITIAL_FORM: CustomerCreatePayload & CustomerUpdatePayload = {
   orderAmount: null,
   paidAmount: null,
   paymentStatus: '未有款项',
-  orderStatus: '未下单',
+  orderStatus: '待排产',
   installationStatus: '待安装'
 }
 
@@ -42,6 +42,9 @@ export const useCustomerForm = () => {
     editingId.value = row.id ?? null
     editingDeliveryStartDate.value = row.deliveryStartDate || ''
     editingWorkshopDeliveryStartDate.value = row.workshopDeliveryStartDate || ''
+    const normalizedOrderStatus = row.installationStatus === '已安装'
+      ? '生产完成'
+      : (row.orderStatus === '已下单' ? '生产中' : (row.orderStatus && row.orderStatus !== '未下单' ? row.orderStatus : '待排产'))
     Object.assign(formData, {
       companyName: row.companyName,
       customerName: row.customerName,
@@ -54,7 +57,7 @@ export const useCustomerForm = () => {
       discountPoints: row.discountPoints || '',
       remark: row.remark,
       paymentStatus: row.paymentStatus || '未有款项',
-      orderStatus: row.orderStatus && row.orderStatus !== '未下单' ? row.orderStatus : '待排产',
+      orderStatus: normalizedOrderStatus,
       installationStatus: row.installationStatus || '待安装',
       orderCount: row.orderCount || 0,
       totalAmount: row.totalAmount || 0,

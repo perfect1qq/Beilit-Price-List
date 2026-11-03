@@ -103,19 +103,19 @@
                     <el-tag
                       size="small"
                       class="clickable-status-tag"
-                      :type="row.orderStatus === '生产完成' ? 'success' : (row.orderStatus === '生产中' ? 'warning' : 'info')"
+                      :type="normalizeOrderStatus(row.orderStatus, row.installationStatus) === '生产完成' ? 'success' : (normalizeOrderStatus(row.orderStatus, row.installationStatus) === '生产中' ? 'warning' : 'info')"
                     >
-                      {{ row.orderStatus || '生产中' }} ▾
+                      {{ normalizeOrderStatus(row.orderStatus, row.installationStatus) }} ▾
                     </el-tag>
                     <template #dropdown>
                       <el-dropdown-menu>
-                        <el-dropdown-item command="待排产">待排产</el-dropdown-item>
-                        <el-dropdown-item command="生产中">生产中</el-dropdown-item>
+                        <el-dropdown-item command="待排产">待排产（未下单）</el-dropdown-item>
+                        <el-dropdown-item command="生产中">生产中（已下单）</el-dropdown-item>
                         <el-dropdown-item command="生产完成">生产完成</el-dropdown-item>
                       </el-dropdown-menu>
                     </template>
                   </el-dropdown>
-                  <el-tag v-else size="small" type="info">待排产</el-tag>
+                  <el-tag v-else size="small" type="warning">生产中</el-tag>
                 </template>
               </AutoFitColumn>
 
@@ -193,7 +193,7 @@
                       <span class="days-badge">{{ row.workshopDeliveryDays }}天</span>
                       <span class="arrow-sep">→</span>
                       <span class="target-date">{{ getDeliveryInfo(row.workshopDeliveryDays, row.workshopDeliveryStartDate || row.createdAt)?.targetStr }}</span>
-                      <template v-if="row.orderStatus === '生产完成'">
+                      <template v-if="normalizeOrderStatus(row.orderStatus, row.installationStatus) === '生产完成'">
                         <el-tag size="small" type="success" effect="plain" class="mini-status-tag">完工✓</el-tag>
                       </template>
                       <template v-else>
@@ -435,16 +435,16 @@
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="车间生产状态">
-              <el-select v-model="financeForm.orderStatus" placeholder="选择生产进度" style="width: 100%;">
-                <el-option label="待排产" value="待排产" />
-                <el-option label="生产中" value="生产中" />
+              <el-select v-model="financeForm.orderStatus" placeholder="选择生产进度" style="width: 100%;" @change="handleDialogOrderStatusChange">
+                <el-option label="待排产（未下单）" value="待排产" />
+                <el-option label="生产中（已下单）" value="生产中" />
                 <el-option label="生产完成" value="生产完成" />
               </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="现场安装状态">
-              <el-select v-model="financeForm.installationStatus" placeholder="选择安装进度" style="width: 100%;">
+              <el-select v-model="financeForm.installationStatus" placeholder="选择安装进度" style="width: 100%;" @change="handleDialogInstallStatusChange">
                 <el-option label="待安装" value="待安装" />
                 <el-option label="已安装" value="已安装" />
               </el-select>
@@ -739,6 +739,30 @@ const defaultFinanceForm = () => ({
 const financeForm = ref(defaultFinanceForm())
 
 /**
+ * 规范化车间生产状态与安装状态的联动：
+ * - 已安装 -> 必为生产完成
+ * - 未下单 -> 待排产；已下单 -> 生产中
+ */
+const normalizeOrderStatus = (orderStatus?: string | null, installationStatus?: string | null): string => {
+  if (installationStatus === '已安装') return '生产完成'
+  if (!orderStatus || orderStatus === '已下单') return '生产中'
+  if (orderStatus === '未下单') return '待排产'
+  return orderStatus
+}
+
+const handleDialogInstallStatusChange = (val: string) => {
+  if (val === '已安装') {
+    financeForm.value.orderStatus = '生产完成'
+  }
+}
+
+const handleDialogOrderStatusChange = (val: string) => {
+  if (val !== '生产完成' && financeForm.value.installationStatus === '已安装') {
+    financeForm.value.installationStatus = '待安装'
+  }
+}
+
+/**
  * 根据账单总额与已收金额自动计算结款状态
  * - 无账单金额 → 待结款
  * - 已收金额 >= 账单总额 → 已结清
@@ -911,7 +935,8 @@ const displayFinanceOrders = computed(() => {
     orderName: c.title || `${c.companyName || ''} - 合同项目`,
     orderAmount: Number(c.amount) || 0,
     paidAmount: 0,
-    orderStatus: '已下单',
+    orderStatus: '生产中',
+    installationStatus: '待安装',
     paymentStatus: '待催款',
     isInvoiced: false,
     isContractVirtual: true,
@@ -922,7 +947,7 @@ const displayFinanceOrders = computed(() => {
 })
 
 const producingCount = computed(() => {
-  return displayFinanceOrders.value.filter((o: any) => o.orderStatus === '生产中').length
+  return displayFinanceOrders.value.filter((o: any) => normalizeOrderStatus(o.orderStatus, o.installationStatus) === '生产中').length
 })
 
 const waitingInstallCount = computed(() => {
@@ -1026,16 +1051,29 @@ const openFinanceAddDialog = () => {
   showFinanceDialog.value = true
 }
 
-// 快速切换订单状态（生产状态或安装状态）
+// 快速切换订单状态（生产状态或安装状态联动）
 const quickUpdateOrderStatus = async (row: any, field: 'orderStatus' | 'installationStatus', val: string) => {
   if (!props.customerId || row.isContractVirtual) return
+  const prevOrderStatus = normalizeOrderStatus(row.orderStatus, row.installationStatus)
+  const payload: Record<string, string> = { [field]: val }
+  if (field === 'installationStatus' && val === '已安装') {
+    payload.orderStatus = '生产完成'
+  } else if (field === 'orderStatus' && val !== '生产完成' && row.installationStatus === '已安装') {
+    payload.installationStatus = '待安装'
+  }
   try {
     await updateOrderMutation.mutateAsync({
       orderId: row.id,
-      data: { [field]: val },
+      data: payload,
       customerId: props.customerId
     })
-    ElMessage.success(`状态已更新为：${val}`)
+    if (field === 'installationStatus' && val === '已安装' && prevOrderStatus !== '生产完成') {
+      ElMessage.success('已更新为「已安装」，车间生产状态已同步为「生产完成」')
+    } else if (field === 'orderStatus' && val !== '生产完成' && row.installationStatus === '已安装') {
+      ElMessage.success(`已更新为「${val}」，现场安装状态已同步为「待安装」`)
+    } else {
+      ElMessage.success(`状态已更新为：${val}`)
+    }
     await refetchCustomer()
     emit('data-changed')
   } catch (e: any) {
@@ -1173,8 +1211,8 @@ const openFinanceEditDialog = (row: any) => {
     orderAmount: row.orderAmount || 0,
     paidAmount: row.paidAmount || 0,
     paymentStatus: computePaymentStatus(row.orderAmount, row.paidAmount),
-    orderStatus: row.orderStatus || '生产中',
-    installationStatus: row.installationStatus || '待安装',
+    orderStatus: normalizeOrderStatus(row.orderStatus, row.installationStatus),
+    installationStatus: row.installationStatus === '已安装' ? '已安装' : '待安装',
     isInvoiced: Boolean(row.isInvoiced),
     workshopDeliveryDays: row.workshopDeliveryDays,
     workshopDeliveryStartDate: row.workshopDeliveryStartDate ? row.workshopDeliveryStartDate.split('T')[0] : (row.createdAt ? row.createdAt.split('T')[0] : new Date().toISOString().split('T')[0]),

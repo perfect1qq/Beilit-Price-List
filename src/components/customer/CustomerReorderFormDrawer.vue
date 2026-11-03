@@ -83,7 +83,7 @@
         </span>
       </el-form-item>
 
-      <!-- 下单状态：待排产 / 已下单 -->
+      <!-- 下单状态：待排产(未下单) / 生产中(已下单) / 生产完成 -->
       <el-form-item label="下单与复购" prop="orderStatus">
         <el-select
           v-model="localData.orderStatus"
@@ -91,8 +91,9 @@
           style="width: 100%"
           @change="handleOrderStatusChange"
         >
-          <el-option label="待排产" value="待排产" />
-          <el-option label="已下单" value="已下单" />
+          <el-option label="待排产（未下单）" value="待排产" />
+          <el-option label="生产中（已下单）" value="生产中" />
+          <el-option label="生产完成" value="生产完成" />
         </el-select>
         <span v-if="autoOrderDescription" style="font-size: 12px; color: #909399; margin-top: 4px; display: block;">
           💡 订单参考：{{ autoOrderDescription }}（可手动自选）
@@ -244,12 +245,17 @@ const handlePaymentStatusChange = (val: string) => {
 
 // 3. 手动修改下单状态联动
 const handleOrderStatusChange = (val: string) => {
-  if (val === "已下单") {
-    // 已下单客户，联动为已合作
+  if (val === "生产中" || val === "生产完成" || val === "已下单") {
+    // 已下单/生产中客户，联动为已合作
     localData.cooperationStatus = "已合作";
     if (localData.paymentStatus === "未有款项") {
       localData.paymentStatus = "待催款";
     }
+    if (val !== "生产完成" && localData.installationStatus === "已安装") {
+      localData.installationStatus = "待安装";
+    }
+  } else if (val === "待排产") {
+    localData.installationStatus = "待安装";
   }
 };
 
@@ -257,14 +263,18 @@ watch(
   () => props.formData,
   (newVal) => {
     Object.assign(localData, newVal);
-    if (!localData.orderStatus || localData.orderStatus === "未下单") {
+    if (localData.installationStatus === "已安装") {
+      localData.orderStatus = "生产完成";
+    } else if (!localData.orderStatus || localData.orderStatus === "未下单") {
       localData.orderStatus = "待排产";
+    } else if (localData.orderStatus === "已下单") {
+      localData.orderStatus = "生产中";
     }
     // 人为控制大于智能匹配：编辑时完全以回填数据为准，不强行覆盖用户的手动设定
     if (!props.isEdit && isAutoCooperated.value) {
       localData.cooperationStatus = "已合作";
-      if ((newVal as any)?.orderCount > 0) {
-        localData.orderStatus = "已下单";
+      if ((newVal as any)?.orderCount > 0 && localData.orderStatus === "待排产") {
+        localData.orderStatus = "生产中";
       }
     }
   },
