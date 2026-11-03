@@ -21,7 +21,7 @@
         <el-empty v-if="!groupedContracts.length" :description="filters.keyword ? '未搜索到匹配的合同' : '暂无合同记录'" />
         
         <GroupedHistoryList v-else :data="groupedContracts">
-          <template #default="{ records }">
+          <template #default>
             <el-table-column prop="title" label="合同名称" min-width="200" />
             <el-table-column label="合同时间" width="120" align="center">
               <template #default="scope">

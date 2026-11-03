@@ -341,14 +341,13 @@
 </template>
 
 <script setup lang="ts">
-import { CooperationStatus, CustomerType, PaymentStatus, OrderStatus, InstallationStatus } from '@/constants/enums';
+import { PaymentStatus } from '@/constants/enums';
 import CustomerReorderStats from './customer/CustomerReorderStats.vue';
 import { onMounted, ref, computed, reactive } from "vue";
-import { useRouter } from "vue-router";
 import { ElMessageBox } from "element-plus";
-import { Delete, Search } from "@element-plus/icons-vue";
+import { Search } from "@element-plus/icons-vue";
 import { to } from "@/utils/async";
-import { formatDate, formatDateOnly, getRemainingDays } from "@/utils/date";
+import { formatDateOnly } from "@/utils/date";
 import { formatMoney } from "@/utils/number";
 import { showError, showSuccess } from "@/utils/message";
 import { usePermissions } from "@/composables/usePermissions";
@@ -375,7 +374,6 @@ import FormButtons from "@/components/common/FormButtons.vue";
 import CustomerReorderFormDrawer from "@/components/customer/CustomerReorderFormDrawer.vue";
 import CustomerReorder360Drawer from "@/components/customer/CustomerReorder360Drawer.vue";
 
-const router = useRouter();
 const { isGuest, canCreate, canDelete } = usePermissions();
 
 const activeStat = ref("");
@@ -503,20 +501,6 @@ const handleDelete = async (row: { id?: number | string; companyName: string }) 
   void refetchList();
 };
 
-// 订单/车间状态（人为控制优先，待排产 vs 已下单）
-const getOrderStatusTag = (item: CustomerListItem): { text: string; type: 'info' | 'warning' | 'success' | 'primary' } => {
-  if (item.orderStatus === '待排产') {
-    return { text: '待排产', type: 'warning' };
-  }
-  if (item.orderStatus === '已下单') {
-    return { text: '已下单', type: 'primary' };
-  }
-  if ((item.orderCount || 0) > 0) {
-    return { text: '已下单', type: 'primary' };
-  }
-  return { text: '待排产', type: 'warning' };
-};
-
 // 结款状态（人为控制优先，无手动设置时按账单欠款推导）：
 //   待催款（danger）
 //   已结清（success）
@@ -530,24 +514,6 @@ const getPaymentStatus = (item: CustomerListItem): { text: string; type: 'info' 
   const paid = item.totalPaidAmount || 0;
   if (total === 0) return { text: PaymentStatus.NONE, type: 'info' };
   return total - paid > 0 ? { text: '待催款', type: 'danger' } : { text: PaymentStatus.PAID, type: 'success' };
-};
-
-const getRemainingClass = (dateStr: string, installationStatus?: string) => {
-  if (installationStatus === InstallationStatus.INSTALLED) return "text-success";
-  const days = getRemainingDays(dateStr);
-  if (days === null) return "";
-  if (days < 0) return "overdue";
-  if (days <= 3) return "urgent";
-  return "normal";
-};
-
-const getRemainingText = (dateStr: string, installationStatus?: string) => {
-  if (installationStatus === InstallationStatus.INSTALLED) return "已完工";
-  const days = getRemainingDays(dateStr);
-  if (days === null) return "";
-  if (days < 0) return `逾期${Math.abs(days)}天`;
-  if (days === 0) return "今天到期";
-  return `剩${days}天`;
 };
 
 const invoiceDialogVisible = ref(false);

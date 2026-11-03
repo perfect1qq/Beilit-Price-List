@@ -33,7 +33,7 @@ type Variant =
   | 'search' | 'download' | 'upload'
   | 'primary' | 'default'
 
-const props = defineProps({
+defineProps({
   submitText: { type: String, default: '确定' },
   cancelText: { type: String, default: '取消' },
   submitVariant: { type: String as () => Variant, default: 'save' },

@@ -417,7 +417,7 @@ const saveOrder = async () => {
   if (!formRef.value) return;
   try {
     await formRef.value.validate();
-  } catch (err) {
+  } catch {
     showError(new Error('请填写必填项'), '保存失败');
     return;
   }

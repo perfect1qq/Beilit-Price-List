@@ -763,17 +763,6 @@ const computedFinanceStatus = computed(() => {
   return { label: status, type: typeMap[status] || 'warning' }
 })
 
-// 表格中根据订单数据动态计算结款状态（不依赖后端存储值，确保旧数据也能正确显示）
-const getPaymentStatusInfo = (row: { orderAmount?: number | null; paidAmount?: number | null }) => {
-  const status = computePaymentStatus(row.orderAmount, row.paidAmount)
-  const typeMap: Record<string, 'success' | 'danger' | 'warning'> = {
-    '已结清': 'success',
-    '待催款': 'danger',
-    '待结款': 'warning',
-  }
-  return { label: status, type: typeMap[status] || 'warning' }
-}
-
 // 监听金额变化，自动同步结款状态到表单（提交时使用）
 watch(
   () => [financeForm.value.orderAmount, financeForm.value.paidAmount],

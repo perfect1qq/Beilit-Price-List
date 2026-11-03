@@ -143,7 +143,6 @@ import {
   createRequiredRule,
   createMaxLengthRule,
 } from "@/utils/formRules";
-import { addDays, formatDate } from "@/utils/date";
 import type { CustomerCreatePayload, CustomerUpdatePayload } from "@/types";
 
 const props = defineProps({
